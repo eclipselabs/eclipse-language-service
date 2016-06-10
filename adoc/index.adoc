@@ -22,9 +22,16 @@ The easiest way to have a language server running is to install VSCode: http://c
 
 == Eclipse IDE Side ==
 
-We create a plugin `org.eclipse.languageserver`. It implements an extension to `org.eclipse.wst.jsdt.ui.javaCompletionProposalComputer`. The LanguageCompletionProposalComputer#
+We choose to start implementing a JavaScript Editor as VSCode already provides a Language Server Service for a JavaScript editor. 
+You can extend this by adding any other editor, as example XML, Java, Xtext, PHP, HTML, XSLT, SASS, etc.  
 
-== Important Notes == 
+* We created a plugin `org.eclipse.languageserver`, which implements an extension to `org.eclipse.wst.jsdt.ui.javaCompletionProposalComputer`. 
+* The LanguageCompletionProposalComputer#computeCompletionProposals(..) is the method that actually provides content assist.
+* To run, you need to setup for JSDT, explained here: https://www.youtube.com/watch?v=gOz1hk-ohMA
 
-Sven put an interesting comment to ensime-server
+== Important Notes and References == 
+
+* Sven put an interesting comment to ensime-server
 see: https://github.com/ensime/ensime-server/issues/1498
+* Initial prototype of language server protocol extension for Che using the TypeFox API:
+https://github.com/eclipse/che/pull/1323/commits/e250864c89228875723649268a72a87d91057033  
