@@ -1,8 +1,11 @@
 # Eclipse integration for language service (experiment)
 
+
 This repository contains experiments to make Eclipse IDE able to consume the Microsoft Language Server protocol.
 
 This has been initiated during the EclipseCon France 2016 Unconference.
+
+for details, see [Documentation Index](/adoc/index.adoc)
 
 At the moment, it only provides the extension to add completion to the JavaScript editor. Some related future work will be:
 
