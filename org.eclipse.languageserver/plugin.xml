@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?eclipse version="3.4"?>
+<plugin>
+   <!-- Extension point will ideally be "org.eclipse.text...." because
+   the feature should be part of the generic text editor -->
+   <extension
+         id="languageServer"
+         point="org.eclipse.wst.jsdt.ui.javaCompletionProposalComputer">
+      <javaCompletionProposalComputer
+            activate="true"
+            categoryId="org.eclipse.wst.jsdt.ui.defaultProposalCategory"
+            class="org.eclipse.languageserver.LanguageCompletionProposalComputer">
+         <partition
+               type="__dftl_partition_content_type">
+         </partition>
+      </javaCompletionProposalComputer>
+   </extension>
+
+</plugin>
