@@ -15,5 +15,16 @@
          </partition>
       </javaCompletionProposalComputer>
    </extension>
+   <extension
+         point="org.eclipse.ui.workbench.texteditor.hyperlinkDetectors">
+      <hyperlinkDetector
+            activate="true"
+            class="org.eclipse.languageserver.LangaugeServiceBasedHyperlinkDetector"
+            id="org.eclipse.languageserver.hyperlinkDetector"
+            modifierKeys="Ctrl"
+            name="Language-Service based hyperlink"
+            targetId="org.eclipse.ui.DefaultTextEditor">
+      </hyperlinkDetector>
+   </extension>
 
 </plugin>

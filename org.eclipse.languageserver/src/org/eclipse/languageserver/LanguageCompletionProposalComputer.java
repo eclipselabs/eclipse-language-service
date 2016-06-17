@@ -10,6 +10,7 @@ import java.util.Set;
 import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.jface.text.contentassist.CompletionProposal;
 import org.eclipse.jface.text.contentassist.ICompletionProposal;
+import org.eclipse.jface.text.contentassist.IContextInformation;
 import org.eclipse.wst.jsdt.ui.text.java.ContentAssistInvocationContext;
 import org.eclipse.wst.jsdt.ui.text.java.IJavaCompletionProposalComputer;
 
@@ -25,15 +26,7 @@ public class LanguageCompletionProposalComputer implements IJavaCompletionPropos
 	public List<ICompletionProposal> computeCompletionProposals(ContentAssistInvocationContext context,
 			IProgressMonitor monitor) {
 		List<ICompletionProposal> languageServiceProposals = new ArrayList<>();
-		Set<URI> languagesServicesUrls = new HashSet<URI>();
-		try {
-			languagesServicesUrls.add(new URI("dummy")); // thos should be retrieved as preferences most likely
-		} catch (URISyntaxException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-		for (URI uri : languagesServicesUrls) {
-			LanguageClient languageClient = new LanguageClient(uri);
+		for (LanguageClient languageClient : LanguageClient.getAllLanguageClientFor(null)) {
 			if (languageClient.isActiveFor(context)) {
 				Set<String> proposals = languageClient.getCompletionProposals(context);
 				for (String proposal : proposals) {
@@ -45,7 +38,7 @@ public class LanguageCompletionProposalComputer implements IJavaCompletionPropos
 	}
 
 	@Override
-	public List<ICompletionProposal> computeContextInformation(ContentAssistInvocationContext context,
+	public List<IContextInformation> computeContextInformation(ContentAssistInvocationContext context,
 			IProgressMonitor monitor) {
 		return null;
 	}
