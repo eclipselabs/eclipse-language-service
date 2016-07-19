@@ -14,7 +14,6 @@ import org.eclipse.jface.text.BadLocationException;
 import org.eclipse.jface.text.DocumentEvent;
 import org.eclipse.jface.text.IDocument;
 import org.eclipse.jface.text.IDocumentListener;
-import org.eclipse.osgi.storage.bundlefile.FileBundleEntry;
 
 import io.typefox.lsapi.DidChangeTextDocumentParamsImpl;
 import io.typefox.lsapi.DidOpenTextDocumentParamsImpl;
@@ -22,7 +21,6 @@ import io.typefox.lsapi.InitializeParamsImpl;
 import io.typefox.lsapi.InitializeResult;
 import io.typefox.lsapi.PositionImpl;
 import io.typefox.lsapi.RangeImpl;
-import io.typefox.lsapi.TextDocumentContentChangeEvent;
 import io.typefox.lsapi.TextDocumentContentChangeEventImpl;
 import io.typefox.lsapi.TextDocumentItemImpl;
 import io.typefox.lsapi.VersionedTextDocumentIdentifierImpl;
@@ -33,6 +31,7 @@ public class LanguageServerWrapper {
 	private final class DocumentChangeListenenr implements IDocumentListener {
 		private IFile file;
 		private int version = 2;
+		private DidChangeTextDocumentParamsImpl change;
 
 		public DocumentChangeListenenr(IFile file) {
 			this.file = file;
@@ -40,16 +39,19 @@ public class LanguageServerWrapper {
 
 		@Override
 		public void documentChanged(DocumentEvent event) {
+			change.getContentChanges().get(0).setText(event.getDocument().get());
+			server.getTextDocumentService().didChange(change);
+			version++;
 		}
 
 		@Override
 		public void documentAboutToBeChanged(DocumentEvent event) {
 			try {
-				DidChangeTextDocumentParamsImpl change = new DidChangeTextDocumentParamsImpl();
+				this.change = new DidChangeTextDocumentParamsImpl();
 				VersionedTextDocumentIdentifierImpl doc = new VersionedTextDocumentIdentifierImpl();
 				doc.setUri(file.getLocationURI().toString());
 				doc.setVersion(version);
-				change.setTextDocument(doc);
+				this.change.setTextDocument(doc);
 				TextDocumentContentChangeEventImpl changeEvent = new TextDocumentContentChangeEventImpl();
 				RangeImpl range = new RangeImpl();
 				PositionImpl start = new PositionImpl();
@@ -62,10 +64,8 @@ public class LanguageServerWrapper {
 				range.setEnd(end);
 				changeEvent.setRange(range);
 				changeEvent.setRangeLength(event.getLength());
-				changeEvent.setText(event.getText());
-				change.setContentChanges(Arrays.asList(new TextDocumentContentChangeEventImpl[] { changeEvent }));
-				server.getTextDocumentService().didChange(change);
-				version++;
+				changeEvent.setText(event.getDocument().get()); // TODO set to value after change
+				this.change.setContentChanges(Arrays.asList(new TextDocumentContentChangeEventImpl[] { changeEvent }));
 			} catch (BadLocationException ex) {
 				ex.printStackTrace(); // TODO
 			}
