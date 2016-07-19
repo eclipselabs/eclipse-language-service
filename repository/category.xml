@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<site>
+	 <category-def name="Language Server Support for Eclipse" label="Language Server Support for Eclipse IDE"/>
+   <bundle id="org.eclipse.languageserver">
+      <category name="Language Server Support for Eclipse"/>
+   </bundle>
+
+	<!-- Dependencies -->
+	<bundle id="io.typefox.lsapi"/>
+	<bundle id="io.typefox.lsapi.annotations"/>
+	<bundle id="io.typefox.lsapi.services"/>
+	<bundle id="org.eclipse.xtext.xbase.lib"/>`
+</site>

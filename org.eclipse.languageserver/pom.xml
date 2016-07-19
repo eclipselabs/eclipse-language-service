@@ -1,18 +1,15 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
-  <groupId>org.eclipse.languageserver</groupId>
   <artifactId>org.eclipse.languageserver</artifactId>
-  <version>1.0.0-SNAPSHOT</version>
+	<parent>
+  	<groupId>org.eclipse.languageserver</groupId>
+		<artifactId>parent</artifactId>
+	  <version>1.0.0-SNAPSHOT</version>
+	</parent>
   <packaging>eclipse-plugin</packaging>
   
   <build>
   	<plugins>
-  		<plugin>
-  			<groupId>org.eclipse.tycho</groupId>
-  			<artifactId>tycho-maven-plugin</artifactId>
-  			<version>0.25.0</version>
-  			<extensions>true</extensions>
-  		</plugin>
   		<plugin>
   			<groupId>org.eclipse.tycho</groupId>
   			<artifactId>target-platform-configuration</artifactId>
@@ -38,11 +35,6 @@
   </dependencies>
   
   <repositories>
-  	<repository>
-  		<layout>p2</layout>
-  		<id>neon</id>
-  		<url>http://download.eclipse.org/releases/neon</url>
-  	</repository>
   	<repository>
   		<id>oss.sonatype.org</id>
   		<url>https://oss.sonatype.org/content/repositories/snapshots/</url>
