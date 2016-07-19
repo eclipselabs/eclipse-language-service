@@ -16,23 +16,10 @@
       </javaCompletionProposalComputer>
    </extension>
    <extension
-         point="org.eclipse.ui.workbench.texteditor.hyperlinkDetectors">
-      <hyperlinkDetector
-            activate="true"
-            class="org.eclipse.languageserver.LangaugeServiceBasedHyperlinkDetector"
-            id="org.eclipse.languageserver.hyperlinkDetector"
-            modifierKeys="Ctrl"
-            name="Language-Service based hyperlink"
-            targetId="org.eclipse.ui.DefaultTextEditor">
-      </hyperlinkDetector>
-   </extension>
-   <extension
-         point="org.eclipse.ui.workbench.texteditor.contentAssistProcessors">
+         point="org.eclipse.ui.genericeditor.contentAssistProcessors">
       <contentAssistProcessor
-            class="org.eclipse.languageserver.LSContentAssistProcessor">
-         <activeWhen>
-            <or></or>
-         </activeWhen>
+            class="org.eclipse.languageserver.LSContentAssistProcessor"
+            contentType="org.eclipse.wst.css.core.csssource">
       </contentAssistProcessor>
    </extension>
 
