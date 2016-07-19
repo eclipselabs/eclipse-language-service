@@ -20,12 +20,12 @@
   	</plugins>
   </build>
   
-  <repositories>
-  	<repository>
-  		<layout>p2</layout>
-  		<id>neon</id>
-  		<url>http://download.eclipse.org/releases/neon</url>
-  	</repository>
+	<repositories>
+		<repository>
+			<layout>p2</layout>
+			<id>neon</id>
+			<url>http://download.eclipse.org/releases/neon</url>
+		</repository>
 		<repository>
 			<layout>p2</layout>
 			<id>ls-api-latest</id>
@@ -35,6 +35,11 @@
 			<layout>p2</layout>
 			<id>orbit</id>
 			<url>http://download.eclipse.org/tools/orbit/downloads/drops/R20160520211859/repository/</url>
+		</repository>
+		<repository>
+			<id>oss.sonatype.org</id>
+			<url>https://oss.sonatype.org/content/repositories/snapshots/</url>
+			<snapshots><enabled>true</enabled></snapshots>
 		</repository>
   </repositories>
 </project>
