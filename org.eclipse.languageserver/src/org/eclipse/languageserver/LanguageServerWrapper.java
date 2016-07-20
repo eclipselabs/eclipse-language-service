@@ -2,24 +2,42 @@ package org.eclipse.languageserver;
 
 import java.io.File;
 import java.io.IOException;
+import java.net.URI;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
+import java.util.function.Consumer;
 
+import org.eclipse.core.filebuffers.FileBuffers;
+import org.eclipse.core.filebuffers.LocationKind;
 import org.eclipse.core.resources.IFile;
+import org.eclipse.core.resources.IMarker;
 import org.eclipse.core.resources.IProject;
+import org.eclipse.core.resources.IResource;
+import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IPath;
+import org.eclipse.core.runtime.Platform;
+import org.eclipse.core.runtime.content.IContentType;
 import org.eclipse.jface.text.BadLocationException;
 import org.eclipse.jface.text.DocumentEvent;
 import org.eclipse.jface.text.IDocument;
 import org.eclipse.jface.text.IDocumentListener;
+import org.eclipse.xtext.xbase.lib.Procedures.Procedure2;
 
+import com.google.common.base.Objects;
+
+import io.typefox.lsapi.ClientCapabilitiesImpl;
+import io.typefox.lsapi.Diagnostic;
 import io.typefox.lsapi.DidChangeTextDocumentParamsImpl;
 import io.typefox.lsapi.DidOpenTextDocumentParamsImpl;
 import io.typefox.lsapi.InitializeParamsImpl;
 import io.typefox.lsapi.InitializeResult;
 import io.typefox.lsapi.PositionImpl;
+import io.typefox.lsapi.PublishDiagnosticsParams;
 import io.typefox.lsapi.RangeImpl;
 import io.typefox.lsapi.TextDocumentContentChangeEventImpl;
 import io.typefox.lsapi.TextDocumentItemImpl;
@@ -29,18 +47,18 @@ import io.typefox.lsapi.services.json.JsonBasedLanguageServer;
 public class LanguageServerWrapper {
 
 	private final class DocumentChangeListenenr implements IDocumentListener {
-		private IFile file;
+		private URI fileURI;
 		private int version = 2;
 		private DidChangeTextDocumentParamsImpl change;
 
-		public DocumentChangeListenenr(IFile file) {
-			this.file = file;
+		public DocumentChangeListenenr(URI fileURI) {
+			this.fileURI = fileURI;
 		}
 
 		@Override
 		public void documentChanged(DocumentEvent event) {
-			change.getContentChanges().get(0).setText(event.getDocument().get());
-			server.getTextDocumentService().didChange(change);
+			this.change.getContentChanges().get(0).setText(event.getDocument().get());
+			server.getTextDocumentService().didChange(this.change);
 			version++;
 		}
 
@@ -49,18 +67,14 @@ public class LanguageServerWrapper {
 			try {
 				this.change = new DidChangeTextDocumentParamsImpl();
 				VersionedTextDocumentIdentifierImpl doc = new VersionedTextDocumentIdentifierImpl();
-				doc.setUri(file.getLocationURI().toString());
+				doc.setUri(fileURI.toString());
 				doc.setVersion(version);
 				this.change.setTextDocument(doc);
 				TextDocumentContentChangeEventImpl changeEvent = new TextDocumentContentChangeEventImpl();
 				RangeImpl range = new RangeImpl();
-				PositionImpl start = new PositionImpl();
-				start.setLine(event.getDocument().getLineOfOffset(event.getOffset()));
-				start.setCharacter(event.getOffset() - event.getDocument().getLineInformationOfOffset(event.getOffset()).getOffset());
+				PositionImpl start = LanguageServerEclipseUtils.toPosition(event.getOffset(), event.getDocument());
 				range.setStart(start);
-				PositionImpl end = new PositionImpl();
-				end.setLine(event.getDocument().getLineOfOffset(event.getOffset() + event.getLength()));
-				end.setCharacter(event.getOffset() + event.getLength() - event.getDocument().getLineInformationOfOffset(event.getOffset() + event.getLength()).getOffset());
+				PositionImpl end = LanguageServerEclipseUtils.toPosition(event.getOffset() + event.getLength(), event.getDocument());
 				range.setEnd(end);
 				changeEvent.setRange(range);
 				changeEvent.setRangeLength(event.getLength());
@@ -72,13 +86,17 @@ public class LanguageServerWrapper {
 		}
 	}
 
+	protected static final String LS_DIAGNOSTIC_MARKER_TYPE = "org.eclipse.languageserver.diagnostic"; //$NON-NLS-1$
+
 	private Process process;
 	private JsonBasedLanguageServer server;
 	private IProject project;
+	private IContentType contentType;
 	private Map<IPath, DocumentChangeListenenr> connectedFiles;
 	
-	public LanguageServerWrapper(IProject project) {
+	public LanguageServerWrapper(IProject project, IContentType contentType) {
 		this.project = project;
+		this.contentType = contentType;
 	}
 	
 	private void start() throws IOException {
@@ -93,18 +111,117 @@ public class LanguageServerWrapper {
 		//     (don't forget the `npm run watch` after the install script)
 		// 3. Then set language server location and adapt process builder.
 		
-		ProcessBuilder builder = new ProcessBuilder("/usr/bin/node", "/home/mistria/git/vscode/extensions/css/server/out/cssServerMain.js")
-			.directory(new File("/home/mistria/git/vscode/extensions/css/server/out/"));
+		ProcessBuilder builder = null;
+		if (contentType.getId().contains("css")) {
+			builder = new ProcessBuilder("/usr/bin/node", "/home/mistria/git/vscode/extensions/css/server/out/cssServerMain.js")
+					.directory(new File("/home/mistria/git/vscode/extensions/css/server/out/"));
+		} else if (contentType.getId().contains("json")) {
+			builder = new ProcessBuilder("/usr/bin/node", "/home/mistria/git/vscode/extensions/json/server/out/jsonServerMain.js")
+					.directory(new File("/home/mistria/git/vscode/extensions/json/server/out/"));
+		} else if (contentType.getId().contains("csharp")) {
+			builder = new ProcessBuilder("/usr/bin/node", "/home/mistria/git/omnisharp-node-client/languageserver/server.js")
+					.directory(new File("/home/mistria/git/omnisharp-node-client/languageserver"));
+		}
 		this.process = builder.start();
 		this.server = new JsonBasedLanguageServer();
+		this.server.onError(new Procedure2<String, Throwable>() {
+
+			@Override
+			public void apply(String p1, Throwable p2) {
+				System.err.println(p1);
+				p2.printStackTrace();
+			}
+		});
 		this.server.connect(this.process.getInputStream(), this.process.getOutputStream());
 		// initialize
 		InitializeParamsImpl initParams = new InitializeParamsImpl();
 		initParams.setRootPath(project.getLocation().toFile().getAbsolutePath());
+		String name = Platform.getProduct().getName();
+		if (name == null) {
+			name = "Eclipse IDE";
+		}
+		initParams.setClientName(name);
+		Integer.valueOf(java.lang.management.ManagementFactory.getRuntimeMXBean().getName().split("@")[0]);
+		initParams.setCapabilities(new ClientCapabilitiesImpl());
+		connectDiagnostics();
 		CompletableFuture<InitializeResult> result = server.initialize(initParams);
+		try {
+			InitializeResult initializeResult = result.get();
+		} catch (InterruptedException | ExecutionException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 		this.connectedFiles = new HashMap<>();
 	}
 	
+	private void connectDiagnostics() {
+		this.server.getTextDocumentService().onPublishDiagnostics(new Consumer<PublishDiagnosticsParams>() {
+			@Override
+			public void accept(PublishDiagnosticsParams diagnostics) {
+				try {
+					Set<IMarker> remainingMarkers = new HashSet<>(Arrays.asList(project.findMarkers(LS_DIAGNOSTIC_MARKER_TYPE, false, IResource.DEPTH_INFINITE)));
+					for (Diagnostic diagnostic : diagnostics.getDiagnostics()) {
+						IMarker associatedMarker = getExistingMarkerFor(diagnostic, remainingMarkers);
+						if (associatedMarker == null) {
+							createMarkerForDiagnostic(diagnostic);
+						} else {
+							remainingMarkers.remove(associatedMarker);
+						}
+					}
+					for (IMarker marker : remainingMarkers) {
+						marker.delete();
+					}
+				} catch (CoreException ex) {
+					ex.printStackTrace(); // TODO
+				}
+			}
+
+			private void createMarkerForDiagnostic(Diagnostic diagnostic) {
+				IResource resource = project.findMember(diagnostic.getSource());
+				if (resource == null) {
+					resource = project;
+				}
+				try {
+					IMarker marker = resource.createMarker(LS_DIAGNOSTIC_MARKER_TYPE);
+					marker.setAttribute(IMarker.MESSAGE, diagnostic.getMessage());
+					marker.setAttribute(IMarker.SEVERITY, diagnostic.getSeverity()); // TODO mapping Eclipse <-> LS severity
+					if (resource.getType() == IResource.FILE) {
+						IFile file = (IFile)resource;
+						IDocument document = FileBuffers.getTextFileBufferManager().getTextFileBuffer(file.getLocation(), LocationKind.IFILE).getDocument();
+						marker.setAttribute(IMarker.CHAR_START, LanguageServerEclipseUtils.toOffset(diagnostic.getRange().getStart(), document));
+						marker.setAttribute(IMarker.CHAR_END, LanguageServerEclipseUtils.toOffset(diagnostic.getRange().getEnd(), document));
+						marker.setAttribute(IMarker.LINE_NUMBER, diagnostic.getRange().getStart().getLine() - 1);
+					}
+				} catch (Exception ex) {
+					ex.printStackTrace(); // TODO
+				}
+			}
+
+			private IMarker getExistingMarkerFor(Diagnostic diagnostic, Set<IMarker> remainingMarkers) {
+				IResource resource = project.findMember(diagnostic.getSource());
+				IDocument document = null; // retrieve from diagnostic
+				if (resource == null) {
+					return null;
+				}
+				for (IMarker marker : remainingMarkers) {
+					int startOffset = marker.getAttribute(IMarker.CHAR_START, -1);
+					int endOffset = marker.getAttribute(IMarker.CHAR_END, -1);
+					try {
+						if (marker.getResource().getProjectRelativePath().toString().equals(diagnostic.getSource()) 
+								&& LanguageServerEclipseUtils.toOffset(diagnostic.getRange().getStart(), document) == startOffset
+								&& LanguageServerEclipseUtils.toOffset(diagnostic.getRange().getEnd(), document) == endOffset
+								&& Objects.equal(marker.getAttribute(IMarker.MESSAGE), diagnostic.getMessage())) {
+							return marker;
+						}
+					} catch (Exception e) {
+						e.printStackTrace(); // TODO
+					}
+				}
+				return null;
+			}
+		});
+	}
+
 	private void stop() {
 		this.process.destroy();
 		this.process = null;
@@ -112,7 +229,7 @@ public class LanguageServerWrapper {
 		this.server = null;
 	}
 
-	public void connect(IFile file, IDocument document) throws IOException {
+	public void connect(IFile file, final IDocument document) throws IOException {
 		start();
 		if (this.connectedFiles.containsKey(file.getLocation())) {
 			return;
@@ -125,7 +242,7 @@ public class LanguageServerWrapper {
 		open.setTextDocument(textDocument);
 		this.server.getTextDocumentService().didOpen(open);
 		
-		DocumentChangeListenenr listener = new DocumentChangeListenenr(file);
+		DocumentChangeListenenr listener = new DocumentChangeListenenr(file.getLocationURI());
 		document.addDocumentListener(listener);
 		this.connectedFiles.put(file.getLocation(), listener);
 	}

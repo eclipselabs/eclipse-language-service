@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
 import org.eclipse.core.resources.IFile;
+import org.eclipse.jface.text.IDocument;
 import org.eclipse.jface.text.ITextViewer;
 import org.eclipse.jface.text.contentassist.CompletionProposal;
 import org.eclipse.jface.text.contentassist.ICompletionProposal;
@@ -15,24 +16,13 @@ import org.eclipse.jface.text.contentassist.IContextInformationValidator;
 import org.eclipse.ui.IEditorInput;
 import org.eclipse.ui.IEditorPart;
 import org.eclipse.ui.IFileEditorInput;
+import org.eclipse.ui.IURIEditorInput;
 import org.eclipse.ui.PlatformUI;
 import org.eclipse.ui.texteditor.AbstractTextEditor;
 
 import io.typefox.lsapi.CompletionItem;
-import io.typefox.lsapi.CompletionItemImpl;
 import io.typefox.lsapi.CompletionList;
-import io.typefox.lsapi.DidChangeConfigurationParamsImpl;
-import io.typefox.lsapi.DidChangeTextDocumentParamsImpl;
-import io.typefox.lsapi.DidOpenTextDocumentParamsImpl;
-import io.typefox.lsapi.InitializeParamsImpl;
-import io.typefox.lsapi.InitializeResult;
-import io.typefox.lsapi.PositionImpl;
-import io.typefox.lsapi.RangeImpl;
-import io.typefox.lsapi.TextDocumentIdentifierImpl;
-import io.typefox.lsapi.TextDocumentItemImpl;
 import io.typefox.lsapi.TextDocumentPositionParamsImpl;
-import io.typefox.lsapi.TextEditImpl;
-import io.typefox.lsapi.VersionedTextDocumentIdentifierImpl;
 import io.typefox.lsapi.services.json.JsonBasedLanguageServer;
 
 public class LSContentAssistProcessor implements IContentAssistProcessor {
@@ -47,31 +37,31 @@ public class LSContentAssistProcessor implements IContentAssistProcessor {
 			return new ICompletionProposal[0];
 		}
 		IEditorInput input = activeEditor.getEditorInput();
-		if (input instanceof IFileEditorInput) {
-			IFile file = ((IFileEditorInput) input).getFile();
-			URI fileUri = file.getLocation().toFile().toURI();
-			try {
-				JsonBasedLanguageServer server = LanaguageServiceAccessor.getLanaguageServer(file, viewer.getDocument());
-
-				PositionImpl start = new PositionImpl();
-				start.setLine(viewer.getDocument().getLineOfOffset(offset));
-				start.setCharacter(offset - viewer.getDocument().getLineInformationOfOffset(offset).getOffset());
-				TextDocumentPositionParamsImpl param = new TextDocumentPositionParamsImpl();
-				param.setPosition(start);
-				param.setUri(fileUri.toString());
-				TextDocumentIdentifierImpl id = new TextDocumentIdentifierImpl();
-				id.setUri(fileUri.toString());
-				param.setTextDocument(id);
+		JsonBasedLanguageServer server = null;
+		URI fileUri = null;
+		try {
+			if (input instanceof IFileEditorInput) { // TODO, also support non resource file
+				IFile file = ((IFileEditorInput) input).getFile();
+				fileUri = file.getLocation().toFile().toURI();
+				server = LanaguageServiceAccessor.getLanaguageServer(file, viewer.getDocument());
+			} else if (input instanceof IURIEditorInput) {
+				fileUri = ((IURIEditorInput)input).getURI();
+				// TODO server
+			}
+	
+			if (server != null) {
+				IDocument document = viewer.getDocument();
+				TextDocumentPositionParamsImpl param = LanguageServerEclipseUtils.toTextDocumentPosistionParams(fileUri, offset, document);
 				CompletableFuture<CompletionList> res = server.getTextDocumentService().completion(param);
 				List<ICompletionProposal> proposals = new ArrayList<>();
 				for (CompletionItem item : res.get().getItems()) {
+					// TODO add description and so on
 					proposals.add(new CompletionProposal(item.getInsertText(), offset, 0, item.getInsertText().length()));
 				}
 				return proposals.toArray(new ICompletionProposal[proposals.size()]);
-			} catch (Exception e) {
-				e.printStackTrace();
 			}
-			
+		} catch (Exception ex) {
+			ex.printStackTrace(); //TODO
 		}
 		return null;
 	}
