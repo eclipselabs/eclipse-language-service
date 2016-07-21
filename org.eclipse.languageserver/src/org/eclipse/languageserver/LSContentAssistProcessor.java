@@ -55,8 +55,13 @@ public class LSContentAssistProcessor implements IContentAssistProcessor {
 				CompletableFuture<CompletionList> res = server.getTextDocumentService().completion(param);
 				List<ICompletionProposal> proposals = new ArrayList<>();
 				for (CompletionItem item : res.get().getItems()) {
+					String text = item.getInsertText();
+					if (text == null) {
+						text = item.getSortText();
+					}
+					// TODO also consider item.getTextEdit
 					// TODO add description and so on
-					proposals.add(new CompletionProposal(item.getInsertText(), offset, 0, item.getInsertText().length()));
+					proposals.add(new CompletionProposal(text, offset, 0, text.length()));
 				}
 				return proposals.toArray(new ICompletionProposal[proposals.size()]);
 			}

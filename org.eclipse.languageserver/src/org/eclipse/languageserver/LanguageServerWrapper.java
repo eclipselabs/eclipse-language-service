@@ -13,6 +13,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.function.Consumer;
 
 import org.eclipse.core.filebuffers.FileBuffers;
+import org.eclipse.core.filebuffers.ITextFileBuffer;
 import org.eclipse.core.filebuffers.LocationKind;
 import org.eclipse.core.resources.IFile;
 import org.eclipse.core.resources.IMarker;
@@ -20,6 +21,7 @@ import org.eclipse.core.resources.IProject;
 import org.eclipse.core.resources.IResource;
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IPath;
+import org.eclipse.core.runtime.Path;
 import org.eclipse.core.runtime.Platform;
 import org.eclipse.core.runtime.content.IContentType;
 import org.eclipse.jface.text.BadLocationException;
@@ -36,6 +38,7 @@ import io.typefox.lsapi.DidChangeTextDocumentParamsImpl;
 import io.typefox.lsapi.DidOpenTextDocumentParamsImpl;
 import io.typefox.lsapi.InitializeParamsImpl;
 import io.typefox.lsapi.InitializeResult;
+import io.typefox.lsapi.Message;
 import io.typefox.lsapi.PositionImpl;
 import io.typefox.lsapi.PublishDiagnosticsParams;
 import io.typefox.lsapi.RangeImpl;
@@ -121,11 +124,11 @@ public class LanguageServerWrapper {
 		} else if (contentType.getId().contains("csharp")) {
 			builder = new ProcessBuilder("/usr/bin/node", "/home/mistria/git/omnisharp-node-client/languageserver/server.js")
 					.directory(new File("/home/mistria/git/omnisharp-node-client/languageserver"));
+			builder.environment().put("LD_LIBRARY_PATH", "/home/mistria/apps/OmniSharp.NET/icu54:" + builder.environment().get("$LD_LIBRARY_PATH"));
 		}
 		this.process = builder.start();
 		this.server = new JsonBasedLanguageServer();
 		this.server.onError(new Procedure2<String, Throwable>() {
-
 			@Override
 			public void apply(String p1, Throwable p2) {
 				System.err.println(p1);
@@ -133,12 +136,30 @@ public class LanguageServerWrapper {
 			}
 		});
 		this.server.connect(this.process.getInputStream(), this.process.getOutputStream());
+		this.server.getProtocol().addErrorListener(new Procedure2<String, Throwable>() {
+			@Override
+			public void apply(String p1, Throwable p2) {
+				System.err.println("error: " + p1);
+			}
+		});
+		this.server.getProtocol().addIncomingMessageListener(new Procedure2<Message, String>() {
+			@Override
+			public void apply(Message p1, String p2) {
+				System.err.println("IN: " + p1.getJsonrpc() + "\n" + p2);
+			}
+		});
+		this.server.getProtocol().addOutgoingMessageListener(new Procedure2<Message, String>() {
+			@Override
+			public void apply(Message p1, String p2) {
+				System.err.println("OUT: " + p1.getJsonrpc() + "\n" + p2);
+			}
+		});
 		// initialize
 		InitializeParamsImpl initParams = new InitializeParamsImpl();
 		initParams.setRootPath(project.getLocation().toFile().getAbsolutePath());
-		String name = Platform.getProduct().getName();
-		if (name == null) {
-			name = "Eclipse IDE";
+		String name = "Eclipse IDE";
+		if (Platform.getProduct() != null) {
+			name = Platform.getProduct().getName();
 		}
 		initParams.setClientName(name);
 		Integer.valueOf(java.lang.management.ManagementFactory.getRuntimeMXBean().getName().split("@")[0]);
@@ -159,11 +180,16 @@ public class LanguageServerWrapper {
 			@Override
 			public void accept(PublishDiagnosticsParams diagnostics) {
 				try {
-					Set<IMarker> remainingMarkers = new HashSet<>(Arrays.asList(project.findMarkers(LS_DIAGNOSTIC_MARKER_TYPE, false, IResource.DEPTH_INFINITE)));
+					// TODO fix issue with file:/// vs file:/
+					IResource resource = project.getFile(new Path(diagnostics.getUri().substring(project.getLocationURI().toString().length())));
+					if (resource == null || !resource.exists()) {
+						resource = project;
+					}
+					Set<IMarker> remainingMarkers = new HashSet<>(Arrays.asList(resource.findMarkers(LS_DIAGNOSTIC_MARKER_TYPE, false, IResource.DEPTH_ONE)));
 					for (Diagnostic diagnostic : diagnostics.getDiagnostics()) {
-						IMarker associatedMarker = getExistingMarkerFor(diagnostic, remainingMarkers);
+						IMarker associatedMarker = getExistingMarkerFor(resource, diagnostic, remainingMarkers);
 						if (associatedMarker == null) {
-							createMarkerForDiagnostic(diagnostic);
+							createMarkerForDiagnostic(resource, diagnostic);
 						} else {
 							remainingMarkers.remove(associatedMarker);
 						}
@@ -176,40 +202,36 @@ public class LanguageServerWrapper {
 				}
 			}
 
-			private void createMarkerForDiagnostic(Diagnostic diagnostic) {
-				IResource resource = project.findMember(diagnostic.getSource());
-				if (resource == null) {
-					resource = project;
-				}
+			private void createMarkerForDiagnostic(IResource resource, Diagnostic diagnostic) {
 				try {
 					IMarker marker = resource.createMarker(LS_DIAGNOSTIC_MARKER_TYPE);
 					marker.setAttribute(IMarker.MESSAGE, diagnostic.getMessage());
-					marker.setAttribute(IMarker.SEVERITY, diagnostic.getSeverity()); // TODO mapping Eclipse <-> LS severity
+					marker.setAttribute(IMarker.SEVERITY, LanguageServerEclipseUtils.toEclipseMarkerSeverity(diagnostic.getSeverity())); // TODO mapping Eclipse <-> LS severity
 					if (resource.getType() == IResource.FILE) {
 						IFile file = (IFile)resource;
-						IDocument document = FileBuffers.getTextFileBufferManager().getTextFileBuffer(file.getLocation(), LocationKind.IFILE).getDocument();
+						IDocument document = FileBuffers.getTextFileBufferManager().getTextFileBuffer(file.getFullPath(), LocationKind.IFILE).getDocument();
 						marker.setAttribute(IMarker.CHAR_START, LanguageServerEclipseUtils.toOffset(diagnostic.getRange().getStart(), document));
 						marker.setAttribute(IMarker.CHAR_END, LanguageServerEclipseUtils.toOffset(diagnostic.getRange().getEnd(), document));
-						marker.setAttribute(IMarker.LINE_NUMBER, diagnostic.getRange().getStart().getLine() - 1);
+						marker.setAttribute(IMarker.LINE_NUMBER, diagnostic.getRange().getStart().getLine());
 					}
 				} catch (Exception ex) {
 					ex.printStackTrace(); // TODO
 				}
 			}
 
-			private IMarker getExistingMarkerFor(Diagnostic diagnostic, Set<IMarker> remainingMarkers) {
-				IResource resource = project.findMember(diagnostic.getSource());
-				IDocument document = null; // retrieve from diagnostic
-				if (resource == null) {
+			private IMarker getExistingMarkerFor(IResource resource, Diagnostic diagnostic, Set<IMarker> remainingMarkers) {
+				ITextFileBuffer textFileBuffer = FileBuffers.getTextFileBufferManager().getTextFileBuffer(resource.getFullPath(), LocationKind.IFILE);
+				if (textFileBuffer == null) {
 					return null;
 				}
+				IDocument document = textFileBuffer.getDocument();
 				for (IMarker marker : remainingMarkers) {
 					int startOffset = marker.getAttribute(IMarker.CHAR_START, -1);
 					int endOffset = marker.getAttribute(IMarker.CHAR_END, -1);
 					try {
 						if (marker.getResource().getProjectRelativePath().toString().equals(diagnostic.getSource()) 
-								&& LanguageServerEclipseUtils.toOffset(diagnostic.getRange().getStart(), document) == startOffset
-								&& LanguageServerEclipseUtils.toOffset(diagnostic.getRange().getEnd(), document) == endOffset
+								&& LanguageServerEclipseUtils.toOffset(diagnostic.getRange().getStart(), document) == startOffset + 1
+								&& LanguageServerEclipseUtils.toOffset(diagnostic.getRange().getEnd(), document) == endOffset + 1
 								&& Objects.equal(marker.getAttribute(IMarker.MESSAGE), diagnostic.getMessage())) {
 							return marker;
 						}
@@ -239,6 +261,7 @@ public class LanguageServerWrapper {
 		TextDocumentItemImpl textDocument = new TextDocumentItemImpl();
 		textDocument.setUri(file.getLocationURI().toString());
 		textDocument.setText(document.get());
+		textDocument.setLanguageId(file.getFileExtension());
 		open.setTextDocument(textDocument);
 		this.server.getTextDocumentService().didOpen(open);
 		

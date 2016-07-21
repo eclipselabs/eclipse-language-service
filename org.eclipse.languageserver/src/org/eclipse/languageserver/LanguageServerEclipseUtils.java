@@ -2,6 +2,7 @@ package org.eclipse.languageserver;
 
 import java.net.URI;
 
+import org.eclipse.core.resources.IMarker;
 import org.eclipse.jface.text.BadLocationException;
 import org.eclipse.jface.text.IDocument;
 
@@ -20,7 +21,7 @@ public class LanguageServerEclipseUtils {
 	}
 
 	public static int toOffset(Position position, IDocument document) throws BadLocationException {
-		return document.getLineInformationOfOffset(position.getLine()).getOffset() + position.getCharacter();
+		return document.getLineInformation(position.getLine()).getOffset() + position.getCharacter();
 	}
 
 	public static TextDocumentPositionParamsImpl toTextDocumentPosistionParams(URI fileUri, int offset, IDocument document)
@@ -33,6 +34,14 @@ public class LanguageServerEclipseUtils {
 		id.setUri(fileUri.toString());
 		param.setTextDocument(id);
 		return param;
+	}
+
+	public static int toEclipseMarkerSeverity(Integer lspSeverity) {
+		switch (lspSeverity) {
+		case 1: return IMarker.SEVERITY_ERROR;
+		case 2: return IMarker.SEVERITY_WARNING;
+		}
+		return IMarker.SEVERITY_INFO;
 	}
 
 }
