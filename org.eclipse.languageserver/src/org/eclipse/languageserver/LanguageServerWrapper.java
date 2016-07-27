@@ -1,3 +1,13 @@
+/*******************************************************************************
+ * Copyright (c) 2016 Red Hat Inc. and others.
+ * All rights reserved. This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License v1.0
+ * which accompanies this distribution, and is available at
+ * http://www.eclipse.org/legal/epl-v10.html
+ *
+ * Contributors:
+ *  Mickael Istria (Red Hat Inc.) - initial implementation
+ *******************************************************************************/
 package org.eclipse.languageserver;
 
 import java.io.File;
@@ -21,7 +31,6 @@ import org.eclipse.core.resources.IProject;
 import org.eclipse.core.resources.IResource;
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IPath;
-import org.eclipse.core.runtime.Path;
 import org.eclipse.core.runtime.Platform;
 import org.eclipse.core.runtime.content.IContentType;
 import org.eclipse.jface.text.BadLocationException;
@@ -180,8 +189,9 @@ public class LanguageServerWrapper {
 			@Override
 			public void accept(PublishDiagnosticsParams diagnostics) {
 				try {
-					// TODO fix issue with file:/// vs file:/
-					IResource resource = project.getFile(new Path(diagnostics.getUri().substring(project.getLocationURI().toString().length())));
+					// fix issue with file:/// vs file:/
+					String uri = diagnostics.getUri();
+					IResource resource = LanguageServerEclipseUtils.findResourceFor(uri);
 					if (resource == null || !resource.exists()) {
 						resource = project;
 					}

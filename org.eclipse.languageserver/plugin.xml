@@ -4,18 +4,6 @@
    <!-- Extension point will ideally be "org.eclipse.text...." because
    the feature should be part of the generic text editor -->
    <extension
-         id="languageServer"
-         point="org.eclipse.wst.jsdt.ui.javaCompletionProposalComputer">
-      <javaCompletionProposalComputer
-            activate="true"
-            categoryId="org.eclipse.wst.jsdt.ui.defaultProposalCategory"
-            class="org.eclipse.languageserver.LanguageCompletionProposalComputer">
-         <partition
-               type="__dftl_partition_content_type">
-         </partition>
-      </javaCompletionProposalComputer>
-   </extension>
-   <extension
          point="org.eclipse.ui.genericeditor.contentAssistProcessors">
       <contentAssistProcessor
             class="org.eclipse.languageserver.LSContentAssistProcessor"
@@ -61,6 +49,32 @@
             name="C Sharp"
             priority="normal">
       </content-type>
+   </extension>
+   <extension
+         point="org.eclipse.ui.workbench.texteditor.hyperlinkDetectors">
+      <hyperlinkDetector
+            activate="true"
+            class="org.eclipse.languageserver.OpenDeclarationHyperlinkDetector"
+            description="%openDeclarationHyperlink_decription"
+            id="org.eclipse.languageserver.hyperlinkDetector"
+            name="%openDeclarationHyperlink_name"
+            targetId="org.eclipse.ui.DefaultTextEditor">
+      </hyperlinkDetector>
+   </extension>
+   <extension
+         point="org.eclipse.ui.handlers">
+      <handler
+            class="org.eclipse.languageserver.LSFindReferences"
+            commandId="org.eclipse.ui.genericeditor.findReferences">
+      </handler>
+   </extension>
+   <extension
+         point="org.eclipse.search.searchResultViewPages">
+      <viewPage
+            class="org.eclipse.search.internal.ui.text.FileSearchPage"
+            id="org.eclipse.languageserver.lsResultPage"
+            searchResultClass="org.eclipse.languageserver.LSSearchResult">
+      </viewPage>
    </extension>
 
 </plugin>
