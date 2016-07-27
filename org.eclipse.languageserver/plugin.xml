@@ -76,5 +76,12 @@
             searchResultClass="org.eclipse.languageserver.LSSearchResult">
       </viewPage>
    </extension>
+   <extension
+         point="org.eclipse.ui.genericeditor.presentationReconcilers">
+      <presentationReconciler
+            class="org.eclipse.languageserver.CSharpKeywordsHighlighter"
+            contentType="org.eclipse.languageserver.csharp">
+      </presentationReconciler>
+   </extension>
 
 </plugin>
