@@ -76,25 +76,25 @@ public class LanguageServerWrapper {
 
 		@Override
 		public void documentAboutToBeChanged(DocumentEvent event) {
-			try {
+//			try {
 				this.change = new DidChangeTextDocumentParamsImpl();
 				VersionedTextDocumentIdentifierImpl doc = new VersionedTextDocumentIdentifierImpl();
 				doc.setUri(fileURI.toString());
 				doc.setVersion(version);
 				this.change.setTextDocument(doc);
 				TextDocumentContentChangeEventImpl changeEvent = new TextDocumentContentChangeEventImpl();
-				RangeImpl range = new RangeImpl();
-				PositionImpl start = LanguageServerEclipseUtils.toPosition(event.getOffset(), event.getDocument());
-				range.setStart(start);
-				PositionImpl end = LanguageServerEclipseUtils.toPosition(event.getOffset() + event.getLength(), event.getDocument());
-				range.setEnd(end);
-				changeEvent.setRange(range);
-				changeEvent.setRangeLength(event.getLength());
+//				RangeImpl range = new RangeImpl();
+//				PositionImpl start = LanguageServerEclipseUtils.toPosition(event.getOffset(), event.getDocument());
+//				range.setStart(start);
+//				PositionImpl end = LanguageServerEclipseUtils.toPosition(event.getOffset() + event.getLength(), event.getDocument());
+//				range.setEnd(end);
+//				changeEvent.setRange(range);
+//				changeEvent.setRangeLength(event.getLength());
 				changeEvent.setText(event.getDocument().get()); // TODO set to value after change
 				this.change.setContentChanges(Arrays.asList(new TextDocumentContentChangeEventImpl[] { changeEvent }));
-			} catch (BadLocationException ex) {
-				ex.printStackTrace(); // TODO
-			}
+//			} catch (BadLocationException ex) {
+//				ex.printStackTrace(); // TODO
+//			}
 		}
 	}
 
