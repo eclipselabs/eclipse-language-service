@@ -71,7 +71,7 @@ public class LSContentAssistProcessor implements IContentAssistProcessor {
 					}
 					// TODO also consider item.getTextEdit
 					// TODO add description and so on
-					proposals.add(new CompletionProposal(text, offset, 0, text.length()));
+					proposals.add(new LSCompletionProposal(item, offset));
 				}
 				return proposals.toArray(new ICompletionProposal[proposals.size()]);
 			}
