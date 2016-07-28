@@ -218,24 +218,24 @@ public class LSCompletionProposal implements ICompletionProposal, ICompletionPro
 	@Override
 	public Image getImage() {
 		switch (this.item.getKind()) {
-		case 1: // Text
-		case 2: //Method
-		case 3: //Function
-		case 4: //Constructor
-		case 5: //Field
-		case 6: //Variable
-		case 7: //Class
-		case 8: //Interface
-		case 9: //Module
-		case 10: //Property
-		case 11: //Unit
-		case 12: //Value
-		case 13: //Enum
-		case 14: //Keyword
-		case 15: //Snippet
-		case 16: //Color
-		case 17: //File
-		case 18: //Reference
+		case Text: // Text
+		case Method: //Method
+		case Function: //Function
+		case Constructor: //Constructor
+		case Field: //Field
+		case Variable: //Variable
+		case Class: //Class
+		case Interface: //Interface
+		case Module: //Module
+		case Property: //Property
+		case Unit: //Unit
+		case Value: //Value
+		case Enum: //Enum
+		case Keyword: //Keyword
+		case Snippet: //Snippet
+		case Color: //Color
+		case File: //File
+		case Reference: //Reference
 			// TODO
 		}
 		return null;

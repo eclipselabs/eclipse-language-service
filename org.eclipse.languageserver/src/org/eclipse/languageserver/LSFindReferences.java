@@ -27,7 +27,6 @@ import org.eclipse.jface.text.IDocument;
 import org.eclipse.jface.text.TextSelection;
 import org.eclipse.jface.viewers.ISelection;
 import org.eclipse.search2.internal.ui.SearchView;
-import org.eclipse.search2.internal.ui.SearchViewManager;
 import org.eclipse.ui.IEditorInput;
 import org.eclipse.ui.IEditorPart;
 import org.eclipse.ui.IFileEditorInput;
@@ -37,9 +36,9 @@ import org.eclipse.ui.handlers.HandlerUtil;
 import org.eclipse.ui.texteditor.AbstractTextEditor;
 
 import io.typefox.lsapi.Location;
-import io.typefox.lsapi.ReferenceContextImpl;
-import io.typefox.lsapi.ReferenceParamsImpl;
-import io.typefox.lsapi.TextDocumentIdentifierImpl;
+import io.typefox.lsapi.impl.ReferenceContextImpl;
+import io.typefox.lsapi.impl.ReferenceParamsImpl;
+import io.typefox.lsapi.impl.TextDocumentIdentifierImpl;
 import io.typefox.lsapi.services.json.JsonBasedLanguageServer;
 
 public class LSFindReferences extends AbstractHandler implements IHandler {

@@ -20,10 +20,11 @@ import org.eclipse.core.runtime.Path;
 import org.eclipse.jface.text.BadLocationException;
 import org.eclipse.jface.text.IDocument;
 
+import io.typefox.lsapi.DiagnosticSeverity;
 import io.typefox.lsapi.Position;
-import io.typefox.lsapi.PositionImpl;
-import io.typefox.lsapi.TextDocumentIdentifierImpl;
-import io.typefox.lsapi.TextDocumentPositionParamsImpl;
+import io.typefox.lsapi.impl.PositionImpl;
+import io.typefox.lsapi.impl.TextDocumentIdentifierImpl;
+import io.typefox.lsapi.impl.TextDocumentPositionParamsImpl;
 
 public class LanguageServerEclipseUtils {
 
@@ -50,21 +51,21 @@ public class LanguageServerEclipseUtils {
 		return param;
 	}
 
-//	public static int toEclipseMarkerSeverity(DiagnosticSeverity lspSeverity) {
-//		switch (lspSeverity) {
-//		case Error: return IMarker.SEVERITY_ERROR;
-//		case Warning: return IMarker.SEVERITY_WARNING;
-//		}
-//		return IMarker.SEVERITY_INFO;
-//	}
-	
-	public static int toEclipseMarkerSeverity(int lspSeverity) {
+	public static int toEclipseMarkerSeverity(DiagnosticSeverity lspSeverity) {
 		switch (lspSeverity) {
-		case 1: return IMarker.SEVERITY_ERROR;
-		case 2: return IMarker.SEVERITY_WARNING;
+		case Error: return IMarker.SEVERITY_ERROR;
+		case Warning: return IMarker.SEVERITY_WARNING;
 		}
 		return IMarker.SEVERITY_INFO;
 	}
+	
+//	public static int toEclipseMarkerSeverity(int lspSeverity) {
+//		switch (lspSeverity) {
+//		case 1: return IMarker.SEVERITY_ERROR;
+//		case 2: return IMarker.SEVERITY_WARNING;
+//		}
+//		return IMarker.SEVERITY_INFO;
+//	}
 	
 	public static IResource findResourceFor(String uri) {
 		uri = uri.replace("file:///", "file:/");

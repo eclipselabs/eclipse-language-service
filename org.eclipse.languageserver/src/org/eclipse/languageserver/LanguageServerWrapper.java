@@ -33,7 +33,6 @@ import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IPath;
 import org.eclipse.core.runtime.Platform;
 import org.eclipse.core.runtime.content.IContentType;
-import org.eclipse.jface.text.BadLocationException;
 import org.eclipse.jface.text.DocumentEvent;
 import org.eclipse.jface.text.IDocument;
 import org.eclipse.jface.text.IDocumentListener;
@@ -41,19 +40,17 @@ import org.eclipse.xtext.xbase.lib.Procedures.Procedure2;
 
 import com.google.common.base.Objects;
 
-import io.typefox.lsapi.ClientCapabilitiesImpl;
 import io.typefox.lsapi.Diagnostic;
-import io.typefox.lsapi.DidChangeTextDocumentParamsImpl;
-import io.typefox.lsapi.DidOpenTextDocumentParamsImpl;
-import io.typefox.lsapi.InitializeParamsImpl;
 import io.typefox.lsapi.InitializeResult;
 import io.typefox.lsapi.Message;
-import io.typefox.lsapi.PositionImpl;
 import io.typefox.lsapi.PublishDiagnosticsParams;
-import io.typefox.lsapi.RangeImpl;
-import io.typefox.lsapi.TextDocumentContentChangeEventImpl;
-import io.typefox.lsapi.TextDocumentItemImpl;
-import io.typefox.lsapi.VersionedTextDocumentIdentifierImpl;
+import io.typefox.lsapi.impl.ClientCapabilitiesImpl;
+import io.typefox.lsapi.impl.DidChangeTextDocumentParamsImpl;
+import io.typefox.lsapi.impl.DidOpenTextDocumentParamsImpl;
+import io.typefox.lsapi.impl.InitializeParamsImpl;
+import io.typefox.lsapi.impl.TextDocumentContentChangeEventImpl;
+import io.typefox.lsapi.impl.TextDocumentItemImpl;
+import io.typefox.lsapi.impl.VersionedTextDocumentIdentifierImpl;
 import io.typefox.lsapi.services.json.JsonBasedLanguageServer;
 
 public class LanguageServerWrapper {

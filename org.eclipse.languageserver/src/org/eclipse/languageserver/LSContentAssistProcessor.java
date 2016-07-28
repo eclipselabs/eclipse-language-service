@@ -18,7 +18,6 @@ import java.util.concurrent.CompletableFuture;
 import org.eclipse.core.resources.IFile;
 import org.eclipse.jface.text.IDocument;
 import org.eclipse.jface.text.ITextViewer;
-import org.eclipse.jface.text.contentassist.CompletionProposal;
 import org.eclipse.jface.text.contentassist.ICompletionProposal;
 import org.eclipse.jface.text.contentassist.IContentAssistProcessor;
 import org.eclipse.jface.text.contentassist.IContextInformation;
@@ -32,7 +31,7 @@ import org.eclipse.ui.texteditor.AbstractTextEditor;
 
 import io.typefox.lsapi.CompletionItem;
 import io.typefox.lsapi.CompletionList;
-import io.typefox.lsapi.TextDocumentPositionParamsImpl;
+import io.typefox.lsapi.impl.TextDocumentPositionParamsImpl;
 import io.typefox.lsapi.services.json.JsonBasedLanguageServer;
 
 public class LSContentAssistProcessor implements IContentAssistProcessor {
