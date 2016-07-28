@@ -43,6 +43,7 @@ public class LSCompletionProposal implements ICompletionProposal, ICompletionPro
 
 	private CompletionItem item;
 	private int initialOffset;
+	private int selectionOffset;
 
 	public LSCompletionProposal(CompletionItem item, int offset) {
 		this.item = item;
@@ -166,10 +167,42 @@ public class LSCompletionProposal implements ICompletionProposal, ICompletionPro
 	@Override
 	public void apply(IDocument document) {
 		String insertText = getInsertText();
+		this.selectionOffset = insertText.length();
+		
+		// Look for letters that are available before completion offset
 		try {
-			document.replace(this.initialOffset, 0, insertText);
+			int backOffset = 0;
+			int size = Math.min(this.initialOffset, insertText.length());
+			while (backOffset == 0 && size != 0) {
+				if (document.get(this.initialOffset - size, size).equals(insertText.substring(0, size))) {
+					backOffset = size;
+				}
+				size--;
+			}
+			if (backOffset != 0) {
+				insertText = insertText.substring(backOffset);
+				this.selectionOffset -= backOffset;
+			}
+		} catch (BadLocationException ex) {
+			ex.printStackTrace();
+		}
+		
+		// Looks for letters that were added after completion was triggered
+		int aheadOffset = 0;
+		try {
+			while (aheadOffset < document.getLength() && aheadOffset < insertText.length() && document.getChar(this.initialOffset + aheadOffset) == insertText.charAt(aheadOffset)) {
+				aheadOffset++;
+			}
+			insertText = insertText.substring(aheadOffset);
 		} catch (BadLocationException x) {
-			// ignore
+			x.printStackTrace();
+		}
+		
+		try {
+			document.replace(this.initialOffset + aheadOffset, 0, insertText);
+		} catch (BadLocationException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
 		}
 	}
 
@@ -207,7 +240,7 @@ public class LSCompletionProposal implements ICompletionProposal, ICompletionPro
 
 	@Override
 	public Point getSelection(IDocument document) {
-		return new Point(this.initialOffset + getInsertText().length(), 0);
+		return new Point(this.initialOffset + this.selectionOffset, 0);
 	}
 
 	@Override
