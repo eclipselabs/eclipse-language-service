@@ -8,7 +8,7 @@
  * Contributors:
  *  Mickael Istria (Red Hat Inc.) - initial implementation
  *******************************************************************************/
-package org.eclipse.languageserver;
+package org.eclipse.languageserver.operations.references;
 
 import java.net.URI;
 import java.util.List;
@@ -26,6 +26,8 @@ import org.eclipse.core.runtime.Path;
 import org.eclipse.jface.text.IDocument;
 import org.eclipse.jface.text.TextSelection;
 import org.eclipse.jface.viewers.ISelection;
+import org.eclipse.languageserver.LanaguageServiceAccessor;
+import org.eclipse.languageserver.LanguageServerEclipseUtils;
 import org.eclipse.search2.internal.ui.SearchView;
 import org.eclipse.ui.IEditorInput;
 import org.eclipse.ui.IEditorPart;

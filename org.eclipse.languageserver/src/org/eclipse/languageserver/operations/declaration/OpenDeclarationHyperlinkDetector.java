@@ -8,7 +8,7 @@
  * Contributors:
  *  Mickael Istria (Red Hat Inc.) - initial implementation
  *******************************************************************************/
-package org.eclipse.languageserver;
+package org.eclipse.languageserver.operations.declaration;
 
 import java.net.URI;
 import java.util.ArrayList;
@@ -30,6 +30,9 @@ import org.eclipse.jface.text.ITextViewer;
 import org.eclipse.jface.text.TextSelection;
 import org.eclipse.jface.text.hyperlink.AbstractHyperlinkDetector;
 import org.eclipse.jface.text.hyperlink.IHyperlink;
+import org.eclipse.languageserver.LanaguageServiceAccessor;
+import org.eclipse.languageserver.LanguageServerEclipseUtils;
+import org.eclipse.languageserver.Messages;
 import org.eclipse.ui.IEditorPart;
 import org.eclipse.ui.PartInitException;
 import org.eclipse.ui.PlatformUI;

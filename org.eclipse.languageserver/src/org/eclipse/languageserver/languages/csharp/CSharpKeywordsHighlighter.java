@@ -8,7 +8,7 @@
  * Contributors:
  *   Mickael Istria (Red Hat Inc.) - initial implementation
  *******************************************************************************/
-package org.eclipse.languageserver;
+package org.eclipse.languageserver.languages.csharp;
 
 import java.util.Arrays;
 import java.util.HashSet;

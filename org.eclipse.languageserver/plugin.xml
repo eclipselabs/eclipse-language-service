@@ -6,30 +6,30 @@
    <extension
          point="org.eclipse.ui.genericeditor.contentAssistProcessors">
       <contentAssistProcessor
-            class="org.eclipse.languageserver.LSContentAssistProcessor"
+            class="org.eclipse.languageserver.operations.completion.LSContentAssistProcessor"
             contentType="org.eclipse.wst.css.core.csssource">
       </contentAssistProcessor>
       <contentAssistProcessor
-            class="org.eclipse.languageserver.LSContentAssistProcessor"
+            class="org.eclipse.languageserver.operations.completion.LSContentAssistProcessor"
             contentType="org.eclipse.wst.jsdt.core.jsonSource">
       </contentAssistProcessor>
       <contentAssistProcessor
-            class="org.eclipse.languageserver.LSContentAssistProcessor"
+            class="org.eclipse.languageserver.operations.completion.LSContentAssistProcessor"
             contentType="org.eclipse.languageserver.csharp">
       </contentAssistProcessor>
    </extension>
    <extension
          point="org.eclipse.ui.genericeditor.hoverProviders">
       <hoverProvider
-            class="org.eclipse.languageserver.LSBasedHover"
+            class="org.eclipse.languageserver.operations.hover.LSBasedHover"
             contentType="org.eclipse.wst.css.core.csssource">
       </hoverProvider>
       <hoverProvider
-            class="org.eclipse.languageserver.LSBasedHover"
+            class="org.eclipse.languageserver.operations.hover.LSBasedHover"
             contentType="org.eclipse.wst.jsdt.core.jsonSource">
       </hoverProvider>
       <hoverProvider
-            class="org.eclipse.languageserver.LSBasedHover"
+            class="org.eclipse.languageserver.operations.hover.LSBasedHover"
             contentType="org.eclipse.languageserver.csharp">
       </hoverProvider>
    </extension>
@@ -54,7 +54,7 @@
          point="org.eclipse.ui.workbench.texteditor.hyperlinkDetectors">
       <hyperlinkDetector
             activate="true"
-            class="org.eclipse.languageserver.OpenDeclarationHyperlinkDetector"
+            class="org.eclipse.languageserver.operations.declaration.OpenDeclarationHyperlinkDetector"
             description="%openDeclarationHyperlink_decription"
             id="org.eclipse.languageserver.hyperlinkDetector"
             name="%openDeclarationHyperlink_name"
@@ -64,7 +64,7 @@
    <extension
          point="org.eclipse.ui.handlers">
       <handler
-            class="org.eclipse.languageserver.LSFindReferences"
+            class="org.eclipse.languageserver.operations.references.LSFindReferences"
             commandId="org.eclipse.ui.genericeditor.findReferences">
       </handler>
    </extension>
@@ -73,13 +73,13 @@
       <viewPage
             class="org.eclipse.search.internal.ui.text.FileSearchPage"
             id="org.eclipse.languageserver.lsResultPage"
-            searchResultClass="org.eclipse.languageserver.LSSearchResult">
+            searchResultClass="org.eclipse.languageserver.operations.references.LSSearchResult">
       </viewPage>
    </extension>
    <extension
          point="org.eclipse.ui.genericeditor.presentationReconcilers">
       <presentationReconciler
-            class="org.eclipse.languageserver.CSharpKeywordsHighlighter"
+            class="org.eclipse.languageserver.languages.csharp.CSharpKeywordsHighlighter"
             contentType="org.eclipse.languageserver.csharp">
       </presentationReconciler>
    </extension>

@@ -8,7 +8,7 @@
  * Contributors:
  *   Mickael Istria (Red Hat Inc.) - initial implementation
  *******************************************************************************/
-package org.eclipse.languageserver;
+package org.eclipse.languageserver.operations.completion;
 
 import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.jface.text.AbstractReusableInformationControlCreator;

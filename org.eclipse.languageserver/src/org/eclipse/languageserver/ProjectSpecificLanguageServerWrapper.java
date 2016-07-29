@@ -10,7 +10,6 @@
  *******************************************************************************/
 package org.eclipse.languageserver;
 
-import java.io.File;
 import java.io.IOException;
 import java.net.URI;
 import java.util.Arrays;
@@ -53,7 +52,11 @@ import io.typefox.lsapi.impl.TextDocumentItemImpl;
 import io.typefox.lsapi.impl.VersionedTextDocumentIdentifierImpl;
 import io.typefox.lsapi.services.json.JsonBasedLanguageServer;
 
-public class LanguageServerWrapper {
+/**
+ * Wraps instantiation, initialization of project-specific instance of the
+ * language server
+ */
+public class ProjectSpecificLanguageServerWrapper {
 
 	private final class DocumentChangeListenenr implements IDocumentListener {
 		private URI fileURI;
@@ -97,42 +100,22 @@ public class LanguageServerWrapper {
 
 	protected static final String LS_DIAGNOSTIC_MARKER_TYPE = "org.eclipse.languageserver.diagnostic"; //$NON-NLS-1$
 
-	private Process process;
+	final private StreamConnectionProvider lspStreamProvider;
 	private JsonBasedLanguageServer server;
 	private IProject project;
 	private IContentType contentType;
 	private Map<IPath, DocumentChangeListenenr> connectedFiles;
 	
-	public LanguageServerWrapper(IProject project, IContentType contentType) {
+	public ProjectSpecificLanguageServerWrapper(IProject project, IContentType contentType, StreamConnectionProvider connection) {
 		this.project = project;
 		this.contentType = contentType;
+		this.lspStreamProvider = connection;
 	}
-	
+
 	private void start() throws IOException {
-		if (this.process != null) {
+		if (this.server != null) {
 			return;
 		}
-		// Steps to get a usable Language server (for language supported by VSCode LS implementations)
-		// 1. Make VSCode LS [for CSS here] use STDIN/STDOUT. In file extensions/css/server/cssServerMain.ts change connection line to
-		//       let connection: IConnection = createConnection(new StreamMessageReader(process.in), new StreamMessageWriter(process.out));
-		//    and add imports  StreamMessageReader, StreamMessageWriter (as same level as IPCMessageReader/Writer)
-		// 2. Build VSCode as explained in https://github.com/Microsoft/vscode/wiki/How-to-Contribute#build-and-run-from-source
-		//     (don't forget the `npm run watch` after the install script)
-		// 3. Then set language server location and adapt process builder.
-		
-		ProcessBuilder builder = null;
-		if (contentType.getId().contains("css")) {
-			builder = new ProcessBuilder("/usr/bin/node", "/home/mistria/git/vscode/extensions/css/server/out/cssServerMain.js")
-					.directory(new File("/home/mistria/git/vscode/extensions/css/server/out/"));
-		} else if (contentType.getId().contains("json")) {
-			builder = new ProcessBuilder("/usr/bin/node", "/home/mistria/git/vscode/extensions/json/server/out/jsonServerMain.js")
-					.directory(new File("/home/mistria/git/vscode/extensions/json/server/out/"));
-		} else if (contentType.getId().contains("csharp")) {
-			builder = new ProcessBuilder("/usr/bin/node", "/home/mistria/git/omnisharp-node-client/languageserver/server.js")
-					.directory(new File("/home/mistria/git/omnisharp-node-client/languageserver"));
-			builder.environment().put("LD_LIBRARY_PATH", "/home/mistria/apps/OmniSharp.NET/icu54:" + builder.environment().get("$LD_LIBRARY_PATH"));
-		}
-		this.process = builder.start();
 		this.server = new JsonBasedLanguageServer();
 		this.server.onError(new Procedure2<String, Throwable>() {
 			@Override
@@ -141,7 +124,8 @@ public class LanguageServerWrapper {
 				p2.printStackTrace();
 			}
 		});
-		this.server.connect(this.process.getInputStream(), this.process.getOutputStream());
+		this.lspStreamProvider.start();
+		this.server.connect(this.lspStreamProvider.getInputStream(), this.lspStreamProvider.getOutputStream());
 		this.server.getProtocol().addErrorListener(new Procedure2<String, Throwable>() {
 			@Override
 			public void apply(String p1, Throwable p2) {
@@ -252,8 +236,7 @@ public class LanguageServerWrapper {
 	}
 
 	private void stop() {
-		this.process.destroy();
-		this.process = null;
+		this.lspStreamProvider.stop();
 		this.server.shutdown();
 		this.server = null;
 	}

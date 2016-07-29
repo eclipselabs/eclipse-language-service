@@ -8,7 +8,7 @@
  * Contributors:
  *  Mickael Istria (Red Hat Inc.) - initial implementation
  *******************************************************************************/
-package org.eclipse.languageserver;
+package org.eclipse.languageserver.operations.hover;
 
 import java.net.URI;
 import java.util.concurrent.CompletableFuture;
@@ -22,6 +22,8 @@ import org.eclipse.jface.text.IRegion;
 import org.eclipse.jface.text.ITextHover;
 import org.eclipse.jface.text.ITextViewer;
 import org.eclipse.jface.text.Region;
+import org.eclipse.languageserver.LanaguageServiceAccessor;
+import org.eclipse.languageserver.LanguageServerEclipseUtils;
 
 import io.typefox.lsapi.Hover;
 import io.typefox.lsapi.MarkedString;
