@@ -1,3 +1,5 @@
+[![Build Status](https://travis-ci.org/eclipselabs/eclipse-language-service.svg?branch=master)](https://travis-ci.org/eclipselabs/eclipse-language-service)
+
 # Eclipse integration for language service (experiment)
 
 
