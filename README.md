@@ -1,5 +1,4 @@
-This repository cntains experiments to make Eclipse IDE able to consume the [https://github.com/Microsoft/language-server-protocol],(Language Server protocol).
-
+This repository cntains experiments to make Eclipse IDE able to consume the [Language Server protocol](https://github.com/Microsoft/language-server-protocol).
 This has been initiated during the EclipseCon France 2016 Unconference.
 
 for details, see [Documentation Index](/adoc/index.adoc)
@@ -13,7 +12,10 @@ At the moment, it provides regular JFace/Platform Text classes for:
 * jump to declaration
 * Find References
 
-Extensions to the [https://bugs.eclipse.org/bugs/show_bug.cgi?id=497871](Generic Editor proposal for Eclipse Platform Text) are provided so having the generic editor + this bundle enables the LSP based behavior in the Generic editor. But those classes can be reused in any editor or other extensions.
+Extensions to the [Generic Editor proposal for Eclipse Platform Text](https://bugs.eclipse.org/bugs/show_bug.cgi?id=497871) are provided so having the generic editor + this bundle enables the LSP based behavior in the Generic editor. But those classes can be reused in any editor or other extensions. Examples of integration contain:
+* C# edition in Eclipse IDE using OmniSharp LSP imllementation
+* JSON (with schema) using VSCode LSP impl
+* CSS using VSCode LSP impl.
 
 Contributions are highly welcome using GitHub issues and PR at the moment.
 
