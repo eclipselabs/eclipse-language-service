@@ -1,16 +1,20 @@
-# Eclipse integration for language service (experiment)
-
-
-This repository contains experiments to make Eclipse IDE able to consume the Microsoft Language Server protocol.
+This repository cntains experiments to make Eclipse IDE able to consume the [https://github.com/Microsoft/language-server-protocol],(Language Server protocol).
 
 This has been initiated during the EclipseCon France 2016 Unconference.
 
 for details, see [Documentation Index](/adoc/index.adoc)
 
-At the moment, it only provides the extension to add completion to the JavaScript editor. Some related future work will be:
+At the moment, it provides regular JFace/Platform Text classes for:
+* WIP detection of language server for given file (see also issues #3 and #4)
+* synchronization of files with Language Server
+* diagnostics as problem markers
+* completion
+* hover
+* jump to declaration
+* Find References
 
-1. Adding extension points on the generic Text Editor to hook strategies for completion, coloration, Open Declaration... This work has to be done in Eclipse Platform UI directly.
-2. Work on a Language Client for Eclipse IDE. This work can remain implemented as part of the repository at the moment; but it should strongly be considered for integration in some Eclipse.org project ASAP.
-3. Create extensions to 1. using the Language Client created in 2. This work can remain implemented as part of the repository at the moment; but it should strongly be considered for integration in some Eclipse.org project ASAP.
+Extensions to the [https://bugs.eclipse.org/bugs/show_bug.cgi?id=497871](Generic Editor proposal for Eclipse Platform Text) are provided so having the generic editor + this bundle enables the LSP based behavior in the Generic editor. But those classes can be reused in any editor or other extensions.
 
-Step 1. and 2. can be worked on simultaneously. Integration (step 3) can happen progressively and integrate change for 1. and 2. as they arrive.
+Contributions are highly welcome using GitHub issues and PR at the moment.
+
+This piece of work is meant to move to some Eclipse.org project then inside the Eclipse IDE package directlyas soon as it is considered stable and isable enough.
