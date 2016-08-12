@@ -111,7 +111,7 @@ public class OpenDeclarationHyperlinkDetector extends AbstractHyperlinkDetector 
 		URI fileUri = null;
 		try {
 			if (iFile.exists()) {
-				server = LanaguageServiceAccessor.getLanaguageServer(iFile, textViewer.getDocument());
+				server = LanguageServiceAccessor.getLanguageServer(iFile, textViewer.getDocument());
 				fileUri = iFile.getLocationURI();
 			} else {
 				fileUri = location.toFile().toURI();

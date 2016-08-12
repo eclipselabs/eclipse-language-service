@@ -22,7 +22,7 @@ import org.eclipse.jface.text.IRegion;
 import org.eclipse.jface.text.ITextHover;
 import org.eclipse.jface.text.ITextViewer;
 import org.eclipse.jface.text.Region;
-import org.eclipse.languageserver.LanaguageServiceAccessor;
+import org.eclipse.languageserver.LanguageServiceAccessor;
 import org.eclipse.languageserver.LanguageServerEclipseUtils;
 
 import io.typefox.lsapi.Hover;
@@ -43,7 +43,7 @@ public class LSBasedHover implements ITextHover {
 		URI fileUri = null;
 		try {
 			if (iFile.exists()) {
-				server = LanaguageServiceAccessor.getLanaguageServer(iFile, textViewer.getDocument());
+				server = LanguageServiceAccessor.getLanguageServer(iFile, textViewer.getDocument());
 				fileUri = iFile.getLocationURI();
 			} else {
 				fileUri = location.toFile().toURI();
@@ -72,7 +72,7 @@ public class LSBasedHover implements ITextHover {
 		URI fileUri = null;
 		try {
 			if (iFile.exists()) {
-				server = LanaguageServiceAccessor.getLanaguageServer(iFile, textViewer.getDocument());
+				server = LanguageServiceAccessor.getLanguageServer(iFile, textViewer.getDocument());
 				fileUri = iFile.getLocationURI();
 			} else {
 				fileUri = location.toFile().toURI();

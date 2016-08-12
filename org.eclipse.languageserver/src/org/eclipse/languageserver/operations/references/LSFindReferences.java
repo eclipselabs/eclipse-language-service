@@ -26,7 +26,7 @@ import org.eclipse.core.runtime.Path;
 import org.eclipse.jface.text.IDocument;
 import org.eclipse.jface.text.TextSelection;
 import org.eclipse.jface.viewers.ISelection;
-import org.eclipse.languageserver.LanaguageServiceAccessor;
+import org.eclipse.languageserver.LanguageServiceAccessor;
 import org.eclipse.languageserver.LanguageServerEclipseUtils;
 import org.eclipse.search2.internal.ui.SearchView;
 import org.eclipse.ui.IEditorInput;
@@ -65,7 +65,7 @@ public class LSFindReferences extends AbstractHandler implements IHandler {
 					IFile file = ((IFileEditorInput) input).getFile();
 					fileUri = file.getLocation().toFile().toURI();
 					document = ITextFileBufferManager.DEFAULT.getTextFileBuffer(file.getFullPath(),	LocationKind.IFILE).getDocument();
-					server = LanaguageServiceAccessor.getLanaguageServer(file, document);
+					server = LanguageServiceAccessor.getLanguageServer(file, document);
 				} else if (input instanceof IURIEditorInput) {
 					fileUri = ((IURIEditorInput)input).getURI();
 					document = ITextFileBufferManager.DEFAULT.getTextFileBuffer(new Path(fileUri.getPath()), LocationKind.LOCATION).getDocument();

@@ -22,7 +22,7 @@ import org.eclipse.jface.text.contentassist.ICompletionProposal;
 import org.eclipse.jface.text.contentassist.IContentAssistProcessor;
 import org.eclipse.jface.text.contentassist.IContextInformation;
 import org.eclipse.jface.text.contentassist.IContextInformationValidator;
-import org.eclipse.languageserver.LanaguageServiceAccessor;
+import org.eclipse.languageserver.LanguageServiceAccessor;
 import org.eclipse.languageserver.LanguageServerEclipseUtils;
 import org.eclipse.ui.IEditorInput;
 import org.eclipse.ui.IEditorPart;
@@ -54,7 +54,7 @@ public class LSContentAssistProcessor implements IContentAssistProcessor {
 			if (input instanceof IFileEditorInput) { // TODO, also support non resource file
 				IFile file = ((IFileEditorInput) input).getFile();
 				fileUri = file.getLocation().toFile().toURI();
-				server = LanaguageServiceAccessor.getLanaguageServer(file, viewer.getDocument());
+				server = LanguageServiceAccessor.getLanguageServer(file, viewer.getDocument());
 			} else if (input instanceof IURIEditorInput) {
 				fileUri = ((IURIEditorInput)input).getURI();
 				// TODO server

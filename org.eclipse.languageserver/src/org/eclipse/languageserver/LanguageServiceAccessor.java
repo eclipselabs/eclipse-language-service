@@ -29,11 +29,11 @@ import io.typefox.lsapi.services.json.JsonBasedLanguageServer;
  * Deals with instantiations and caching of underlying {@link ProjectSpecificLanguageServerWrapper}.
  *
  */
-public class LanaguageServiceAccessor {
+public class LanguageServiceAccessor {
 
 	private static Map<IProject, Map<IContentType, ProjectSpecificLanguageServerWrapper>> projectServers = new HashMap<>();
 
-	public static JsonBasedLanguageServer getLanaguageServer(IFile file, IDocument document) throws IOException {
+	public static JsonBasedLanguageServer getLanguageServer(IFile file, IDocument document) throws IOException {
 		IProject project = file.getProject();
 		if (!projectServers.containsKey(project)) {
 			projectServers.put(project, new HashMap<>());
