@@ -79,7 +79,7 @@ public class LSBasedHover implements ITextHover {
 			}
 			if (server != null) {
 				CompletableFuture<Hover> hover = server.getTextDocumentService().hover(LanguageServerEclipseUtils.toTextDocumentPosistionParams(fileUri, offset, textViewer.getDocument()));
-				Range range = hover.get(200, TimeUnit.MILLISECONDS).getRange();
+				Range range = hover.get(400, TimeUnit.MILLISECONDS).getRange();
 				int rangeOffset = LanguageServerEclipseUtils.toOffset(range.getStart(), textViewer.getDocument());
 				Region res = new Region(rangeOffset, LanguageServerEclipseUtils.toOffset(range.getEnd(), textViewer.getDocument()) - rangeOffset);
 			}
