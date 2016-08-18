@@ -22,13 +22,13 @@ import org.eclipse.jface.text.IRegion;
 import org.eclipse.jface.text.ITextHover;
 import org.eclipse.jface.text.ITextViewer;
 import org.eclipse.jface.text.Region;
-import org.eclipse.languageserver.LanguageServiceAccessor;
 import org.eclipse.languageserver.LanguageServerEclipseUtils;
+import org.eclipse.languageserver.LanguageServiceAccessor;
 
 import io.typefox.lsapi.Hover;
 import io.typefox.lsapi.MarkedString;
 import io.typefox.lsapi.Range;
-import io.typefox.lsapi.services.json.JsonBasedLanguageServer;
+import io.typefox.lsapi.services.transport.client.LanguageClientEndpoint;
 
 public class LSBasedHover implements ITextHover {
 
@@ -39,17 +39,17 @@ public class LSBasedHover implements ITextHover {
 	public String getHoverInfo(ITextViewer textViewer, IRegion hoverRegion) {
 		IPath location = FileBuffers.getTextFileBufferManager().getTextFileBuffer(textViewer.getDocument()).getLocation();
 		IFile iFile = ResourcesPlugin.getWorkspace().getRoot().getFile(location);
-		JsonBasedLanguageServer server = null;
+		LanguageClientEndpoint languageClient = null;
 		URI fileUri = null;
 		try {
 			if (iFile.exists()) {
-				server = LanguageServiceAccessor.getLanguageServer(iFile, textViewer.getDocument());
+				languageClient = LanguageServiceAccessor.getLanguageServer(iFile, textViewer.getDocument());
 				fileUri = iFile.getLocationURI();
 			} else {
 				fileUri = location.toFile().toURI();
 			}
-			if (server != null) {
-				CompletableFuture<Hover> documentHighlight = server.getTextDocumentService().hover(LanguageServerEclipseUtils.toTextDocumentPosistionParams(fileUri, hoverRegion.getOffset(), textViewer.getDocument()));
+			if (languageClient != null) {
+				CompletableFuture<Hover> documentHighlight = languageClient.getTextDocumentService().hover(LanguageServerEclipseUtils.toTextDocumentPosistionParams(fileUri, hoverRegion.getOffset(), textViewer.getDocument()));
 				StringBuilder res = new StringBuilder();
 				for (MarkedString string : documentHighlight.get().getContents()) {
 					res.append(string.getValue());
@@ -68,20 +68,20 @@ public class LSBasedHover implements ITextHover {
 		// TODO: factorize!
 		IPath location = FileBuffers.getTextFileBufferManager().getTextFileBuffer(textViewer.getDocument()).getLocation();
 		IFile iFile = ResourcesPlugin.getWorkspace().getRoot().getFile(location);
-		JsonBasedLanguageServer server = null;
+		LanguageClientEndpoint languageClient = null;
 		URI fileUri = null;
 		try {
 			if (iFile.exists()) {
-				server = LanguageServiceAccessor.getLanguageServer(iFile, textViewer.getDocument());
+				languageClient = LanguageServiceAccessor.getLanguageServer(iFile, textViewer.getDocument());
 				fileUri = iFile.getLocationURI();
 			} else {
 				fileUri = location.toFile().toURI();
 			}
-			if (server != null) {
-				CompletableFuture<Hover> hover = server.getTextDocumentService().hover(LanguageServerEclipseUtils.toTextDocumentPosistionParams(fileUri, offset, textViewer.getDocument()));
+			if (languageClient != null) {
+				CompletableFuture<Hover> hover = languageClient.getTextDocumentService().hover(LanguageServerEclipseUtils.toTextDocumentPosistionParams(fileUri, offset, textViewer.getDocument()));
 				Range range = hover.get(400, TimeUnit.MILLISECONDS).getRange();
 				int rangeOffset = LanguageServerEclipseUtils.toOffset(range.getStart(), textViewer.getDocument());
-				Region res = new Region(rangeOffset, LanguageServerEclipseUtils.toOffset(range.getEnd(), textViewer.getDocument()) - rangeOffset);
+				return new Region(rangeOffset, LanguageServerEclipseUtils.toOffset(range.getEnd(), textViewer.getDocument()) - rangeOffset);
 			}
 		} catch (Exception ex) {
 			ex.printStackTrace(); // TODO

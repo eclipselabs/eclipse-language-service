@@ -26,8 +26,8 @@ import org.eclipse.core.runtime.Path;
 import org.eclipse.jface.text.IDocument;
 import org.eclipse.jface.text.TextSelection;
 import org.eclipse.jface.viewers.ISelection;
-import org.eclipse.languageserver.LanguageServiceAccessor;
 import org.eclipse.languageserver.LanguageServerEclipseUtils;
+import org.eclipse.languageserver.LanguageServiceAccessor;
 import org.eclipse.search2.internal.ui.SearchView;
 import org.eclipse.ui.IEditorInput;
 import org.eclipse.ui.IEditorPart;
@@ -41,7 +41,7 @@ import io.typefox.lsapi.Location;
 import io.typefox.lsapi.impl.ReferenceContextImpl;
 import io.typefox.lsapi.impl.ReferenceParamsImpl;
 import io.typefox.lsapi.impl.TextDocumentIdentifierImpl;
-import io.typefox.lsapi.services.json.JsonBasedLanguageServer;
+import io.typefox.lsapi.services.transport.client.LanguageClientEndpoint;
 
 public class LSFindReferences extends AbstractHandler implements IHandler {
 
@@ -57,7 +57,7 @@ public class LSFindReferences extends AbstractHandler implements IHandler {
 		}
 		if (part instanceof AbstractTextEditor) {
 			IEditorInput input = part.getEditorInput();
-			JsonBasedLanguageServer server = null;
+			LanguageClientEndpoint languageClient = null;
 			URI fileUri = null;
 			try {
 				IDocument document = null;
@@ -65,14 +65,14 @@ public class LSFindReferences extends AbstractHandler implements IHandler {
 					IFile file = ((IFileEditorInput) input).getFile();
 					fileUri = file.getLocation().toFile().toURI();
 					document = ITextFileBufferManager.DEFAULT.getTextFileBuffer(file.getFullPath(),	LocationKind.IFILE).getDocument();
-					server = LanguageServiceAccessor.getLanguageServer(file, document);
+					languageClient = LanguageServiceAccessor.getLanguageServer(file, document);
 				} else if (input instanceof IURIEditorInput) {
 					fileUri = ((IURIEditorInput)input).getURI();
 					document = ITextFileBufferManager.DEFAULT.getTextFileBuffer(new Path(fileUri.getPath()), LocationKind.LOCATION).getDocument();
 					// TODO server
 				}
 		
-				if (server != null) {
+				if (languageClient != null) {
 					ISelection sel = ((AbstractTextEditor) part).getSelectionProvider().getSelection();
 					if (sel instanceof TextSelection) {
 					    ReferenceParamsImpl params = new ReferenceParamsImpl();
@@ -83,7 +83,7 @@ public class LSFindReferences extends AbstractHandler implements IHandler {
 					    ReferenceContextImpl context = new ReferenceContextImpl();
 					    context.setIncludeDeclaration(true);
 					    params.setContext(context);
-					    CompletableFuture<List<? extends Location>> references = server.getTextDocumentService().references(params);
+					    CompletableFuture<List<? extends Location>> references = languageClient.getTextDocumentService().references(params);
 					    LSSearchResult search = new LSSearchResult(references, document);
 						search.getQuery().run(new NullProgressMonitor());
 						searchView.showSearchResult(search);

@@ -58,8 +58,10 @@ public class LanguageServerEclipseUtils {
 		switch (lspSeverity) {
 		case Error: return IMarker.SEVERITY_ERROR;
 		case Warning: return IMarker.SEVERITY_WARNING;
+		default:
+			return IMarker.SEVERITY_INFO;
 		}
-		return IMarker.SEVERITY_INFO;
+
 	}
 	
 //	public static int toEclipseMarkerSeverity(int lspSeverity) {

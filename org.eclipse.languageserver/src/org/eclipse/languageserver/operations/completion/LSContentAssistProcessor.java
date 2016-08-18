@@ -14,6 +14,7 @@ import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.TimeUnit;
 
 import org.eclipse.core.resources.IFile;
 import org.eclipse.jface.text.IDocument;
@@ -22,8 +23,8 @@ import org.eclipse.jface.text.contentassist.ICompletionProposal;
 import org.eclipse.jface.text.contentassist.IContentAssistProcessor;
 import org.eclipse.jface.text.contentassist.IContextInformation;
 import org.eclipse.jface.text.contentassist.IContextInformationValidator;
-import org.eclipse.languageserver.LanguageServiceAccessor;
 import org.eclipse.languageserver.LanguageServerEclipseUtils;
+import org.eclipse.languageserver.LanguageServiceAccessor;
 import org.eclipse.ui.IEditorInput;
 import org.eclipse.ui.IEditorPart;
 import org.eclipse.ui.IFileEditorInput;
@@ -34,7 +35,7 @@ import org.eclipse.ui.texteditor.AbstractTextEditor;
 import io.typefox.lsapi.CompletionItem;
 import io.typefox.lsapi.CompletionList;
 import io.typefox.lsapi.impl.TextDocumentPositionParamsImpl;
-import io.typefox.lsapi.services.json.JsonBasedLanguageServer;
+import io.typefox.lsapi.services.transport.client.LanguageClientEndpoint;
 
 public class LSContentAssistProcessor implements IContentAssistProcessor {
 
@@ -43,29 +44,30 @@ public class LSContentAssistProcessor implements IContentAssistProcessor {
 
 	@Override
 	public ICompletionProposal[] computeCompletionProposals(ITextViewer viewer, int offset) {
+		ICompletionProposal[] res = new ICompletionProposal[0];
 		IEditorPart activeEditor = PlatformUI.getWorkbench().getActiveWorkbenchWindow().getActivePage().getActiveEditor();
 		if (!(activeEditor instanceof AbstractTextEditor)) {
 			return new ICompletionProposal[0];
 		}
 		IEditorInput input = activeEditor.getEditorInput();
-		JsonBasedLanguageServer server = null;
+		LanguageClientEndpoint languageClient = null;
 		URI fileUri = null;
 		try {
 			if (input instanceof IFileEditorInput) { // TODO, also support non resource file
 				IFile file = ((IFileEditorInput) input).getFile();
 				fileUri = file.getLocation().toFile().toURI();
-				server = LanguageServiceAccessor.getLanguageServer(file, viewer.getDocument());
+				languageClient = LanguageServiceAccessor.getLanguageServer(file, viewer.getDocument());
 			} else if (input instanceof IURIEditorInput) {
 				fileUri = ((IURIEditorInput)input).getURI();
 				// TODO server
 			}
 	
-			if (server != null) {
+			if (languageClient != null) {
 				IDocument document = viewer.getDocument();
 				TextDocumentPositionParamsImpl param = LanguageServerEclipseUtils.toTextDocumentPosistionParams(fileUri, offset, document);
-				CompletableFuture<CompletionList> res = server.getTextDocumentService().completion(param);
+				CompletableFuture<CompletionList> request = languageClient.getTextDocumentService().completion(param);
 				List<ICompletionProposal> proposals = new ArrayList<>();
-				for (CompletionItem item : res.get().getItems()) {
+				for (CompletionItem item : request.get(2, TimeUnit.SECONDS).getItems()) {
 					String text = item.getInsertText();
 					if (text == null) {
 						text = item.getSortText();
@@ -74,18 +76,18 @@ public class LSContentAssistProcessor implements IContentAssistProcessor {
 					// TODO add description and so on
 					proposals.add(new LSCompletionProposal(item, offset));
 				}
-				return proposals.toArray(new ICompletionProposal[proposals.size()]);
+				res = proposals.toArray(new ICompletionProposal[proposals.size()]);
 			}
 		} catch (Exception ex) {
 			ex.printStackTrace(); //TODO
 		}
-		return null;
+		return res;
 	}
 
 	@Override
 	public IContextInformation[] computeContextInformation(ITextViewer viewer, int offset) {
-		// TODO Auto-generated method stub
-		return null;
+		// TODO
+		return new IContextInformation[0];
 	}
 
 	@Override

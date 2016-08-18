@@ -14,6 +14,7 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.TimeUnit;
 
 import org.eclipse.core.filesystem.EFS;
 import org.eclipse.core.filesystem.IFileStore;
@@ -95,7 +96,7 @@ public class LSSearchResult extends FileSearchResult {
 				@Override
 				public IStatus run(IProgressMonitor monitor) throws OperationCanceledException {
 					try {
-						for (Location loc : references.get()) {
+						for (Location loc : references.get(4, TimeUnit.SECONDS)) {
 							Match match = toMatch(loc);
 							addMatch(match);
 						}

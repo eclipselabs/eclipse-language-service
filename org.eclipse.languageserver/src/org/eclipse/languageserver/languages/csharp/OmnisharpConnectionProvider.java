@@ -40,6 +40,7 @@ public class OmnisharpConnectionProvider implements StreamConnectionProvider {
 
 		@Override
 		public void streamAppended(String text, IStreamMonitor monitor) {
+			System.err.println(text);
 			byte[] bytes = text.getBytes(Charset.defaultCharset());
 			List<Byte> bytesAsList = new ArrayList<>(bytes.length);
 			for (byte b : bytes) {

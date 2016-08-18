@@ -19,8 +19,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 import java.util.function.Consumer;
 
 import org.eclipse.core.filebuffers.FileBuffers;
@@ -32,8 +30,12 @@ import org.eclipse.core.resources.IProject;
 import org.eclipse.core.resources.IResource;
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IPath;
+import org.eclipse.core.runtime.IProgressMonitor;
+import org.eclipse.core.runtime.IStatus;
 import org.eclipse.core.runtime.Platform;
+import org.eclipse.core.runtime.Status;
 import org.eclipse.core.runtime.content.IContentType;
+import org.eclipse.core.runtime.jobs.Job;
 import org.eclipse.jface.text.DocumentEvent;
 import org.eclipse.jface.text.IDocument;
 import org.eclipse.jface.text.IDocumentListener;
@@ -52,7 +54,12 @@ import io.typefox.lsapi.impl.InitializeParamsImpl;
 import io.typefox.lsapi.impl.TextDocumentContentChangeEventImpl;
 import io.typefox.lsapi.impl.TextDocumentItemImpl;
 import io.typefox.lsapi.impl.VersionedTextDocumentIdentifierImpl;
-import io.typefox.lsapi.services.json.JsonBasedLanguageServer;
+import io.typefox.lsapi.services.json.MessageJsonHandler;
+import io.typefox.lsapi.services.json.StreamMessageReader;
+import io.typefox.lsapi.services.json.StreamMessageWriter;
+import io.typefox.lsapi.services.transport.client.LanguageClientEndpoint;
+import io.typefox.lsapi.services.transport.io.MessageReader;
+import io.typefox.lsapi.services.transport.io.MessageWriter;
 
 /**
  * Wraps instantiation, initialization of project-specific instance of the
@@ -72,7 +79,7 @@ public class ProjectSpecificLanguageServerWrapper {
 		@Override
 		public void documentChanged(DocumentEvent event) {
 			this.change.getContentChanges().get(0).setText(event.getDocument().get());
-			server.getTextDocumentService().didChange(this.change);
+			languageClient.getTextDocumentService().didChange(this.change);
 			version++;
 		}
 
@@ -103,10 +110,12 @@ public class ProjectSpecificLanguageServerWrapper {
 	protected static final String LS_DIAGNOSTIC_MARKER_TYPE = "org.eclipse.languageserver.diagnostic"; //$NON-NLS-1$
 
 	final private StreamConnectionProvider lspStreamProvider;
-	private JsonBasedLanguageServer server;
+	private LanguageClientEndpoint languageClient;
 	private IProject project;
 	private IContentType contentType;
 	private Map<IPath, DocumentChangeListenenr> connectedFiles;
+
+	private Job languageClientListenerJob;
 	
 	public ProjectSpecificLanguageServerWrapper(IProject project, IContentType contentType, StreamConnectionProvider connection) {
 		this.project = project;
@@ -115,37 +124,53 @@ public class ProjectSpecificLanguageServerWrapper {
 	}
 
 	private void start() throws IOException {
-		if (this.server != null) {
+		if (this.languageClient != null) {
 			return;
 		}
-		this.server = new JsonBasedLanguageServer();
-		this.server.onError(new Procedure2<String, Throwable>() {
-			@Override
-			public void apply(String p1, Throwable p2) {
-				System.err.println(p1);
-				p2.printStackTrace();
-			}
-		});
+		this.languageClient = new LanguageClientEndpoint();
 		this.lspStreamProvider.start();
-		this.server.connect(this.lspStreamProvider.getInputStream(), this.lspStreamProvider.getOutputStream());
-		this.server.getProtocol().addErrorListener(new Procedure2<String, Throwable>() {
+		MessageJsonHandler jsonHandler = new MessageJsonHandler();
+		jsonHandler.setMethodResolver(this.languageClient);
+		MessageReader reader = new StreamMessageReader(this.lspStreamProvider.getInputStream(), jsonHandler);
+		MessageWriter writer = new StreamMessageWriter(this.lspStreamProvider.getOutputStream(), jsonHandler);
+		reader.setOnError(new Consumer<Throwable>() {
 			@Override
-			public void apply(String p1, Throwable p2) {
-				System.err.println("error: " + p1);
+			public void accept(Throwable t) {
+				System.err.println("Logged error: ");
+				t.printStackTrace(System.err);
+				// most likely an issue that requires a restart
+				stop();
 			}
 		});
-		this.server.getProtocol().addIncomingMessageListener(new Procedure2<Message, String>() {
+		reader.setOnRead(new Procedure2<Message, String>() {
 			@Override
 			public void apply(Message p1, String p2) {
 				System.err.println("IN: " + p1.getJsonrpc() + "\n" + p2);
 			}
 		});
-		this.server.getProtocol().addOutgoingMessageListener(new Procedure2<Message, String>() {
+		writer.setOnWrite(new Procedure2<Message, String>() {
 			@Override
 			public void apply(Message p1, String p2) {
 				System.err.println("OUT: " + p1.getJsonrpc() + "\n" + p2);
 			}
 		});
+		writer.setOnError(new Consumer<Throwable>() {
+			@Override
+			public void accept(Throwable t) {
+				System.err.println("Logged error: ");
+				t.printStackTrace(System.err);
+				// most likely an issue that requires a restart
+				stop();
+			}
+		});
+		this.languageClientListenerJob = new Job("Language Client Endpoint - " + project.getName() + " - " + contentType.getId()) {
+			@Override
+			protected IStatus run(IProgressMonitor monitor) {
+				languageClient.connect(reader, writer);
+				return Status.OK_STATUS;
+			}
+		};
+		this.languageClientListenerJob.schedule();
 		// initialize
 		InitializeParamsImpl initParams = new InitializeParamsImpl();
 		initParams.setRootPath(project.getLocation().toFile().getAbsolutePath());
@@ -157,7 +182,7 @@ public class ProjectSpecificLanguageServerWrapper {
 		Integer.valueOf(java.lang.management.ManagementFactory.getRuntimeMXBean().getName().split("@")[0]);
 		initParams.setCapabilities(new ClientCapabilitiesImpl());
 		connectDiagnostics();
-		CompletableFuture<InitializeResult> result = server.initialize(initParams);
+		CompletableFuture<InitializeResult> result = languageClient.initialize(initParams);
 		try {
 			InitializeResult initializeResult = result.get();
 		} catch (InterruptedException | ExecutionException e) {
@@ -168,7 +193,7 @@ public class ProjectSpecificLanguageServerWrapper {
 	}
 	
 	private void connectDiagnostics() {
-		this.server.getTextDocumentService().onPublishDiagnostics(new Consumer<PublishDiagnosticsParams>() {
+		this.languageClient.getTextDocumentService().onPublishDiagnostics(new Consumer<PublishDiagnosticsParams>() {
 			@Override
 			public void accept(PublishDiagnosticsParams diagnostics) {
 				try {
@@ -238,9 +263,12 @@ public class ProjectSpecificLanguageServerWrapper {
 	}
 
 	private void stop() {
+		this.languageClientListenerJob.cancel();
+		this.languageClient.shutdown();
+		this.languageClient.getWriter().close();
+		this.languageClient.getReader().close();
 		this.lspStreamProvider.stop();
-		this.server.shutdown();
-		this.server = null;
+		this.languageClient = null;
 	}
 
 	public void connect(IFile file, final IDocument document) throws IOException {
@@ -255,7 +283,7 @@ public class ProjectSpecificLanguageServerWrapper {
 		textDocument.setText(document.get());
 		textDocument.setLanguageId(file.getFileExtension());
 		open.setTextDocument(textDocument);
-		this.server.getTextDocumentService().didOpen(open);
+		this.languageClient.getTextDocumentService().didOpen(open);
 		
 		DocumentChangeListenenr listener = new DocumentChangeListenenr(file.getLocationURI());
 		document.addDocumentListener(listener);
@@ -270,7 +298,7 @@ public class ProjectSpecificLanguageServerWrapper {
 		}
 	}
 
-	public JsonBasedLanguageServer getServer() {
-		return server;
+	public LanguageClientEndpoint getServer() {
+		return languageClient;
 	}
 }

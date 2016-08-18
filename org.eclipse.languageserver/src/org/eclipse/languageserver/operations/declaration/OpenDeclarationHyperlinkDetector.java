@@ -14,6 +14,7 @@ import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.TimeUnit;
 
 import org.eclipse.core.filebuffers.FileBuffers;
 import org.eclipse.core.filebuffers.ITextFileBufferManager;
@@ -40,7 +41,7 @@ import org.eclipse.ui.ide.IDE;
 import org.eclipse.ui.texteditor.AbstractTextEditor;
 
 import io.typefox.lsapi.Location;
-import io.typefox.lsapi.services.json.JsonBasedLanguageServer;
+import io.typefox.lsapi.services.transport.client.LanguageClientEndpoint;
 
 public class OpenDeclarationHyperlinkDetector extends AbstractHyperlinkDetector {
 
@@ -107,18 +108,18 @@ public class OpenDeclarationHyperlinkDetector extends AbstractHyperlinkDetector 
 	public IHyperlink[] detectHyperlinks(ITextViewer textViewer, IRegion region, boolean canShowMultipleHyperlinks) {
 		IPath location = FileBuffers.getTextFileBufferManager().getTextFileBuffer(textViewer.getDocument()).getLocation();
 		IFile iFile = ResourcesPlugin.getWorkspace().getRoot().getFile(location);
-		JsonBasedLanguageServer server = null;
+		LanguageClientEndpoint languageClient = null;
 		URI fileUri = null;
 		try {
 			if (iFile.exists()) {
-				server = LanguageServiceAccessor.getLanguageServer(iFile, textViewer.getDocument());
+				languageClient = LanguageServiceAccessor.getLanguageServer(iFile, textViewer.getDocument());
 				fileUri = iFile.getLocationURI();
 			} else {
 				fileUri = location.toFile().toURI();
 			}
-			if (server != null) {
-				CompletableFuture<List<? extends Location>> documentHighlight = server.getTextDocumentService().definition(LanguageServerEclipseUtils.toTextDocumentPosistionParams(fileUri, region.getOffset(), textViewer.getDocument()));
-				List<? extends Location> response = documentHighlight.get();
+			if (languageClient != null) {
+				CompletableFuture<List<? extends Location>> documentHighlight = languageClient.getTextDocumentService().definition(LanguageServerEclipseUtils.toTextDocumentPosistionParams(fileUri, region.getOffset(), textViewer.getDocument()));
+				List<? extends Location> response = documentHighlight.get(2, TimeUnit.SECONDS);
 				if (response.isEmpty()) {
 					return null;
 				}

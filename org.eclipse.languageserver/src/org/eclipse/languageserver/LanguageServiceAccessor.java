@@ -12,7 +12,6 @@ package org.eclipse.languageserver;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.nio.charset.Charset;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -23,7 +22,7 @@ import org.eclipse.core.runtime.Platform;
 import org.eclipse.core.runtime.content.IContentType;
 import org.eclipse.jface.text.IDocument;
 
-import io.typefox.lsapi.services.json.JsonBasedLanguageServer;
+import io.typefox.lsapi.services.transport.client.LanguageClientEndpoint;
 
 /**
  * The entry-point to retrieve a Language Server for a given resource/project.
@@ -34,7 +33,7 @@ public class LanguageServiceAccessor {
 
 	private static Map<IProject, Map<IContentType, ProjectSpecificLanguageServerWrapper>> projectServers = new HashMap<>();
 
-	public static JsonBasedLanguageServer getLanguageServer(IFile file, IDocument document) throws IOException {
+	public static LanguageClientEndpoint getLanguageServer(IFile file, IDocument document) throws IOException {
 		IProject project = file.getProject();
 		if (!projectServers.containsKey(project)) {
 			projectServers.put(project, new HashMap<>());
