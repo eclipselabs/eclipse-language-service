@@ -58,7 +58,7 @@ public class LanguageServiceAccessor {
 				if (wrapper == null) {
 					StreamConnectionProvider connection = LSPStreamConnectionProviderRegistry.getInstance().findProviderFor(contentType);
 					if (connection != null) {
-						wrapper = new ProjectSpecificLanguageServerWrapper(project, contentType, connection);
+						wrapper = new ProjectSpecificLanguageServerWrapper(project, connection);
 						projectServers.get(project).put(contentType, wrapper);
 					}
 				}

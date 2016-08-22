@@ -13,12 +13,11 @@ package org.eclipse.languageserver;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.eclipse.core.externaltools.internal.IExternalToolConstants;
 import org.eclipse.core.runtime.Platform;
 import org.eclipse.core.runtime.content.IContentType;
 import org.eclipse.core.runtime.content.IContentTypeManager;
-import org.eclipse.languageserver.languages.TweakedVSCodeCSSConnectionProvider;
-import org.eclipse.languageserver.languages.TweakedVSCodeJsonConnectionProvider;
-import org.eclipse.languageserver.languages.csharp.OmnisharpConnectionProvider;
+import org.eclipse.languageserver.languages.InitializeLaunchConfigurations;
 
 /**
  * This registry aims at providing a good language server connection (as {@link StreamConnectionProvider}
@@ -48,9 +47,9 @@ public class LSPStreamConnectionProviderRegistry {
 	private void initialize() {
 		IContentTypeManager manager = Platform.getContentTypeManager();
 		// TODO initialize from extension registry and/or preference or other settigns
-		connections.put(manager.getContentType("org.eclipse.wst.css.core.csssource"), new TweakedVSCodeCSSConnectionProvider());
-		connections.put(manager.getContentType("org.eclipse.wst.jsdt.core.jsonSource"), new TweakedVSCodeJsonConnectionProvider());
-		connections.put(manager.getContentType("org.eclipse.languageserver.csharp"), new OmnisharpConnectionProvider());
+		connections.put(manager.getContentType("org.eclipse.wst.css.core.csssource"), new LaunchConfigurationStreamProvider(LaunchConfigurationStreamProvider.findLaunchConfiguration(IExternalToolConstants.ID_PROGRAM_LAUNCH_CONFIGURATION_TYPE, InitializeLaunchConfigurations.VSCODE_CSS_NAME)));
+		connections.put(manager.getContentType("org.eclipse.wst.jsdt.core.jsonSource"), new LaunchConfigurationStreamProvider(LaunchConfigurationStreamProvider.findLaunchConfiguration(IExternalToolConstants.ID_PROGRAM_LAUNCH_CONFIGURATION_TYPE, InitializeLaunchConfigurations.VSCODE_JSON_NAME)));
+		connections.put(manager.getContentType("org.eclipse.languageserver.csharp"), new LaunchConfigurationStreamProvider(LaunchConfigurationStreamProvider.findLaunchConfiguration(IExternalToolConstants.ID_PROGRAM_LAUNCH_CONFIGURATION_TYPE, InitializeLaunchConfigurations.OMNISHARP_NAME)));
 	}
 	
 	public StreamConnectionProvider findProviderFor(IContentType contentType) {

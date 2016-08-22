@@ -67,7 +67,7 @@ public class LSContentAssistProcessor implements IContentAssistProcessor {
 				TextDocumentPositionParamsImpl param = LanguageServerEclipseUtils.toTextDocumentPosistionParams(fileUri, offset, document);
 				CompletableFuture<CompletionList> request = languageClient.getTextDocumentService().completion(param);
 				List<ICompletionProposal> proposals = new ArrayList<>();
-				for (CompletionItem item : request.get(2, TimeUnit.SECONDS).getItems()) {
+				for (CompletionItem item : request.get(4, TimeUnit.SECONDS).getItems()) {
 					String text = item.getInsertText();
 					if (text == null) {
 						text = item.getSortText();

@@ -83,5 +83,11 @@
             contentType="org.eclipse.languageserver.csharp">
       </presentationReconciler>
    </extension>
+   <extension
+         point="org.eclipse.ui.startup">
+      <startup
+            class="org.eclipse.languageserver.languages.InitializeLaunchConfigurations">
+      </startup>
+   </extension>
 
 </plugin>
