@@ -89,5 +89,13 @@
             class="org.eclipse.languageserver.languages.InitializeLaunchConfigurations">
       </startup>
    </extension>
+   <extension
+         point="org.eclipse.ui.preferencePages">
+      <page
+            class="org.eclipse.languageserver.ui.LanguageServerPreferencePage"
+            id="org.eclipse.languageserver.preferences"
+            name="Language Servers">
+      </page>
+   </extension>
 
 </plugin>

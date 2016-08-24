@@ -33,7 +33,7 @@ import org.eclipse.jface.text.hyperlink.AbstractHyperlinkDetector;
 import org.eclipse.jface.text.hyperlink.IHyperlink;
 import org.eclipse.languageserver.LanguageServerEclipseUtils;
 import org.eclipse.languageserver.LanguageServiceAccessor;
-import org.eclipse.languageserver.Messages;
+import org.eclipse.languageserver.ui.Messages;
 import org.eclipse.ui.IEditorPart;
 import org.eclipse.ui.PartInitException;
 import org.eclipse.ui.PlatformUI;

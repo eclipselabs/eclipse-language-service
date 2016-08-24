@@ -15,11 +15,15 @@ import java.util.Map;
 
 import org.eclipse.core.externaltools.internal.IExternalToolConstants;
 import org.eclipse.core.runtime.CoreException;
+import org.eclipse.core.runtime.Platform;
+import org.eclipse.core.runtime.content.IContentTypeManager;
 import org.eclipse.debug.core.DebugPlugin;
 import org.eclipse.debug.core.ILaunchConfiguration;
 import org.eclipse.debug.core.ILaunchConfigurationType;
 import org.eclipse.debug.core.ILaunchConfigurationWorkingCopy;
 import org.eclipse.debug.core.ILaunchManager;
+import org.eclipse.languageserver.LSPStreamConnectionProviderRegistry;
+import org.eclipse.languageserver.LaunchConfigurationStreamProvider;
 import org.eclipse.ui.IStartup;
 
 /**
@@ -36,13 +40,15 @@ public class InitializeLaunchConfigurations implements IStartup {
 
 	@Override
 	public void earlyStartup() {
-		ILaunchManager manager = DebugPlugin.getDefault().getLaunchManager();
-		ILaunchConfigurationType externalType = manager.getLaunchConfigurationType(IExternalToolConstants.ID_PROGRAM_LAUNCH_CONFIGURATION_TYPE);
+		IContentTypeManager contentTypeManager = Platform.getContentTypeManager();
+		ILaunchManager launchManager = DebugPlugin.getDefault().getLaunchManager();
+		ILaunchConfigurationType externalType = launchManager.getLaunchConfigurationType(IExternalToolConstants.ID_PROGRAM_LAUNCH_CONFIGURATION_TYPE);
+		LSPStreamConnectionProviderRegistry registry = LSPStreamConnectionProviderRegistry.getInstance();
 		// OmniSharp
 		try {
 			String omniSharpLaunchName = OMNISHARP_NAME;
 			ILaunchConfiguration omniSharpLauch = null;
-			for (ILaunchConfiguration launch : manager.getLaunchConfigurations(externalType)) {
+			for (ILaunchConfiguration launch : launchManager.getLaunchConfigurations(externalType)) {
 				if (launch.getName().equals(omniSharpLaunchName)) {
 					omniSharpLauch = launch;
 				}
@@ -62,6 +68,7 @@ public class InitializeLaunchConfigurations implements IStartup {
 				environment.put("LD_LIBRARY_PATH", "/home/mistria/apps/OmniSharp.NET/icu54:" + System.getenv("LD_LIBRARY_PATH"));
 				workingCopy.setAttribute(ILaunchManager.ATTR_ENVIRONMENT_VARIABLES, environment);
 				omniSharpLauch = workingCopy.doSave();
+				registry.registerAssociation(contentTypeManager.getContentType("org.eclipse.languageserver.csharp"), LaunchConfigurationStreamProvider.findLaunchConfiguration(IExternalToolConstants.ID_PROGRAM_LAUNCH_CONFIGURATION_TYPE, InitializeLaunchConfigurations.OMNISHARP_NAME));
 			}
 		} catch (CoreException e) {
 			e.printStackTrace();
@@ -70,7 +77,7 @@ public class InitializeLaunchConfigurations implements IStartup {
 		try {
 			String omniSharpLaunchName = VSCODE_CSS_NAME;
 			ILaunchConfiguration omniSharpLauch = null;
-			for (ILaunchConfiguration launch : manager.getLaunchConfigurations(externalType)) {
+			for (ILaunchConfiguration launch : launchManager.getLaunchConfigurations(externalType)) {
 				if (launch.getName().equals(omniSharpLaunchName)) {
 					omniSharpLauch = launch;
 				}
@@ -93,6 +100,7 @@ public class InitializeLaunchConfigurations implements IStartup {
 				workingCopy.setAttribute(IExternalToolConstants.ATTR_LOCATION, "/usr/bin/node");
 				workingCopy.setAttribute(IExternalToolConstants.ATTR_TOOL_ARGUMENTS, "/home/mistria/git/vscode/extensions/css/server/out/cssServerMain.js");
 				omniSharpLauch = workingCopy.doSave();
+				registry.registerAssociation(contentTypeManager.getContentType("org.eclipse.wst.css.core.csssource"), LaunchConfigurationStreamProvider.findLaunchConfiguration(IExternalToolConstants.ID_PROGRAM_LAUNCH_CONFIGURATION_TYPE, InitializeLaunchConfigurations.VSCODE_CSS_NAME));
 			}
 		} catch (CoreException e) {
 			e.printStackTrace();
@@ -101,7 +109,7 @@ public class InitializeLaunchConfigurations implements IStartup {
 		try {
 			String omniSharpLaunchName = VSCODE_JSON_NAME;
 			ILaunchConfiguration omniSharpLauch = null;
-			for (ILaunchConfiguration launch : manager.getLaunchConfigurations(externalType)) {
+			for (ILaunchConfiguration launch : launchManager.getLaunchConfigurations(externalType)) {
 				if (launch.getName().equals(omniSharpLaunchName)) {
 					omniSharpLauch = launch;
 				}
@@ -124,6 +132,7 @@ public class InitializeLaunchConfigurations implements IStartup {
 				workingCopy.setAttribute(IExternalToolConstants.ATTR_LOCATION, "/usr/bin/node");
 				workingCopy.setAttribute(IExternalToolConstants.ATTR_TOOL_ARGUMENTS, "/home/mistria/git/vscode/extensions/json/server/out/jsonServerMain.js");
 				omniSharpLauch = workingCopy.doSave();
+				registry.registerAssociation(contentTypeManager.getContentType("org.eclipse.wst.jsdt.core.jsonSource"), LaunchConfigurationStreamProvider.findLaunchConfiguration(IExternalToolConstants.ID_PROGRAM_LAUNCH_CONFIGURATION_TYPE, InitializeLaunchConfigurations.VSCODE_JSON_NAME));
 			}
 		} catch (CoreException e) {
 			e.printStackTrace();
