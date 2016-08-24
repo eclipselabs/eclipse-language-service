@@ -1,0 +1,4 @@
+[submodule "eclipse.platform.ui-with.generic.editor"]
+	path = eclipse.platform.ui-with.generic.editor
+	url = git://git.eclipse.org/gitroot/platform/eclipse.platform.text
+	branch = refs/changes/21/75921/25

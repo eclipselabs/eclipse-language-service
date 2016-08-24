@@ -6,6 +6,7 @@
   <packaging>pom</packaging>
   
 	<modules>
+		<module>eclipse.platform.ui-with.generic.editor/org.eclipse.ui.genericeditor</module>
 		<module>org.eclipse.languageserver</module>
 		<module>repository</module>
 	</modules>
