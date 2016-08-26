@@ -8,11 +8,22 @@ jdk:
 before_install:
   - "export DISPLAY=:99.0"
   - "sh -e /etc/init.d/xvfb start"
+# The following is workaround for https://github.com/travis-ci/travis-ci/issues/4872
+  - wget http://apache.mindstudios.com/maven/maven-3/3.3.9/binaries/apache-maven-3.3.9-bin.tar.gz
+  - tar zxvf apache-maven-3.3.9-bin.tar.gz
+  - chmod +x apache-maven-3.3.9/bin/mvn
+  - export M2_HOME=$PWD/apache-maven-3.3.9
+  - export PATH=$PWD/apache-maven-3.3.9/bin:${PATH}
+  - hash -r
+before_script:
+  - export M2_HOME=$PWD/apache-maven-3.3.9
+  - export PATH=$PWD/apache-maven-3.3.9/bin:${PATH}
+  - hash -r
 
 # Prevent Travis's default of: mvn install -DskipTests=true
 install: ""
 
 script:
   - export MAVEN_OPTS="-Xmx2g"
-  - mvn clean verify
+  - mvn clean verify -P build-individual-bundles
  

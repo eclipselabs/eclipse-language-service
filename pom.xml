@@ -6,7 +6,7 @@
   <packaging>pom</packaging>
   
 	<modules>
-		<module>eclipse.platform.ui-with.generic.editor/org.eclipse.ui.genericeditor</module>
+		<module>eclipse.platform.text-generic_editor/org.eclipse.ui.genericeditor</module>
 		<module>org.eclipse.languageserver</module>
 		<module>repository</module>
 	</modules>
@@ -20,6 +20,15 @@
   		</plugin>
   	</plugins>
   </build>
+
+	<profiles>
+		<profile>
+			<id>build-individual-bundles</id>
+			<activation>
+				<activeByDefault>true</activeByDefault>
+			</activation>
+		</profile>
+	</profiles>
   
 	<repositories>
 		<repository>
@@ -40,6 +49,11 @@
 		<repository>
 			<id>oss.sonatype.org</id>
 			<url>https://oss.sonatype.org/content/repositories/snapshots/</url>
+			<snapshots><enabled>true</enabled></snapshots>
+		</repository>
+		<repository>
+			<id>repo.eclipse.org-snapshots</id>
+			<url>https://repo.eclipse.org/content/groups/snapshots/</url>
 			<snapshots><enabled>true</enabled></snapshots>
 		</repository>
   </repositories>
