@@ -23,7 +23,7 @@ import org.eclipse.jface.text.contentassist.ICompletionProposal;
 import org.eclipse.jface.text.contentassist.IContentAssistProcessor;
 import org.eclipse.jface.text.contentassist.IContextInformation;
 import org.eclipse.jface.text.contentassist.IContextInformationValidator;
-import org.eclipse.languageserver.LanguageServerEclipseUtils;
+import org.eclipse.languageserver.LSPEclipseUtils;
 import org.eclipse.languageserver.LanguageServiceAccessor;
 import org.eclipse.ui.IEditorInput;
 import org.eclipse.ui.IEditorPart;
@@ -64,7 +64,7 @@ public class LSContentAssistProcessor implements IContentAssistProcessor {
 	
 			if (languageClient != null) {
 				IDocument document = viewer.getDocument();
-				TextDocumentPositionParamsImpl param = LanguageServerEclipseUtils.toTextDocumentPosistionParams(fileUri, offset, document);
+				TextDocumentPositionParamsImpl param = LSPEclipseUtils.toTextDocumentPosistionParams(fileUri, offset, document);
 				CompletableFuture<CompletionList> request = languageClient.getTextDocumentService().completion(param);
 				List<ICompletionProposal> proposals = new ArrayList<>();
 				for (CompletionItem item : request.get(4, TimeUnit.SECONDS).getItems()) {

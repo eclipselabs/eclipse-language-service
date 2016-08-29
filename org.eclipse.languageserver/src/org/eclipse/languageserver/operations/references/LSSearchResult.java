@@ -29,7 +29,7 @@ import org.eclipse.jface.resource.ImageDescriptor;
 import org.eclipse.jface.text.BadLocationException;
 import org.eclipse.jface.text.IDocument;
 import org.eclipse.jface.text.IRegion;
-import org.eclipse.languageserver.LanguageServerEclipseUtils;
+import org.eclipse.languageserver.LSPEclipseUtils;
 import org.eclipse.search.internal.ui.text.FileMatch;
 import org.eclipse.search.internal.ui.text.FileSearchQuery;
 import org.eclipse.search.internal.ui.text.FileSearchResult;
@@ -56,9 +56,9 @@ public class LSSearchResult extends FileSearchResult {
 
 	protected Match toMatch(Location loc) {
 		try {
-			int startOffset = LanguageServerEclipseUtils.toOffset(loc.getRange().getStart(), document);
-			int endOffset = LanguageServerEclipseUtils.toOffset(loc.getRange().getEnd(), document);
-			IResource resource = LanguageServerEclipseUtils.findResourceFor(loc.getUri());
+			int startOffset = LSPEclipseUtils.toOffset(loc.getRange().getStart(), document);
+			int endOffset = LSPEclipseUtils.toOffset(loc.getRange().getEnd(), document);
+			IResource resource = LSPEclipseUtils.findResourceFor(loc.getUri());
 			if (resource != null) {
 				IRegion lineInformation = document.getLineInformationOfOffset(startOffset);
 				LineElement lineEntry = new LineElement(resource, document.getLineOfOffset(startOffset), lineInformation.getOffset(), document.get(lineInformation.getOffset(), lineInformation.getLength()));

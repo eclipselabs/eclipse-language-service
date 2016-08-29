@@ -14,23 +14,15 @@ import java.io.IOException;
 import java.net.URI;
 import java.util.Arrays;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Map;
-import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.function.Consumer;
 
-import org.eclipse.core.filebuffers.FileBuffers;
-import org.eclipse.core.filebuffers.ITextFileBuffer;
-import org.eclipse.core.filebuffers.LocationKind;
 import org.eclipse.core.resources.IFile;
-import org.eclipse.core.resources.IMarker;
 import org.eclipse.core.resources.IProject;
-import org.eclipse.core.resources.IResource;
-import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IPath;
 import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.core.runtime.IStatus;
@@ -40,16 +32,13 @@ import org.eclipse.core.runtime.jobs.Job;
 import org.eclipse.jface.text.DocumentEvent;
 import org.eclipse.jface.text.IDocument;
 import org.eclipse.jface.text.IDocumentListener;
+import org.eclipse.languageserver.operations.diagnostics.LSPDiagnosticsToMarkers;
 import org.eclipse.swt.widgets.Display;
 import org.eclipse.ui.internal.progress.ProgressMonitorFocusJobDialog;
 import org.eclipse.xtext.xbase.lib.Procedures.Procedure2;
 
-import com.google.common.base.Objects;
-
-import io.typefox.lsapi.Diagnostic;
 import io.typefox.lsapi.InitializeResult;
 import io.typefox.lsapi.Message;
-import io.typefox.lsapi.PublishDiagnosticsParams;
 import io.typefox.lsapi.impl.ClientCapabilitiesImpl;
 import io.typefox.lsapi.impl.DidChangeTextDocumentParamsImpl;
 import io.typefox.lsapi.impl.DidOpenTextDocumentParamsImpl;
@@ -100,11 +89,9 @@ public class ProjectSpecificLanguageServerWrapper {
 		}
 	}
 
-	protected static final String LS_DIAGNOSTIC_MARKER_TYPE = "org.eclipse.languageserver.diagnostic"; //$NON-NLS-1$
-
 	final private StreamConnectionProvider lspStreamProvider;
 	private LanguageClientEndpoint languageClient;
-	private IProject project;
+	IProject project;
 	private Map<IPath, DocumentChangeListenenr> connectedFiles;
 	private Map<IPath, IDocument> documents;
 
@@ -202,73 +189,7 @@ public class ProjectSpecificLanguageServerWrapper {
 	}
 
 	private void connectDiagnostics() {
-		this.languageClient.getTextDocumentService().onPublishDiagnostics(new Consumer<PublishDiagnosticsParams>() {
-			@Override
-			public void accept(PublishDiagnosticsParams diagnostics) {
-				try {
-					// fix issue with file:/// vs file:/
-					String uri = diagnostics.getUri();
-					IResource resource = LanguageServerEclipseUtils.findResourceFor(uri);
-					if (resource == null || !resource.exists()) {
-						resource = project;
-					}
-					Set<IMarker> remainingMarkers = new HashSet<>(Arrays.asList(resource.findMarkers(LS_DIAGNOSTIC_MARKER_TYPE, false, IResource.DEPTH_ONE)));
-					for (Diagnostic diagnostic : diagnostics.getDiagnostics()) {
-						IMarker associatedMarker = getExistingMarkerFor(resource, diagnostic, remainingMarkers);
-						if (associatedMarker == null) {
-							createMarkerForDiagnostic(resource, diagnostic);
-						} else {
-							remainingMarkers.remove(associatedMarker);
-						}
-					}
-					for (IMarker marker : remainingMarkers) {
-						marker.delete();
-					}
-				} catch (CoreException ex) {
-					ex.printStackTrace(); // TODO
-				}
-			}
-
-			private void createMarkerForDiagnostic(IResource resource, Diagnostic diagnostic) {
-				try {
-					IMarker marker = resource.createMarker(LS_DIAGNOSTIC_MARKER_TYPE);
-					marker.setAttribute(IMarker.MESSAGE, diagnostic.getMessage());
-					marker.setAttribute(IMarker.SEVERITY, LanguageServerEclipseUtils.toEclipseMarkerSeverity(diagnostic.getSeverity())); // TODO mapping Eclipse <-> LS severity
-					if (resource.getType() == IResource.FILE) {
-						IFile file = (IFile)resource;
-						IDocument document = FileBuffers.getTextFileBufferManager().getTextFileBuffer(file.getFullPath(), LocationKind.IFILE).getDocument();
-						marker.setAttribute(IMarker.CHAR_START, LanguageServerEclipseUtils.toOffset(diagnostic.getRange().getStart(), document));
-						marker.setAttribute(IMarker.CHAR_END, LanguageServerEclipseUtils.toOffset(diagnostic.getRange().getEnd(), document));
-						marker.setAttribute(IMarker.LINE_NUMBER, diagnostic.getRange().getStart().getLine());
-					}
-				} catch (Exception ex) {
-					ex.printStackTrace(); // TODO
-				}
-			}
-
-			private IMarker getExistingMarkerFor(IResource resource, Diagnostic diagnostic, Set<IMarker> remainingMarkers) {
-				ITextFileBuffer textFileBuffer = FileBuffers.getTextFileBufferManager().getTextFileBuffer(resource.getFullPath(), LocationKind.IFILE);
-				if (textFileBuffer == null) {
-					return null;
-				}
-				IDocument document = textFileBuffer.getDocument();
-				for (IMarker marker : remainingMarkers) {
-					int startOffset = marker.getAttribute(IMarker.CHAR_START, -1);
-					int endOffset = marker.getAttribute(IMarker.CHAR_END, -1);
-					try {
-						if (marker.getResource().getProjectRelativePath().toString().equals(diagnostic.getSource()) 
-								&& LanguageServerEclipseUtils.toOffset(diagnostic.getRange().getStart(), document) == startOffset + 1
-								&& LanguageServerEclipseUtils.toOffset(diagnostic.getRange().getEnd(), document) == endOffset + 1
-								&& Objects.equal(marker.getAttribute(IMarker.MESSAGE), diagnostic.getMessage())) {
-							return marker;
-						}
-					} catch (Exception e) {
-						e.printStackTrace(); // TODO
-					}
-				}
-				return null;
-			}
-		});
+		this.languageClient.getTextDocumentService().onPublishDiagnostics(new LSPDiagnosticsToMarkers(this.project));
 	}
 
 	private void stop() {

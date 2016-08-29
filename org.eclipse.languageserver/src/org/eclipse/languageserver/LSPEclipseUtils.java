@@ -29,7 +29,7 @@ import io.typefox.lsapi.impl.TextDocumentPositionParamsImpl;
 /**
  * Some utility methods to convert between Eclipse and LS-API types
  */
-public class LanguageServerEclipseUtils {
+public class LSPEclipseUtils {
 
 	public static PositionImpl toPosition(int offset, IDocument document) throws BadLocationException {
 		PositionImpl res = new PositionImpl();

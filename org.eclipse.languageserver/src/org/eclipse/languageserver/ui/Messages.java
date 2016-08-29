@@ -22,6 +22,8 @@ public class Messages extends NLS {
 	public static String NewContentTypeLSPLaunchDialog_associateContentType;
 	public static String NewContentTypeLSPLaunchDialog_withLSPLaunch;
 	public static String PreferencesPage_Intro;
+	public static String codeActions_description;
+	public static String codeActions_label;
 
 	static {
 		NLS.initializeMessages(Messages.class.getPackage().getName() + ".messages", Messages.class);

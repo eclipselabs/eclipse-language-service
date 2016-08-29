@@ -31,7 +31,7 @@ import org.eclipse.jface.text.ITextViewer;
 import org.eclipse.jface.text.TextSelection;
 import org.eclipse.jface.text.hyperlink.AbstractHyperlinkDetector;
 import org.eclipse.jface.text.hyperlink.IHyperlink;
-import org.eclipse.languageserver.LanguageServerEclipseUtils;
+import org.eclipse.languageserver.LSPEclipseUtils;
 import org.eclipse.languageserver.LanguageServiceAccessor;
 import org.eclipse.languageserver.ui.Messages;
 import org.eclipse.ui.IEditorPart;
@@ -76,7 +76,7 @@ public class OpenDeclarationHyperlinkDetector extends AbstractHyperlinkDetector 
 		public void open() {
 			IEditorPart part = null;
 			IDocument targetDocument = null;
-			IResource targetResource = LanguageServerEclipseUtils.findResourceFor(this.location.getUri());
+			IResource targetResource = LSPEclipseUtils.findResourceFor(this.location.getUri());
 			try {
 				if (targetResource != null && targetResource.getType() == IResource.FILE) {
 					part = IDE.openEditor(PlatformUI.getWorkbench().getActiveWorkbenchWindow().getActivePage(), (IFile)targetResource);
@@ -92,8 +92,8 @@ public class OpenDeclarationHyperlinkDetector extends AbstractHyperlinkDetector 
 			try {
 				if (part instanceof AbstractTextEditor) {
 					AbstractTextEditor editor = (AbstractTextEditor) part;
-					int offset = LanguageServerEclipseUtils.toOffset(location.getRange().getStart(), targetDocument);
-					int endOffset = LanguageServerEclipseUtils.toOffset(location.getRange().getEnd(), targetDocument);
+					int offset = LSPEclipseUtils.toOffset(location.getRange().getStart(), targetDocument);
+					int endOffset = LSPEclipseUtils.toOffset(location.getRange().getEnd(), targetDocument);
 					editor.getSelectionProvider().setSelection(new TextSelection(offset, endOffset > offset ? endOffset - offset : 0));
 				}
 			} catch (BadLocationException e) {
@@ -118,7 +118,7 @@ public class OpenDeclarationHyperlinkDetector extends AbstractHyperlinkDetector 
 				fileUri = location.toFile().toURI();
 			}
 			if (languageClient != null) {
-				CompletableFuture<List<? extends Location>> documentHighlight = languageClient.getTextDocumentService().definition(LanguageServerEclipseUtils.toTextDocumentPosistionParams(fileUri, region.getOffset(), textViewer.getDocument()));
+				CompletableFuture<List<? extends Location>> documentHighlight = languageClient.getTextDocumentService().definition(LSPEclipseUtils.toTextDocumentPosistionParams(fileUri, region.getOffset(), textViewer.getDocument()));
 				List<? extends Location> response = documentHighlight.get(2, TimeUnit.SECONDS);
 				if (response.isEmpty()) {
 					return null;

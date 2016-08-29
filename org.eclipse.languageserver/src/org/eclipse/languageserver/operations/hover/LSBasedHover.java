@@ -22,7 +22,7 @@ import org.eclipse.jface.text.IRegion;
 import org.eclipse.jface.text.ITextHover;
 import org.eclipse.jface.text.ITextViewer;
 import org.eclipse.jface.text.Region;
-import org.eclipse.languageserver.LanguageServerEclipseUtils;
+import org.eclipse.languageserver.LSPEclipseUtils;
 import org.eclipse.languageserver.LanguageServiceAccessor;
 
 import io.typefox.lsapi.Hover;
@@ -49,7 +49,7 @@ public class LSBasedHover implements ITextHover {
 				fileUri = location.toFile().toURI();
 			}
 			if (languageClient != null) {
-				CompletableFuture<Hover> documentHighlight = languageClient.getTextDocumentService().hover(LanguageServerEclipseUtils.toTextDocumentPosistionParams(fileUri, hoverRegion.getOffset(), textViewer.getDocument()));
+				CompletableFuture<Hover> documentHighlight = languageClient.getTextDocumentService().hover(LSPEclipseUtils.toTextDocumentPosistionParams(fileUri, hoverRegion.getOffset(), textViewer.getDocument()));
 				StringBuilder res = new StringBuilder();
 				for (MarkedString string : documentHighlight.get().getContents()) {
 					res.append(string.getValue());
@@ -78,10 +78,10 @@ public class LSBasedHover implements ITextHover {
 				fileUri = location.toFile().toURI();
 			}
 			if (languageClient != null) {
-				CompletableFuture<Hover> hover = languageClient.getTextDocumentService().hover(LanguageServerEclipseUtils.toTextDocumentPosistionParams(fileUri, offset, textViewer.getDocument()));
+				CompletableFuture<Hover> hover = languageClient.getTextDocumentService().hover(LSPEclipseUtils.toTextDocumentPosistionParams(fileUri, offset, textViewer.getDocument()));
 				Range range = hover.get(400, TimeUnit.MILLISECONDS).getRange();
-				int rangeOffset = LanguageServerEclipseUtils.toOffset(range.getStart(), textViewer.getDocument());
-				return new Region(rangeOffset, LanguageServerEclipseUtils.toOffset(range.getEnd(), textViewer.getDocument()) - rangeOffset);
+				int rangeOffset = LSPEclipseUtils.toOffset(range.getStart(), textViewer.getDocument());
+				return new Region(rangeOffset, LSPEclipseUtils.toOffset(range.getEnd(), textViewer.getDocument()) - rangeOffset);
 			}
 		} catch (Exception ex) {
 			ex.printStackTrace(); // TODO

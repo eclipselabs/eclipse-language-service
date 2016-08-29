@@ -41,6 +41,13 @@
       </super>
    </extension>
    <extension
+         point="org.eclipse.ui.ide.markerResolution">
+      <markerResolutionGenerator
+            class="org.eclipse.languageserver.operations.codeactions.LSPCodeActionMarkerResolution"
+            markerType="org.eclipse.languageserver.diagnostic">
+      </markerResolutionGenerator>
+   </extension>
+   <extension
          point="org.eclipse.core.contenttype.contentTypes">
       <content-type
             base-type="org.eclipse.core.runtime.text"
@@ -62,10 +69,41 @@
       </hyperlinkDetector>
    </extension>
    <extension
+         point="org.eclipse.ui.commands">
+      <command
+            id="org.eclipse.languageserver.rename"
+            name="Rename">
+      </command>
+   </extension>
+   <extension
          point="org.eclipse.ui.handlers">
       <handler
             class="org.eclipse.languageserver.operations.references.LSFindReferences"
             commandId="org.eclipse.ui.genericeditor.findReferences">
+         <enabledWhen>
+            <and>
+               <with
+                     variable="selection">
+                  <instanceof
+                        value="org.eclipse.jface.text.ITextSelection">
+                  </instanceof>
+               </with>
+            </and>
+         </enabledWhen>
+      </handler>
+      <handler
+            class="org.eclipse.languageserver.operations.rename.LSPRenameHandler"
+            commandId="org.eclipse.ui.edit.rename">
+         <enabledWhen>
+            <and>
+               <with
+                     variable="selection">
+                  <instanceof
+                        value="org.eclipse.jface.text.ITextSelection">
+                  </instanceof>
+               </with>
+            </and>
+         </enabledWhen>
       </handler>
    </extension>
    <extension
@@ -96,6 +134,30 @@
             id="org.eclipse.languageserver.preferences"
             name="Language Servers">
       </page>
+   </extension>
+   <extension
+         point="org.eclipse.ui.menus">
+      <menuContribution
+            allPopups="true"
+            locationURI="popup:#TextEditorContext?after=additions">
+         <menu
+               label="Refactorings">
+            <command
+                  commandId="org.eclipse.ui.edit.rename"
+                  style="push">
+            </command>
+            <separator
+                  name="org.eclipse.languageserver.refactoringseparator">
+            </separator>
+         </menu>
+         <menu
+               label="Code Lens">
+            <dynamic
+                  class="org.eclipse.languageserver.operations.codelens.LSPCodeLensMenu"
+                  id="org.eclipse.languageserver.codelens">
+            </dynamic>
+         </menu>
+      </menuContribution>
    </extension>
 
 </plugin>
