@@ -71,8 +71,8 @@
    <extension
          point="org.eclipse.ui.commands">
       <command
-            id="org.eclipse.languageserver.rename"
-            name="Rename">
+            id="org.eclipse.languageserver.format"
+            name="Format">
       </command>
    </extension>
    <extension
@@ -94,6 +94,20 @@
       <handler
             class="org.eclipse.languageserver.operations.rename.LSPRenameHandler"
             commandId="org.eclipse.ui.edit.rename">
+         <enabledWhen>
+            <and>
+               <with
+                     variable="selection">
+                  <instanceof
+                        value="org.eclipse.jface.text.ITextSelection">
+                  </instanceof>
+               </with>
+            </and>
+         </enabledWhen>
+      </handler>
+      <handler
+            class="org.eclipse.languageserver.operations.format.LSPFormatHandler"
+            commandId="org.eclipse.languageserver.format">
          <enabledWhen>
             <and>
                <with
@@ -150,11 +164,22 @@
                   name="org.eclipse.languageserver.refactoringseparator">
             </separator>
          </menu>
+         <command
+               commandId="org.eclipse.languageserver.format"
+               style="push">
+         </command>
          <menu
                label="Code Lens">
             <dynamic
                   class="org.eclipse.languageserver.operations.codelens.LSPCodeLensMenu"
                   id="org.eclipse.languageserver.codelens">
+            </dynamic>
+         </menu>
+         <menu
+               label="Code Actions">
+            <dynamic
+                  class="org.eclipse.languageserver.operations.codeactions.LSPCodeActionsMenu"
+                  id="org.eclipse.languageserver.codeActions">
             </dynamic>
          </menu>
       </menuContribution>
