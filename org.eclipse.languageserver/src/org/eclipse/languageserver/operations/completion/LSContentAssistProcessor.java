@@ -61,26 +61,43 @@ public class LSContentAssistProcessor implements IContentAssistProcessor {
 				fileUri = ((IURIEditorInput)input).getURI();
 				// TODO server
 			}
-	
+		} catch (Exception ex) {
+			ex.printStackTrace();
+			return res;
+		}
+		
+		CompletableFuture<CompletionList> request = null;
+		try {
 			if (languageClient != null) {
 				IDocument document = viewer.getDocument();
 				TextDocumentPositionParamsImpl param = LSPEclipseUtils.toTextDocumentPosistionParams(fileUri, offset, document);
-				CompletableFuture<CompletionList> request = languageClient.getTextDocumentService().completion(param);
-				List<ICompletionProposal> proposals = new ArrayList<>();
-				for (CompletionItem item : request.get(4, TimeUnit.SECONDS).getItems()) {
-					String text = item.getInsertText();
-					if (text == null) {
-						text = item.getSortText();
-					}
-					// TODO also consider item.getTextEdit
-					// TODO add description and so on
-					proposals.add(new LSCompletionProposal(item, offset));
-				}
-				res = proposals.toArray(new ICompletionProposal[proposals.size()]);
+				request = languageClient.getTextDocumentService().completion(param);
+				CompletionList completionList = request.get(5, TimeUnit.SECONDS);
+				res = toProposals(offset, completionList);
 			}
 		} catch (Exception ex) {
 			ex.printStackTrace(); //TODO
+			res = toProposals(offset, request.getNow(null));
 		}
+		return res;
+	}
+
+	private ICompletionProposal[] toProposals(int offset, CompletionList completionList) {
+		if (completionList == null) {
+			return new ICompletionProposal[0];
+		}
+		ICompletionProposal[] res;
+		List<ICompletionProposal> proposals = new ArrayList<>();
+		for (CompletionItem item : completionList.getItems()) {
+			String text = item.getInsertText();
+			if (text == null) {
+				text = item.getSortText();
+			}
+			// TODO also consider item.getTextEdit
+			// TODO add description and so on
+			proposals.add(new LSCompletionProposal(item, offset));
+		}
+		res = proposals.toArray(new ICompletionProposal[proposals.size()]);
 		return res;
 	}
 

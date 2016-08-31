@@ -12,7 +12,9 @@ package org.eclipse.languageserver.operations.hover;
 
 import java.net.URI;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 import org.eclipse.core.filebuffers.FileBuffers;
 import org.eclipse.core.resources.IFile;
@@ -32,39 +34,33 @@ import io.typefox.lsapi.services.transport.client.LanguageClientEndpoint;
 
 public class LSBasedHover implements ITextHover {
 
+	private CompletableFuture<Hover> hover;
+	private IRegion lastRegion;
+	private ITextViewer textViewer;
+
 	public LSBasedHover() {
 	}
 
 	@Override
 	public String getHoverInfo(ITextViewer textViewer, IRegion hoverRegion) {
-		IPath location = FileBuffers.getTextFileBufferManager().getTextFileBuffer(textViewer.getDocument()).getLocation();
-		IFile iFile = ResourcesPlugin.getWorkspace().getRoot().getFile(location);
-		LanguageClientEndpoint languageClient = null;
-		URI fileUri = null;
-		try {
-			if (iFile.exists()) {
-				languageClient = LanguageServiceAccessor.getLanguageServer(iFile, textViewer.getDocument());
-				fileUri = iFile.getLocationURI();
-			} else {
-				fileUri = location.toFile().toURI();
-			}
-			if (languageClient != null) {
-				CompletableFuture<Hover> documentHighlight = languageClient.getTextDocumentService().hover(LSPEclipseUtils.toTextDocumentPosistionParams(fileUri, hoverRegion.getOffset(), textViewer.getDocument()));
-				StringBuilder res = new StringBuilder();
-				for (MarkedString string : documentHighlight.get().getContents()) {
+		if (hoverRegion.equals(this.lastRegion) && textViewer.equals(this.textViewer)) {
+			StringBuilder res = new StringBuilder();
+			try {
+				for (MarkedString string : this.hover.get(500, TimeUnit.MILLISECONDS).getContents()) {
 					res.append(string.getValue());
 					res.append('\n');
 				}
-				return res.toString();
+			} catch (InterruptedException | ExecutionException | TimeoutException e) {
+				e.printStackTrace();
 			}
-		} catch (Exception ex) {
-			ex.printStackTrace(); // TODO
+			return res.toString();
 		}
 		return null;
 	}
 
 	@Override
 	public IRegion getHoverRegion(ITextViewer textViewer, int offset) {
+		IRegion res = null;
 		// TODO: factorize!
 		IPath location = FileBuffers.getTextFileBufferManager().getTextFileBuffer(textViewer.getDocument()).getLocation();
 		IFile iFile = ResourcesPlugin.getWorkspace().getRoot().getFile(location);
@@ -78,15 +74,18 @@ public class LSBasedHover implements ITextHover {
 				fileUri = location.toFile().toURI();
 			}
 			if (languageClient != null) {
-				CompletableFuture<Hover> hover = languageClient.getTextDocumentService().hover(LSPEclipseUtils.toTextDocumentPosistionParams(fileUri, offset, textViewer.getDocument()));
-				Range range = hover.get(400, TimeUnit.MILLISECONDS).getRange();
+				hover = languageClient.getTextDocumentService().hover(LSPEclipseUtils.toTextDocumentPosistionParams(fileUri, offset, textViewer.getDocument()));
+				Range range = hover.get(800, TimeUnit.MILLISECONDS).getRange();
 				int rangeOffset = LSPEclipseUtils.toOffset(range.getStart(), textViewer.getDocument());
-				return new Region(rangeOffset, LSPEclipseUtils.toOffset(range.getEnd(), textViewer.getDocument()) - rangeOffset);
+				res = new Region(rangeOffset, LSPEclipseUtils.toOffset(range.getEnd(), textViewer.getDocument()) - rangeOffset);
 			}
 		} catch (Exception ex) {
 			ex.printStackTrace(); // TODO
+			res = new Region(offset, 1); 
 		}
-		return null;
+		this.lastRegion = res;
+		this.textViewer = textViewer;
+		return res;
 	}
 
 }

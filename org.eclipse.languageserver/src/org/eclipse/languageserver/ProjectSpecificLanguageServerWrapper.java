@@ -19,7 +19,6 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.function.Consumer;
 
 import org.eclipse.core.resources.IFile;
 import org.eclipse.core.resources.IProject;
@@ -35,7 +34,6 @@ import org.eclipse.jface.text.IDocumentListener;
 import org.eclipse.languageserver.operations.diagnostics.LSPDiagnosticsToMarkers;
 import org.eclipse.swt.widgets.Display;
 import org.eclipse.ui.internal.progress.ProgressMonitorFocusJobDialog;
-import org.eclipse.xtext.xbase.lib.Procedures.Procedure2;
 
 import io.typefox.lsapi.InitializeResult;
 import io.typefox.lsapi.Message;
@@ -46,13 +44,14 @@ import io.typefox.lsapi.impl.InitializeParamsImpl;
 import io.typefox.lsapi.impl.TextDocumentContentChangeEventImpl;
 import io.typefox.lsapi.impl.TextDocumentItemImpl;
 import io.typefox.lsapi.impl.VersionedTextDocumentIdentifierImpl;
+import io.typefox.lsapi.services.json.InvalidMessageException;
 import io.typefox.lsapi.services.json.MessageJsonHandler;
 import io.typefox.lsapi.services.json.StreamMessageReader;
 import io.typefox.lsapi.services.json.StreamMessageWriter;
 import io.typefox.lsapi.services.transport.client.LanguageClientEndpoint;
 import io.typefox.lsapi.services.transport.io.ConcurrentMessageReader;
-import io.typefox.lsapi.services.transport.io.MessageReader;
 import io.typefox.lsapi.services.transport.io.MessageWriter;
+import io.typefox.lsapi.services.transport.trace.MessageTracer;
 
 /**
  * Wraps instantiation, initialization of project-specific instance of the
@@ -115,42 +114,50 @@ public class ProjectSpecificLanguageServerWrapper {
 		try {
 			ExecutorService executorService = Executors.newCachedThreadPool();
 			this.languageClient = new LanguageClientEndpoint(executorService);
+			this.languageClient.setMessageTracer(new MessageTracer() {
+				@Override
+				public void onWrite(Message message, String json) {
+					if (json.contains("telemetry/event")) {
+						return;
+					}
+					System.out.println("WRITE: ");
+					System.out.println(json);
+					System.out.println(message);
+					System.out.println("");
+				}
+				
+				@Override
+				public void onRead(Message message, String json) {
+					if (json.contains("telemetry/event")) {
+						return;
+					}
+					System.out.println("READ: ");
+					System.out.println(json);
+					System.out.println(message);
+					System.out.println("");
+				}
+				
+				@Override
+				public void onError(String message, Throwable throwable) {
+					System.err.println("ERR:");
+					System.err.println("message: " + message);
+					System.err.println("ex: " );
+					if (throwable != null) {
+						throwable.printStackTrace(System.err);
+					}
+					Throwable cause = throwable.getCause();
+					if (cause != null && cause instanceof InvalidMessageException) {
+						//System.err.println("json: " + ((InvalidMessageException)cause).getJson());
+					}
+				}
+			});
 			this.lspStreamProvider.start();
 			MessageJsonHandler jsonHandler = new MessageJsonHandler();
 			jsonHandler.setMethodResolver(this.languageClient);
-			MessageReader reader = new ConcurrentMessageReader(new StreamMessageReader(this.lspStreamProvider.getInputStream(), jsonHandler), executorService);
+			StreamMessageReader baseMessageReader = new StreamMessageReader(this.lspStreamProvider.getInputStream(), jsonHandler);
+			ConcurrentMessageReader multiThreadReader = new ConcurrentMessageReader(baseMessageReader, executorService);
 			MessageWriter writer = new StreamMessageWriter(this.lspStreamProvider.getOutputStream(), jsonHandler);
-			reader.setOnError(new Consumer<Throwable>() {
-				@Override
-				public void accept(Throwable t) {
-					System.err.println("Logged error: ");
-					t.printStackTrace(System.err);
-					// most likely an issue that requires a restart
-					stop();
-				}
-			});
-			reader.setOnRead(new Procedure2<Message, String>() {
-				@Override
-				public void apply(Message p1, String p2) {
-					System.err.println("IN: " + p1.getJsonrpc() + "\n" + p2);
-				}
-			});
-			writer.setOnWrite(new Procedure2<Message, String>() {
-				@Override
-				public void apply(Message p1, String p2) {
-					System.err.println("OUT: " + p1.getJsonrpc() + "\n" + p2);
-				}
-			});
-			writer.setOnError(new Consumer<Throwable>() {
-				@Override
-				public void accept(Throwable t) {
-					System.err.println("Logged error: ");
-					t.printStackTrace(System.err);
-					// most likely an issue that requires a restart
-					stop();
-				}
-			});
-			languageClient.connect(reader, writer);
+			languageClient.connect(multiThreadReader, writer);
 			this.initializeJob = new Job("Initialize language server") {
 				protected IStatus run(IProgressMonitor monitor) {
 					InitializeParamsImpl initParams = new InitializeParamsImpl();
@@ -223,6 +230,11 @@ public class ProjectSpecificLanguageServerWrapper {
 		textDocument.setText(document.get());
 		textDocument.setLanguageId(file.getFileExtension());
 		open.setTextDocument(textDocument);
+		try {
+			this.initializeJob.join();
+		} catch (InterruptedException e) {
+			e.printStackTrace();
+		}
 		this.languageClient.getTextDocumentService().didOpen(open);
 		
 		DocumentChangeListenenr listener = new DocumentChangeListenenr(file.getLocationURI());
