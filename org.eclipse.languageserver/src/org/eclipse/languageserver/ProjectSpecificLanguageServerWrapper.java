@@ -11,6 +11,7 @@
 package org.eclipse.languageserver;
 
 import java.io.IOException;
+import java.lang.reflect.Type;
 import java.net.URI;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -20,6 +21,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
+import org.apache.commons.logging.Log;
 import org.eclipse.core.resources.IFile;
 import org.eclipse.core.resources.IProject;
 import org.eclipse.core.runtime.IPath;
@@ -35,12 +37,30 @@ import org.eclipse.languageserver.operations.diagnostics.LSPDiagnosticsToMarkers
 import org.eclipse.swt.widgets.Display;
 import org.eclipse.ui.internal.progress.ProgressMonitorFocusJobDialog;
 
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+import com.google.gson.JsonDeserializationContext;
+import com.google.gson.JsonDeserializer;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParseException;
+import com.google.gson.JsonSyntaxException;
+import com.google.gson.TypeAdapter;
+import com.google.gson.TypeAdapterFactory;
+import com.google.gson.reflect.TypeToken;
+import com.google.gson.stream.JsonReader;
+import com.google.gson.stream.JsonToken;
+import com.google.gson.stream.JsonWriter;
+
 import io.typefox.lsapi.InitializeResult;
+import io.typefox.lsapi.MarkedString;
 import io.typefox.lsapi.Message;
+import io.typefox.lsapi.builders.MarkedStringBuilder;
 import io.typefox.lsapi.impl.ClientCapabilitiesImpl;
 import io.typefox.lsapi.impl.DidChangeTextDocumentParamsImpl;
 import io.typefox.lsapi.impl.DidOpenTextDocumentParamsImpl;
 import io.typefox.lsapi.impl.InitializeParamsImpl;
+import io.typefox.lsapi.impl.MarkedStringImpl;
 import io.typefox.lsapi.impl.TextDocumentContentChangeEventImpl;
 import io.typefox.lsapi.impl.TextDocumentItemImpl;
 import io.typefox.lsapi.impl.VersionedTextDocumentIdentifierImpl;
@@ -145,14 +165,40 @@ public class ProjectSpecificLanguageServerWrapper {
 					if (throwable != null) {
 						throwable.printStackTrace(System.err);
 					}
-					Throwable cause = throwable.getCause();
-					if (cause != null && cause instanceof InvalidMessageException) {
-						//System.err.println("json: " + ((InvalidMessageException)cause).getJson());
+					if (throwable instanceof InvalidMessageException) {
+						System.err.println("json: " + ((InvalidMessageException)throwable).getJson());
 					}
 				}
 			});
 			this.lspStreamProvider.start();
-			MessageJsonHandler jsonHandler = new MessageJsonHandler();
+			GsonBuilder gsonBuilder = MessageJsonHandler.getDefaultGsonBuilder();
+			// workaround for https://github.com/TypeFox/ls-api/issues/23
+			TypeAdapterFactory stringToMarkedStringAdapterFactory = new TypeAdapterFactory() {
+				@Override
+				public <T> TypeAdapter<T> create(Gson gson, TypeToken<T> typeToken) {
+					if (typeToken.getType() == MarkedStringImpl.class) {
+						final TypeAdapter<MarkedStringImpl> delegate = gson.getDelegateAdapter(this, (TypeToken<MarkedStringImpl>)typeToken);
+					 	return (TypeAdapter<T>)new TypeAdapter<MarkedStringImpl>() {
+					 		public void write(JsonWriter out, MarkedStringImpl value) throws IOException {
+					 			delegate.write(out, value);
+					 		}
+
+					 		public MarkedStringImpl read(JsonReader in) throws IOException {
+					 			if (JsonToken.STRING.equals(in.peek())) {
+					 				MarkedStringImpl res = (MarkedStringImpl) new MarkedStringBuilder().value(in.nextString()).build();
+					 				return res;
+					 			} else {
+					 				return delegate.read(in);
+					 			}
+						    };
+					 	};
+					} else {
+						return null;
+					}
+				}
+			};
+			gsonBuilder.registerTypeAdapterFactory(stringToMarkedStringAdapterFactory);
+			MessageJsonHandler jsonHandler = new MessageJsonHandler(gsonBuilder.create());
 			jsonHandler.setMethodResolver(this.languageClient);
 			StreamMessageReader baseMessageReader = new StreamMessageReader(this.lspStreamProvider.getInputStream(), jsonHandler);
 			ConcurrentMessageReader multiThreadReader = new ConcurrentMessageReader(baseMessageReader, executorService);
