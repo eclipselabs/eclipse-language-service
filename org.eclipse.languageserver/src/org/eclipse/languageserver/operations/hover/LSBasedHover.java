@@ -60,7 +60,7 @@ public class LSBasedHover implements ITextHover {
 
 	@Override
 	public IRegion getHoverRegion(ITextViewer textViewer, int offset) {
-		IRegion res = null;
+		IRegion res = new Region(offset, 0);
 		// TODO: factorize!
 		IPath location = FileBuffers.getTextFileBufferManager().getTextFileBuffer(textViewer.getDocument()).getLocation();
 		IFile iFile = ResourcesPlugin.getWorkspace().getRoot().getFile(location);
@@ -76,8 +76,10 @@ public class LSBasedHover implements ITextHover {
 			if (languageClient != null) {
 				hover = languageClient.getTextDocumentService().hover(LSPEclipseUtils.toTextDocumentPosistionParams(fileUri, offset, textViewer.getDocument()));
 				Range range = hover.get(800, TimeUnit.MILLISECONDS).getRange();
-				int rangeOffset = LSPEclipseUtils.toOffset(range.getStart(), textViewer.getDocument());
-				res = new Region(rangeOffset, LSPEclipseUtils.toOffset(range.getEnd(), textViewer.getDocument()) - rangeOffset);
+				if (range != null) {
+					int rangeOffset = LSPEclipseUtils.toOffset(range.getStart(), textViewer.getDocument());
+					res = new Region(rangeOffset, LSPEclipseUtils.toOffset(range.getEnd(), textViewer.getDocument()) - rangeOffset);
+				}
 			}
 		} catch (Exception ex) {
 			ex.printStackTrace(); // TODO
