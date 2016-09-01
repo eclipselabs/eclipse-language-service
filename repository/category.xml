@@ -20,5 +20,8 @@
    </bundle>
    <bundle id="com.google.gson">
      <category name="deps"/>
-   </bundle> 
+   </bundle>
+   <bundle id="org.eclipse.ui.genericeditor">
+     <category name="deps"/>
+   </bundle>  
 </site>

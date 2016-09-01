@@ -18,15 +18,9 @@ import org.eclipse.core.runtime.content.IContentType;
 import org.eclipse.core.runtime.content.IContentTypeManager;
 import org.eclipse.debug.core.DebugPlugin;
 import org.eclipse.debug.core.ILaunchConfiguration;
-import org.eclipse.debug.internal.ui.DebugUIPlugin;
-import org.eclipse.debug.internal.ui.launchConfigurations.LaunchConfigurationFilteredTree;
 import org.eclipse.debug.internal.ui.launchConfigurations.LaunchConfigurationTreeContentProvider;
-import org.eclipse.debug.internal.ui.launchConfigurations.LaunchConfigurationViewer;
-import org.eclipse.debug.internal.ui.launchConfigurations.LaunchGroupExtension;
 import org.eclipse.debug.ui.DebugUITools;
-import org.eclipse.debug.ui.IDebugUIConstants;
 import org.eclipse.jface.dialogs.Dialog;
-import org.eclipse.jface.dialogs.IDialogConstants;
 import org.eclipse.jface.util.Util;
 import org.eclipse.jface.viewers.DecoratingLabelProvider;
 import org.eclipse.jface.viewers.ISelectionChangedListener;
@@ -38,12 +32,14 @@ import org.eclipse.jface.viewers.TreeViewer;
 import org.eclipse.jface.viewers.Viewer;
 import org.eclipse.jface.viewers.ViewerComparator;
 import org.eclipse.swt.SWT;
+import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Control;
 import org.eclipse.swt.widgets.Label;
 import org.eclipse.swt.widgets.Shell;
 import org.eclipse.ui.PlatformUI;
+import org.eclipse.ui.dialogs.FilteredTree;
 import org.eclipse.ui.dialogs.PatternFilter;
 
 public class NewContentTypeLSPLaunchDialog extends Dialog {
@@ -116,7 +112,9 @@ public class NewContentTypeLSPLaunchDialog extends Dialog {
 		new Label(res, SWT.NONE).setText(Messages.NewContentTypeLSPLaunchDialog_associateContentType);
 		new Label(res, SWT.NONE).setText(Messages.NewContentTypeLSPLaunchDialog_withLSPLaunch);
 		// copied from ContentTypesPreferencePage
-		TreeViewer contentTypesViewer = new TreeViewer(res);
+		FilteredTree contentTypesFilteredTree = new FilteredTree(res, SWT.BORDER, new PatternFilter(), true);
+		TreeViewer contentTypesViewer = contentTypesFilteredTree.getViewer();
+		contentTypesFilteredTree.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, true));
 		contentTypesViewer.setContentProvider(new ContentTypesContentProvider());
 		contentTypesViewer.setLabelProvider(new ContentTypesLabelProvider());
 		contentTypesViewer.setComparator(new ViewerComparator());
@@ -136,7 +134,9 @@ public class NewContentTypeLSPLaunchDialog extends Dialog {
 			}
 		});
 		// copied from LaunchConfigurationDialog : todo use LaunchConfigurationFilteredTree
-		TreeViewer launchConfigViewer = new TreeViewer(res);
+		FilteredTree launchersFilteredTree = new FilteredTree(res, SWT.BORDER, new PatternFilter(), true);
+		TreeViewer launchConfigViewer = launchersFilteredTree.getViewer();
+		launchersFilteredTree.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, true));
 		launchConfigViewer.setLabelProvider(new DecoratingLabelProvider(DebugUITools.newDebugModelPresentation(), PlatformUI.getWorkbench().getDecoratorManager().getLabelDecorator()));
 		launchConfigViewer.setContentProvider(new LaunchConfigurationTreeContentProvider(null, getShell()));
 		launchConfigViewer.setInput(DebugPlugin.getDefault().getLaunchManager());

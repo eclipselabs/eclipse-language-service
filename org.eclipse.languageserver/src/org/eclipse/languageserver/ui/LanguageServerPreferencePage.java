@@ -67,8 +67,10 @@ public class LanguageServerPreferencePage extends PreferencePage implements IWor
 		Composite res = new Composite(parent, SWT.NONE);
 		res.setLayout(new GridLayout(2, false));
 		Label intro = new Label(res, SWT.WRAP);
-		intro.setLayoutData(new GridData(SWT.FILL, SWT.FILL, false, false, 2, 1));
-		//intro.setText(Messages.PreferencesPage_Intro);
+		GridData introLayoutData = new GridData(SWT.FILL, SWT.TOP, true, false, 2, 1);
+		introLayoutData.widthHint = 400;
+		intro.setLayoutData(introLayoutData);
+		intro.setText(Messages.PreferencesPage_Intro);
 		viewer = new TableViewer(res);
 		viewer.getControl().setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, true));
 		viewer.setContentProvider(new ArrayContentProvider());
