@@ -45,6 +45,7 @@ import io.typefox.lsapi.CodeActionParams;
 import io.typefox.lsapi.Command;
 import io.typefox.lsapi.Diagnostic;
 import io.typefox.lsapi.Range;
+import io.typefox.lsapi.ServerCapabilities;
 import io.typefox.lsapi.builders.CodeActionContextBuilder;
 import io.typefox.lsapi.builders.CodeActionParamsBuilder;
 import io.typefox.lsapi.builders.RangeBuilder;
@@ -69,7 +70,7 @@ public class LSPCodeActionsMenu extends ContributionItem implements IWorkbenchCo
 					IFile file = ((IFileEditorInput) input).getFile();
 					fileUri = file.getLocation().toFile().toURI();
 					document = ITextFileBufferManager.DEFAULT.getTextFileBuffer(file.getFullPath(),	LocationKind.IFILE).getDocument();
-					languageClient = LanguageServiceAccessor.getLanguageServer(file, document);
+					languageClient = LanguageServiceAccessor.getLanguageServer(file, document, ServerCapabilities::isCodeActionProvider);
 				} else if (input instanceof IURIEditorInput) {
 					fileUri = ((IURIEditorInput)input).getURI();
 					document = ITextFileBufferManager.DEFAULT.getTextFileBuffer(new Path(fileUri.getPath()), LocationKind.LOCATION).getDocument();

@@ -34,6 +34,7 @@ import org.eclipse.ui.texteditor.AbstractTextEditor;
 
 import io.typefox.lsapi.CompletionItem;
 import io.typefox.lsapi.CompletionList;
+import io.typefox.lsapi.ServerCapabilities;
 import io.typefox.lsapi.impl.TextDocumentPositionParamsImpl;
 import io.typefox.lsapi.services.transport.client.LanguageClientEndpoint;
 
@@ -56,7 +57,7 @@ public class LSContentAssistProcessor implements IContentAssistProcessor {
 			if (input instanceof IFileEditorInput) { // TODO, also support non resource file
 				IFile file = ((IFileEditorInput) input).getFile();
 				fileUri = file.getLocation().toFile().toURI();
-				languageClient = LanguageServiceAccessor.getLanguageServer(file, viewer.getDocument());
+				languageClient = LanguageServiceAccessor.getLanguageServer(file, viewer.getDocument(), ServerCapabilities::isCodeActionProvider);
 			} else if (input instanceof IURIEditorInput) {
 				fileUri = ((IURIEditorInput)input).getURI();
 				// TODO server

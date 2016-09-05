@@ -14,6 +14,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.function.Predicate;
 
 import org.eclipse.core.resources.IFile;
 import org.eclipse.core.resources.IProject;
@@ -22,6 +23,7 @@ import org.eclipse.core.runtime.Platform;
 import org.eclipse.core.runtime.content.IContentType;
 import org.eclipse.jface.text.IDocument;
 
+import io.typefox.lsapi.ServerCapabilities;
 import io.typefox.lsapi.services.transport.client.LanguageClientEndpoint;
 
 /**
@@ -33,7 +35,24 @@ public class LanguageServiceAccessor {
 
 	private static Map<IProject, Map<IContentType, ProjectSpecificLanguageServerWrapper>> projectServers = new HashMap<>();
 
+	public static LanguageClientEndpoint getLanguageServer(IFile file, IDocument document, Predicate<ServerCapabilities> request) throws IOException {
+		ProjectSpecificLanguageServerWrapper wrapper = getLSWrapper(file);
+		if (wrapper != null && (request == null
+				|| wrapper.getServerCapabilities() == null /* null check is workaround for https://github.com/TypeFox/ls-api/issues/47 */
+				|| request.test(wrapper.getServerCapabilities())
+			)) {
+			wrapper.connect(file, document);
+			return wrapper.getServer();
+		}			
+		return null;
+	}
+	
+	@Deprecated
 	public static LanguageClientEndpoint getLanguageServer(IFile file, IDocument document) throws IOException {
+		return getLanguageServer(file, document, null);
+	}
+
+	private static ProjectSpecificLanguageServerWrapper getLSWrapper(IFile file) throws IOException {
 		IProject project = file.getProject();
 		if (!projectServers.containsKey(project)) {
 			projectServers.put(project, new HashMap<>());
@@ -64,10 +83,7 @@ public class LanguageServiceAccessor {
 				}
 			}
 		}
-		if (wrapper != null) {
-			wrapper.connect(file, document);
-			return wrapper.getServer();
-		}
-		return null;
+		return wrapper;
 	}
+
 }

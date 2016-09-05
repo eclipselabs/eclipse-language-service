@@ -41,6 +41,7 @@ import org.eclipse.ui.ide.IDE;
 import org.eclipse.ui.texteditor.AbstractTextEditor;
 
 import io.typefox.lsapi.Location;
+import io.typefox.lsapi.ServerCapabilities;
 import io.typefox.lsapi.services.transport.client.LanguageClientEndpoint;
 
 public class OpenDeclarationHyperlinkDetector extends AbstractHyperlinkDetector {
@@ -112,7 +113,7 @@ public class OpenDeclarationHyperlinkDetector extends AbstractHyperlinkDetector 
 		URI fileUri = null;
 		try {
 			if (iFile.exists()) {
-				languageClient = LanguageServiceAccessor.getLanguageServer(iFile, textViewer.getDocument());
+				languageClient = LanguageServiceAccessor.getLanguageServer(iFile, textViewer.getDocument(), ServerCapabilities::isDefinitionProvider);
 				fileUri = iFile.getLocationURI();
 			} else {
 				fileUri = location.toFile().toURI();

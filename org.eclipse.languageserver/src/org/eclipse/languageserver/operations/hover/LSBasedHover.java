@@ -30,6 +30,7 @@ import org.eclipse.languageserver.LanguageServiceAccessor;
 import io.typefox.lsapi.Hover;
 import io.typefox.lsapi.MarkedString;
 import io.typefox.lsapi.Range;
+import io.typefox.lsapi.ServerCapabilities;
 import io.typefox.lsapi.services.transport.client.LanguageClientEndpoint;
 
 public class LSBasedHover implements ITextHover {
@@ -68,7 +69,7 @@ public class LSBasedHover implements ITextHover {
 		URI fileUri = null;
 		try {
 			if (iFile.exists()) {
-				languageClient = LanguageServiceAccessor.getLanguageServer(iFile, textViewer.getDocument());
+				languageClient = LanguageServiceAccessor.getLanguageServer(iFile, textViewer.getDocument(), ServerCapabilities::isHoverProvider);
 				fileUri = iFile.getLocationURI();
 			} else {
 				fileUri = location.toFile().toURI();

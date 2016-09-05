@@ -41,6 +41,7 @@ import org.eclipse.ui.handlers.HandlerUtil;
 import org.eclipse.ui.texteditor.AbstractTextEditor;
 
 import io.typefox.lsapi.Location;
+import io.typefox.lsapi.ServerCapabilities;
 import io.typefox.lsapi.impl.ReferenceContextImpl;
 import io.typefox.lsapi.impl.ReferenceParamsImpl;
 import io.typefox.lsapi.impl.TextDocumentIdentifierImpl;
@@ -68,7 +69,7 @@ public class LSFindReferences extends AbstractHandler implements IHandler {
 					IFile file = ((IFileEditorInput) input).getFile();
 					fileUri = file.getLocation().toFile().toURI();
 					document = ITextFileBufferManager.DEFAULT.getTextFileBuffer(file.getFullPath(),	LocationKind.IFILE).getDocument();
-					languageClient = LanguageServiceAccessor.getLanguageServer(file, document);
+					languageClient = LanguageServiceAccessor.getLanguageServer(file, document, ServerCapabilities::isReferencesProvider);
 				} else if (input instanceof IURIEditorInput) {
 					fileUri = ((IURIEditorInput)input).getURI();
 					document = ITextFileBufferManager.DEFAULT.getTextFileBuffer(new Path(fileUri.getPath()), LocationKind.LOCATION).getDocument();
@@ -113,7 +114,7 @@ public class LSFindReferences extends AbstractHandler implements IHandler {
 					IFile file = ((IFileEditorInput) input).getFile();
 					fileUri = file.getLocation().toFile().toURI();
 					document = ITextFileBufferManager.DEFAULT.getTextFileBuffer(file.getFullPath(),	LocationKind.IFILE).getDocument();
-					languageClient = LanguageServiceAccessor.getLanguageServer(file, document);
+					languageClient = LanguageServiceAccessor.getLanguageServer(file, document, ServerCapabilities::isReferencesProvider);
 				} else if (input instanceof IURIEditorInput) {
 					fileUri = ((IURIEditorInput)input).getURI();
 					document = ITextFileBufferManager.DEFAULT.getTextFileBuffer(new Path(fileUri.getPath()), LocationKind.LOCATION).getDocument();

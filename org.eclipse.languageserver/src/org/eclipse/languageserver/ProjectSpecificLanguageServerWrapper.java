@@ -55,6 +55,7 @@ import com.google.gson.stream.JsonWriter;
 import io.typefox.lsapi.InitializeResult;
 import io.typefox.lsapi.MarkedString;
 import io.typefox.lsapi.Message;
+import io.typefox.lsapi.ServerCapabilities;
 import io.typefox.lsapi.builders.MarkedStringBuilder;
 import io.typefox.lsapi.impl.ClientCapabilitiesImpl;
 import io.typefox.lsapi.impl.DidChangeTextDocumentParamsImpl;
@@ -110,11 +111,12 @@ public class ProjectSpecificLanguageServerWrapper {
 
 	final private StreamConnectionProvider lspStreamProvider;
 	private LanguageClientEndpoint languageClient;
-	IProject project;
+	private IProject project;
 	private Map<IPath, DocumentChangeListenenr> connectedFiles;
 	private Map<IPath, IDocument> documents;
 
 	private Job initializeJob;
+	private InitializeResult initializeResult;
 	
 	public ProjectSpecificLanguageServerWrapper(IProject project, StreamConnectionProvider connection) {
 		this.project = project;
@@ -166,8 +168,8 @@ public class ProjectSpecificLanguageServerWrapper {
 						throwable.printStackTrace(System.err);
 					}
 					if (throwable instanceof InvalidMessageException) {
-						System.err.println("json unavailable, see https://github.com/TypeFox/ls-api/issues/51");
-						// System.err.println("json: " + ((InvalidMessageException)throwable).getJson());
+						//System.err.println("json unavailable, see https://github.com/TypeFox/ls-api/issues/51");
+						System.err.println("json: " + ((InvalidMessageException)throwable).getJson());
 					}
 				}
 			});
@@ -191,7 +193,7 @@ public class ProjectSpecificLanguageServerWrapper {
 					connectDiagnostics();
 					CompletableFuture<InitializeResult> result = languageClient.initialize(initParams);
 					try {
-						InitializeResult initializeResult = result.get();
+						initializeResult = result.get();
 					} catch (InterruptedException | ExecutionException e) {
 						// TODO Auto-generated catch block
 						e.printStackTrace();
@@ -220,6 +222,11 @@ public class ProjectSpecificLanguageServerWrapper {
 	}
 
 	private void stop() {
+		if (this.initializeJob != null) {
+			this.initializeJob.cancel();
+		}
+		this.initializeJob = null;
+		this.initializeResult = null;
 		if (this.languageClient != null) {
 			this.languageClient.shutdown();
 			if (this.languageClient.getReader() != null) {
@@ -287,5 +294,20 @@ public class ProjectSpecificLanguageServerWrapper {
 			}
 		}
 		return languageClient;
+	}
+
+	public ServerCapabilities getServerCapabilities() {
+		try {
+			start();
+			this.initializeJob.join();
+		} catch (InterruptedException | IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		if (this.initializeResult != null) {
+			return this.initializeResult.getCapabilities();
+		} else {
+			return null;
+		}
 	}
 }

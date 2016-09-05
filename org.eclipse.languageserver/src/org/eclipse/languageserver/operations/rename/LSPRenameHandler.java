@@ -47,8 +47,10 @@ import org.eclipse.ui.IURIEditorInput;
 import org.eclipse.ui.IWorkbenchPart;
 import org.eclipse.ui.PlatformUI;
 import org.eclipse.ui.handlers.HandlerUtil;
+import org.eclipse.ui.internal.handlers.SaveAllHandler;
 import org.eclipse.ui.texteditor.AbstractTextEditor;
 
+import io.typefox.lsapi.ServerCapabilities;
 import io.typefox.lsapi.TextEdit;
 import io.typefox.lsapi.WorkspaceEdit;
 import io.typefox.lsapi.impl.RenameParamsImpl;
@@ -70,7 +72,7 @@ public class LSPRenameHandler extends AbstractHandler implements IHandler {
 					IFile file = ((IFileEditorInput) input).getFile();
 					fileUri = file.getLocation().toFile().toURI();
 					document = ITextFileBufferManager.DEFAULT.getTextFileBuffer(file.getFullPath(),	LocationKind.IFILE).getDocument();
-					languageClient = LanguageServiceAccessor.getLanguageServer(file, document);
+					languageClient = LanguageServiceAccessor.getLanguageServer(file, document, ServerCapabilities::isRenameProvider);
 				} else if (input instanceof IURIEditorInput) {
 					fileUri = ((IURIEditorInput)input).getURI();
 					document = ITextFileBufferManager.DEFAULT.getTextFileBuffer(new Path(fileUri.getPath()), LocationKind.LOCATION).getDocument();
@@ -107,7 +109,7 @@ public class LSPRenameHandler extends AbstractHandler implements IHandler {
 			IResource resource = LSPEclipseUtils.findResourceFor(entry.getKey());
 			if (resource.getType() == IResource.FILE) {
 				IFile file = (IFile)resource;
-				// save all open modified editors
+				// save all open modified editors?
 			}
 		}
 		WorkspaceJob job = new WorkspaceJob("Rename") {
@@ -149,7 +151,7 @@ public class LSPRenameHandler extends AbstractHandler implements IHandler {
 					IFile file = ((IFileEditorInput) input).getFile();
 					fileUri = file.getLocation().toFile().toURI();
 					document = ITextFileBufferManager.DEFAULT.getTextFileBuffer(file.getFullPath(),	LocationKind.IFILE).getDocument();
-					languageClient = LanguageServiceAccessor.getLanguageServer(file, document);
+					languageClient = LanguageServiceAccessor.getLanguageServer(file, document, ServerCapabilities::isRenameProvider);
 				} else if (input instanceof IURIEditorInput) {
 					fileUri = ((IURIEditorInput)input).getURI();
 					document = ITextFileBufferManager.DEFAULT.getTextFileBuffer(new Path(fileUri.getPath()), LocationKind.LOCATION).getDocument();

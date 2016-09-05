@@ -40,6 +40,7 @@ import org.eclipse.ui.handlers.HandlerUtil;
 import org.eclipse.ui.texteditor.AbstractTextEditor;
 
 import io.typefox.lsapi.DocumentFormattingParams;
+import io.typefox.lsapi.ServerCapabilities;
 import io.typefox.lsapi.TextEdit;
 import io.typefox.lsapi.builders.DocumentFormattingParamsBuilder;
 import io.typefox.lsapi.services.transport.client.LanguageClientEndpoint;
@@ -61,7 +62,7 @@ public class LSPFormatHandler extends AbstractHandler implements IHandler {
 					IFile file = ((IFileEditorInput) input).getFile();
 					fileUri = file.getLocation().toFile().toURI();
 					document = ITextFileBufferManager.DEFAULT.getTextFileBuffer(file.getFullPath(),	LocationKind.IFILE).getDocument();
-					languageClient = LanguageServiceAccessor.getLanguageServer(file, document);
+					languageClient = LanguageServiceAccessor.getLanguageServer(file, document, ServerCapabilities::isDocumentFormattingProvider);
 				} else if (input instanceof IURIEditorInput) {
 					fileUri = ((IURIEditorInput)input).getURI();
 					document = ITextFileBufferManager.DEFAULT.getTextFileBuffer(new Path(fileUri.getPath()), LocationKind.LOCATION).getDocument();
@@ -113,7 +114,7 @@ public class LSPFormatHandler extends AbstractHandler implements IHandler {
 					IFile file = ((IFileEditorInput) input).getFile();
 					fileUri = file.getLocation().toFile().toURI();
 					document = ITextFileBufferManager.DEFAULT.getTextFileBuffer(file.getFullPath(),	LocationKind.IFILE).getDocument();
-					languageClient = LanguageServiceAccessor.getLanguageServer(file, document);
+					languageClient = LanguageServiceAccessor.getLanguageServer(file, document, ServerCapabilities::isDocumentFormattingProvider);
 				} else if (input instanceof IURIEditorInput) {
 					fileUri = ((IURIEditorInput)input).getURI();
 					document = ITextFileBufferManager.DEFAULT.getTextFileBuffer(new Path(fileUri.getPath()), LocationKind.LOCATION).getDocument();
@@ -126,10 +127,6 @@ public class LSPFormatHandler extends AbstractHandler implements IHandler {
 			}
 		}
 		return false;
-	}
-
-	private String askNewName() {
-		return "blah";
 	}
 
 }
