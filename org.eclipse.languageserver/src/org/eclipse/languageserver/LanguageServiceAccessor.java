@@ -32,15 +32,55 @@ import io.typefox.lsapi.services.transport.client.LanguageClientEndpoint;
  *
  */
 public class LanguageServiceAccessor {
+	
+	static class WrapperEntryKey {
+		final IProject project;
+		final IContentType contentType;
+		
+		public WrapperEntryKey(IProject project, IContentType contentType) {
+			this.project = project;
+			this.contentType = contentType;
+		}
 
-	private static Map<IProject, Map<IContentType, ProjectSpecificLanguageServerWrapper>> projectServers = new HashMap<>();
+		@Override
+		public int hashCode() {
+			final int prime = 31;
+			int result = 1;
+			result = prime * result + ((contentType == null) ? 0 : contentType.hashCode());
+			result = prime * result + ((project == null) ? 0 : project.hashCode());
+			return result;
+		}
+
+		@Override
+		public boolean equals(Object obj) {
+			if (this == obj)
+				return true;
+			if (obj == null)
+				return false;
+			if (getClass() != obj.getClass())
+				return false;
+			WrapperEntryKey other = (WrapperEntryKey) obj;
+			if (contentType == null) {
+				if (other.contentType != null)
+					return false;
+			} else if (!contentType.equals(other.contentType))
+				return false;
+			if (project == null) {
+				if (other.project != null)
+					return false;
+			} else if (!project.equals(other.project))
+				return false;
+			return true;
+		}
+		
+		
+	}
+
+	private static Map<WrapperEntryKey, ProjectSpecificLanguageServerWrapper> projectServers = new HashMap<>();
 
 	public static LanguageClientEndpoint getLanguageServer(IFile file, IDocument document, Predicate<ServerCapabilities> request) throws IOException {
-		ProjectSpecificLanguageServerWrapper wrapper = getLSWrapper(file);
-		if (wrapper != null && (request == null
-				|| wrapper.getServerCapabilities() == null /* null check is workaround for https://github.com/TypeFox/ls-api/issues/47 */
-				|| request.test(wrapper.getServerCapabilities())
-			)) {
+		ProjectSpecificLanguageServerWrapper wrapper = getLSWrapper(file, request);
+		if (wrapper != null) {
 			wrapper.connect(file, document);
 			return wrapper.getServer();
 		}			
@@ -52,33 +92,42 @@ public class LanguageServiceAccessor {
 		return getLanguageServer(file, document, null);
 	}
 
-	private static ProjectSpecificLanguageServerWrapper getLSWrapper(IFile file) throws IOException {
+	private static ProjectSpecificLanguageServerWrapper getLSWrapper(IFile file, Predicate<ServerCapabilities> request) throws IOException {
 		IProject project = file.getProject();
-		if (!projectServers.containsKey(project)) {
-			projectServers.put(project, new HashMap<>());
-		}
-		IContentType[] contentTypes = null;
+		IContentType[] fileContentTypes = null;
 		try (InputStream contents = file.getContents()) {
-			contentTypes = Platform.getContentTypeManager().findContentTypesFor(contents, file.getName()); //TODO consider using document as inputstream
+			fileContentTypes = Platform.getContentTypeManager().findContentTypesFor(contents, file.getName()); //TODO consider using document as inputstream
 		} catch (CoreException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 		ProjectSpecificLanguageServerWrapper wrapper = null;
+		
 		// 1st: search existing server for that file
-		for (IContentType contentType : contentTypes) {
-			if (wrapper == null) {
-				wrapper = projectServers.get(project).get(contentType);
+		for (IContentType contentType : fileContentTypes) {
+			WrapperEntryKey key = new WrapperEntryKey(project, contentType);
+			wrapper = projectServers.get(key);
+			if (wrapper != null && (request == null
+					|| wrapper.getServerCapabilities() == null /* null check is workaround for https://github.com/TypeFox/ls-api/issues/47 */
+					|| request.test(wrapper.getServerCapabilities())
+				)) {
+				break;
+			} else {
+				wrapper = null;
 			}
 		}
+
 		if (wrapper == null) {
 			// try to create one for available content type
-			for (IContentType contentType : contentTypes) {
-				if (wrapper == null) {
-					StreamConnectionProvider connection = LSPStreamConnectionProviderRegistry.getInstance().findProviderFor(contentType);
-					if (connection != null) {
-						wrapper = new ProjectSpecificLanguageServerWrapper(project, connection);
-						projectServers.get(project).put(contentType, wrapper);
+			for (IContentType contentType : fileContentTypes) {
+				for (StreamConnectionProvider connection : LSPStreamConnectionProviderRegistry.getInstance().findProviderFor(contentType)) {
+					wrapper = new ProjectSpecificLanguageServerWrapper(project, connection);
+					WrapperEntryKey key = new WrapperEntryKey(project, contentType); 
+					projectServers.put(key, wrapper);
+					if (request == null
+						|| wrapper.getServerCapabilities() == null /* null check is workaround for https://github.com/TypeFox/ls-api/issues/47 */
+						|| request.test(wrapper.getServerCapabilities())) {
+						return wrapper;
 					}
 				}
 			}

@@ -11,9 +11,11 @@
 package org.eclipse.languageserver;
 
 import java.io.IOException;
+import java.util.AbstractMap.SimpleEntry;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.List;
 import java.util.Map.Entry;
 
 import org.eclipse.core.runtime.CoreException;
@@ -44,10 +46,7 @@ public class LSPStreamConnectionProviderRegistry {
 		return INSTANCE;
 	}
 	
-	/*
-	 * TODO: use some structure that allows N-N association (List of entries?)
-	 */
-	private Map<IContentType, ILaunchConfiguration> connections = new HashMap<>();
+	private List<Entry<IContentType, ILaunchConfiguration>> connections = new ArrayList<>();
 	private IPreferenceStore preferenceStore;
 	
 	private LSPStreamConnectionProviderRegistry() {
@@ -70,7 +69,7 @@ public class LSPStreamConnectionProviderRegistry {
 				if (contentType != null) {
 					ILaunchConfiguration config = LaunchConfigurationStreamProvider.findLaunchConfiguration(launchType, launchName);
 					if (config != null) {
-						connections.put(contentType, config);
+						connections.add(new SimpleEntry<>(contentType, config));
 					}
 				}
 			}
@@ -79,7 +78,7 @@ public class LSPStreamConnectionProviderRegistry {
 	
 	private void persist() {
 		StringBuilder builder = new StringBuilder();
-		for (Entry<IContentType, ILaunchConfiguration> entry : connections.entrySet()) {
+		for (Entry<IContentType, ILaunchConfiguration> entry : connections) {
 			builder.append(entry.getKey().getId());
 			builder.append(':');
 			try {
@@ -104,25 +103,26 @@ public class LSPStreamConnectionProviderRegistry {
 		}
 	}
 	
-	public StreamConnectionProvider findProviderFor(IContentType contentType) {
-		if (connections.containsKey(contentType)) {
-			return new LaunchConfigurationStreamProvider(connections.get(contentType));
-		}
-		return null;
+	public List<StreamConnectionProvider> findProviderFor(final IContentType contentType) {
+		return Arrays.asList(connections
+			.stream()
+			.filter(entry -> { return entry.getKey().equals(contentType); })
+			.map(entry -> { return new LaunchConfigurationStreamProvider(entry.getValue()); })
+			.toArray(StreamConnectionProvider[]::new));
 	}
 	
 	public void registerAssociation(IContentType contentType, ILaunchConfiguration launchConfig) {
-		connections.put(contentType, launchConfig);
+		connections.add(new SimpleEntry<>(contentType, launchConfig));
 		persist();
 	}
 
-	public Map<IContentType, ILaunchConfiguration> getContentTypeToLSPLaunches() {
-		return Collections.unmodifiableMap(this.connections);
+	public List<Entry<IContentType, ILaunchConfiguration>> getContentTypeToLSPLaunches() {
+		return Collections.unmodifiableList(this.connections);
 	}
 
-	public void setAssociations(Map<IContentType, ILaunchConfiguration> wc) {
+	public void setAssociations(List<Entry<IContentType, ILaunchConfiguration>> wc) {
 		this.connections.clear();
-		this.connections.putAll(wc);
+		this.connections.addAll(wc);
 		persist();
 	}
 

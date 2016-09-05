@@ -10,7 +10,9 @@
  *******************************************************************************/
 package org.eclipse.languageserver.ui;
 
-import java.util.LinkedHashMap;
+import java.util.AbstractMap.SimpleEntry;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map.Entry;
 
 import org.eclipse.core.runtime.content.IContentType;
@@ -42,7 +44,7 @@ import org.eclipse.ui.IWorkbenchPreferencePage;
 public class LanguageServerPreferencePage extends PreferencePage implements IWorkbenchPreferencePage {
 
 	private LSPStreamConnectionProviderRegistry registry;
-	private LinkedHashMap<IContentType, ILaunchConfiguration> workingCopy;
+	private List<Entry<IContentType, ILaunchConfiguration>> workingCopy;
 	private Button removeButton;
 	private TableViewer viewer;
 
@@ -74,8 +76,8 @@ public class LanguageServerPreferencePage extends PreferencePage implements IWor
 		viewer = new TableViewer(res);
 		viewer.getControl().setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, true));
 		viewer.setContentProvider(new ArrayContentProvider());
-		workingCopy = new LinkedHashMap<>();
-		workingCopy.putAll(LSPStreamConnectionProviderRegistry.getInstance().getContentTypeToLSPLaunches());
+		workingCopy = new ArrayList<>();
+		workingCopy.addAll(LSPStreamConnectionProviderRegistry.getInstance().getContentTypeToLSPLaunches());
 		TableViewerColumn contentTypeColumn = new TableViewerColumn(viewer, SWT.NONE);
 		contentTypeColumn.getColumn().setText(Messages.PreferencesPage_contentType);
 		contentTypeColumn.getColumn().setWidth(200);
@@ -106,7 +108,7 @@ public class LanguageServerPreferencePage extends PreferencePage implements IWor
 			public void widgetSelected(SelectionEvent e) {
 				NewContentTypeLSPLaunchDialog dialog = new NewContentTypeLSPLaunchDialog(getShell());
 				if (dialog.open() == IDialogConstants.OK_ID) {
-					workingCopy.put(dialog.getContentType(), dialog.getLaunchConfiguration());
+					workingCopy.add(new SimpleEntry<>(dialog.getContentType(), dialog.getLaunchConfiguration()));
 					viewer.refresh();
 				}
 				super.widgetSelected(e);
@@ -121,7 +123,7 @@ public class LanguageServerPreferencePage extends PreferencePage implements IWor
 				ISelection sel = viewer.getSelection();
 				if (!sel.isEmpty() && sel instanceof IStructuredSelection) {
 					for (Object item : ((IStructuredSelection)sel).toArray()) {
-						workingCopy.remove(((Entry<IContentType, ILaunchConfiguration>)item).getKey());
+						workingCopy.remove((Entry<IContentType, ILaunchConfiguration>)item);
 					}
 					viewer.refresh();
 				}
@@ -133,7 +135,7 @@ public class LanguageServerPreferencePage extends PreferencePage implements IWor
 				updateButtons();
 			}
 		});
-		viewer.setInput(workingCopy.entrySet());
+		viewer.setInput(workingCopy);
 		updateButtons();
 		return res;
 	}
