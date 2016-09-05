@@ -1,6 +1,9 @@
 This repository contains experiments to make Eclipse IDE able to consume the [Language Server protocol](https://github.com/Microsoft/language-server-protocol).
 This has been initiated during the EclipseCon France 2016 Unconference.
 
+[![ScreenShot](http://content.screencast.com/users/mistria/folders/Default/media/1a860eda-8a50-4668-874c-ee2dd2ef213c/FirstFrame.jpg)](http://www.screencast.com/t/Xs3TtaQM)
+
+
 for details, see [Documentation Index](/adoc/index.adoc)
 
 At the moment, it provides regular JFace/Platform Text classes for:
