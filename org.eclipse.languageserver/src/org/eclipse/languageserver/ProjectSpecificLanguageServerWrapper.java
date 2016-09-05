@@ -166,39 +166,13 @@ public class ProjectSpecificLanguageServerWrapper {
 						throwable.printStackTrace(System.err);
 					}
 					if (throwable instanceof InvalidMessageException) {
-						System.err.println("json: " + ((InvalidMessageException)throwable).getJson());
+						System.err.println("json unavailable, see https://github.com/TypeFox/ls-api/issues/51");
+						// System.err.println("json: " + ((InvalidMessageException)throwable).getJson());
 					}
 				}
 			});
 			this.lspStreamProvider.start();
-			GsonBuilder gsonBuilder = MessageJsonHandler.getDefaultGsonBuilder();
-			// workaround for https://github.com/TypeFox/ls-api/issues/23
-			TypeAdapterFactory stringToMarkedStringAdapterFactory = new TypeAdapterFactory() {
-				@Override
-				public <T> TypeAdapter<T> create(Gson gson, TypeToken<T> typeToken) {
-					if (typeToken.getType() == MarkedStringImpl.class) {
-						final TypeAdapter<MarkedStringImpl> delegate = gson.getDelegateAdapter(this, (TypeToken<MarkedStringImpl>)typeToken);
-					 	return (TypeAdapter<T>)new TypeAdapter<MarkedStringImpl>() {
-					 		public void write(JsonWriter out, MarkedStringImpl value) throws IOException {
-					 			delegate.write(out, value);
-					 		}
-
-					 		public MarkedStringImpl read(JsonReader in) throws IOException {
-					 			if (JsonToken.STRING.equals(in.peek())) {
-					 				MarkedStringImpl res = (MarkedStringImpl) new MarkedStringBuilder().value(in.nextString()).build();
-					 				return res;
-					 			} else {
-					 				return delegate.read(in);
-					 			}
-						    };
-					 	};
-					} else {
-						return null;
-					}
-				}
-			};
-			gsonBuilder.registerTypeAdapterFactory(stringToMarkedStringAdapterFactory);
-			MessageJsonHandler jsonHandler = new MessageJsonHandler(gsonBuilder.create());
+			MessageJsonHandler jsonHandler = new MessageJsonHandler();
 			jsonHandler.setMethodResolver(this.languageClient);
 			StreamMessageReader baseMessageReader = new StreamMessageReader(this.lspStreamProvider.getInputStream(), jsonHandler);
 			ConcurrentMessageReader multiThreadReader = new ConcurrentMessageReader(baseMessageReader, executorService);

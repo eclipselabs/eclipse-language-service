@@ -10,6 +10,7 @@
  *******************************************************************************/
 package org.eclipse.languageserver;
 
+import java.io.IOException;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
@@ -20,6 +21,7 @@ import org.eclipse.core.runtime.Platform;
 import org.eclipse.core.runtime.content.IContentType;
 import org.eclipse.core.runtime.content.IContentTypeManager;
 import org.eclipse.debug.core.ILaunchConfiguration;
+import org.eclipse.jface.preference.IPersistentPreferenceStore;
 import org.eclipse.jface.preference.IPreferenceStore;
 
 /**
@@ -93,6 +95,13 @@ public class LSPStreamConnectionProviderRegistry {
 			builder.deleteCharAt(builder.length() - 1);
 		}
 		this.preferenceStore.setValue(CONTENT_TYPE_TO_LSP_LAUNCH_PREF_KEY, builder.toString());
+		if (this.preferenceStore instanceof IPersistentPreferenceStore) {
+			try {
+				((IPersistentPreferenceStore) this.preferenceStore).save();
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+		}
 	}
 	
 	public StreamConnectionProvider findProviderFor(IContentType contentType) {

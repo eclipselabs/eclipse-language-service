@@ -43,7 +43,7 @@ public class LSBasedHover implements ITextHover {
 
 	@Override
 	public String getHoverInfo(ITextViewer textViewer, IRegion hoverRegion) {
-		if (hoverRegion.equals(this.lastRegion) && textViewer.equals(this.textViewer)) {
+		if (hoverRegion.equals(this.lastRegion) && textViewer.equals(this.textViewer) && this.hover != null) {
 			StringBuilder res = new StringBuilder();
 			try {
 				for (MarkedString string : this.hover.get(500, TimeUnit.MILLISECONDS).getContents()) {
