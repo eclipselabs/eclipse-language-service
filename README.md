@@ -1,13 +1,12 @@
 This repository contains experiments to make Eclipse IDE able to consume the [Language Server protocol](https://github.com/Microsoft/language-server-protocol).
-This has been initiated during the EclipseCon France 2016 Unconference.
 
-[![ScreenShot](http://content.screencast.com/users/mistria/folders/Default/media/1a860eda-8a50-4668-874c-ee2dd2ef213c/FirstFrame.jpg)](http://www.screencast.com/t/Xs3TtaQM)
+**Install it into Eclipse IDE** using this p2 repository:  http://repository.jboss.org/nexus/content/unzip/unzip/org/eclipse/languageserver/repository/1.0.0-SNAPSHOT/repository-1.0.0-SNAPSHOT.zip-unzip/
 
 
-for details, see [Documentation Index](/adoc/index.adoc)
+[<img alt="Video demo" src="http://content.screencast.com/users/mistria/folders/Default/media/1a860eda-8a50-4668-874c-ee2dd2ef213c/FirstFrame.jpg" width="400px">](http://www.screencast.com/t/Xs3TtaQM)
 
 At the moment, it provides regular JFace/Platform Text classes for:
-* WIP detection of language server for given file (see also issues #3 and #4)
+* detection of language server for given file
 * synchronization of files with Language Server
 * diagnostics as problem markers
 * completion
@@ -20,6 +19,8 @@ Extensions to the [Generic Editor proposal for Eclipse Platform Text](https://bu
 * JSON (with schema) using VSCode LSP impl
 * CSS using VSCode LSP impl.
 
-Contributions are highly welcome using GitHub issues and PR at the moment.
+See also [Documentation Index](/adoc/index.adoc).
+
+This has been initiated during the EclipseCon France 2016 Unconference. Contributions are highly welcome using GitHub issues and PR at the moment.
 
 This piece of work is meant to move to some Eclipse.org project then inside the Eclipse IDE package directly as soon as it is considered stable and isable enough.
