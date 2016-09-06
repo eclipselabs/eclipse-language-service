@@ -27,10 +27,10 @@ script:
 
 # Deploy snapshot repository to repository.jboss.org 
 after_success: >
-  "echo TRAVIS_PULL_REQUEST=${TRAVIS_PULL_REQUEST} &&
   [[ ${TRAVIS_PULL_REQUEST} == 'false' ]] &&
+  [[ ${TRAVIS_TAG} == ''  ]] &&
   mvn install -P build-individual-bundles -DskipTests &&
-  mvn deploy -DskipTests -f repository/pom.xml --settings repository/deploy-settings.xml"
+  mvn deploy -DskipTests -f repository/pom.xml --settings repository/deploy-settings.xml
   
 # encrypted deploy credentials to repository.jboss.org
 env:
