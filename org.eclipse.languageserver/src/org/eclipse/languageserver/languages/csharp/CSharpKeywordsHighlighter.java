@@ -18,9 +18,13 @@ import org.eclipse.jface.text.IDocument;
 import org.eclipse.jface.text.TextAttribute;
 import org.eclipse.jface.text.presentation.PresentationReconciler;
 import org.eclipse.jface.text.rules.DefaultDamagerRepairer;
+import org.eclipse.jface.text.rules.ICharacterScanner;
 import org.eclipse.jface.text.rules.IRule;
+import org.eclipse.jface.text.rules.IToken;
 import org.eclipse.jface.text.rules.IWordDetector;
+import org.eclipse.jface.text.rules.MultiLineRule;
 import org.eclipse.jface.text.rules.RuleBasedScanner;
+import org.eclipse.jface.text.rules.SingleLineRule;
 import org.eclipse.jface.text.rules.Token;
 import org.eclipse.jface.text.rules.WordRule;
 import org.eclipse.swt.SWT;
@@ -151,7 +155,16 @@ public class CSharpKeywordsHighlighter extends PresentationReconciler {
 		for (String keyword : keywords) {
 			wordRule.addWord(keyword, keywordToken);
 		}
-		scanner.setRules(new IRule[] { wordRule });
+		Token stringToken = new Token(new TextAttribute(Display.getDefault().getSystemColor(SWT.COLOR_BLUE), null, SWT.NONE));
+		Token commentsToken = new Token(new TextAttribute(Display.getDefault().getSystemColor(SWT.COLOR_DARK_GRAY), null, SWT.NONE));
+		scanner.setRules(new IRule[] {
+			wordRule,
+			new SingleLineRule("\"", "\"", stringToken),
+			new SingleLineRule("'", "'", stringToken),
+			new MultiLineRule("@\"", "\"", stringToken, '"'),
+			new SingleLineRule("//", null, commentsToken),
+			new MultiLineRule("/*", "*/", commentsToken)
+		});
 		DefaultDamagerRepairer dr= new DefaultDamagerRepairer(scanner);
 		this.setDamager(dr, IDocument.DEFAULT_CONTENT_TYPE);
 		this.setRepairer(dr, IDocument.DEFAULT_CONTENT_TYPE);
