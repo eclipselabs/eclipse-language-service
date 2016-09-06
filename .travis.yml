@@ -1,29 +1,39 @@
 language: java
-
 sudo: false
-
 jdk:
-  - oraclejdk8
+- oraclejdk8
 
+# Get a recent Maven
 before_install:
-  - "export DISPLAY=:99.0"
-  - "sh -e /etc/init.d/xvfb start"
-# The following is workaround for https://github.com/travis-ci/travis-ci/issues/4872
-  - wget http://apache.mindstudios.com/maven/maven-3/3.3.9/binaries/apache-maven-3.3.9-bin.tar.gz
-  - tar zxvf apache-maven-3.3.9-bin.tar.gz
-  - chmod +x apache-maven-3.3.9/bin/mvn
-  - export M2_HOME=$PWD/apache-maven-3.3.9
-  - export PATH=$PWD/apache-maven-3.3.9/bin:${PATH}
-  - hash -r
+- export DISPLAY=:99.0
+- sh -e /etc/init.d/xvfb start
+- wget http://apache.mindstudios.com/maven/maven-3/3.3.9/binaries/apache-maven-3.3.9-bin.tar.gz
+- tar zxvf apache-maven-3.3.9-bin.tar.gz
+- chmod +x apache-maven-3.3.9/bin/mvn
+- export M2_HOME=$PWD/apache-maven-3.3.9
+- export PATH=$PWD/apache-maven-3.3.9/bin:${PATH}
+- hash -r
 before_script:
-  - export M2_HOME=$PWD/apache-maven-3.3.9
-  - export PATH=$PWD/apache-maven-3.3.9/bin:${PATH}
-  - hash -r
+- export M2_HOME=$PWD/apache-maven-3.3.9
+- export PATH=$PWD/apache-maven-3.3.9/bin:${PATH}
+- hash -r
 
-# Prevent Travis's default of: mvn install -DskipTests=true
-install: ""
+# Skip default mvn install
+install: ''
 
 script:
-  - export MAVEN_OPTS="-Xmx2g"
-  - mvn clean verify -P build-individual-bundles
- 
+- export MAVEN_OPTS="-Xmx2g"
+- mvn clean verify -P build-individual-bundles
+
+# Deploy snapshot repository to repository.jboss.org 
+after_success: >
+  [[ ${TRAVIS_PULL_REQUEST} == 'false' ]] &&
+  [[ ${TRAVIS_TAG} == ''  ]] &&
+  mvn install -P build-individual-bundles -DskipTests &&
+  mvn deploy -DskipTests -f repository/pom.xml --settings repository/deploy-settings.xml
+  
+# encrypted deploy credentials to repository.jboss.org
+env:
+  global:
+  - secure: T6kMBK+sx4xR7E1TPU9UNs1zo6zXDHN1nzF6IsUXOsrynPlynkp+h8FR5ArK4fL89Tq5u1tUc+Q4xcb0d7Z9WJE/O6lFIO6j1pcg0gYgtq44XwEevzqzH76haSxEiAGa0Z8Ht6WZJArSb5Rk0SAY+GmdlTlQqpaJ123nFmBzwK15jstBGHErjYvl5My5r4sYcy3GpBbyvfygkV0GhnKfvLI882Ei0CsyBqR4+alemZODFDuzHHRVSRdiCPZ+XNGjQIgxZ3VZf8Pyi3h/2mCMJtCWdlJRUt0rtlJxmUPq9PEO4hmSJjBiooP41XJVZseEE0ZdJYZfLlUXzRFWBbGSqV7y6rhreRi5lugMRKTWjA7pbneMRdBycRRQ0AY+bS7vIsDvSNfJZhBUY/cIjAblcYQSALe59JAJW9Q09+l1fApawMOrAhFzbIJpI2SYCm8f2TVxk7SabXJ9l0TaKY7SRC81bkQDvD8DnNLgy7iPJSXu30vw1aaX3QEINn6Q6Onjn9roxon7+KBapXxqOxQFxtghYm7Gp280ezRZ9618Vc59ZKN/jX9iY8ZEca+jVp/Q5hlBIOos8YBzoF9pYhCeNl3Kk0TrXAR7dZgJwAAKtclU2O7t7FbEu+uFQerXt8z+y6rUrY5+rOuobwRYpTiWdU+Rm3Ml7brozhA4Q7yqcE0=
+  - secure: rurzG3CkMbenyc1v/t80Yjc6Xbas7P+pWdoQiOkngQ4eztuJ0RcbggfgCV3JdCLNaVmcA4ipS7KSdfC0xJqP7OjJu5yXM9/OS8lowiLuxv6+OjEqV5vyA9+eAr2uWpK7wLb5+bg0OJTEFSeclR7W2bMlmhxjcIWGKbXx2T+cwlisNKLn/b0hkL/udCY+fwpMfMtQi0OSDcbdfkZGX764waX5TJia3j5FiiBn/lJnI/Mi6IJNFVv4hCwLdp4pKPhmmiFv/siqnTm3KOhSAO7aXYLjOujv/22YyWuh5Kpk+lW9jT4F1kZ3Jzxp3NSXhudlDgUcTyth7NvvHS+RrVRxbeD76YT72W1qeLCgrw/wIVfBjk+1XwIxYWcL7t65Jt6OgRaeQVC5pyY4UmWfrXVeC4vsVGH9bYMW9xSUCg1rbFztpIRxDmzIFGi0jHCzs/iCh/TIJFn6JomGxSowBaatundxtOWkLyMHkS75RehzmZF89gRICADA6eIMRFVuoCWrbdh3B7bBXyCz5wuFi4CMRPzPnjvYYk3wMktzjHfIA5HiozaZ7L1Ubc3sMrJqIAg1ynz9QMXi1xfEad5Y56xmzKdHuJ3CaN02lZZpkmVlDNfA459FhNVDYt5Kdw8X0SCzrbE5vAv2R3OnHZatpTIBX0CQl4L8q+nbpsXpcGK9dJg=
