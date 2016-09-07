@@ -5,17 +5,27 @@
   <version>1.0.0-SNAPSHOT</version>
   <packaging>pom</packaging>
   
+
+  	<properties>
+		<tycho-version>0.25.0</tycho-version>
+		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+				
+		<ide.targetPlatform>releng/platform</ide.targetPlatform>
+	</properties>
+
 	<modules>
+		<module>deps-repository</module>
 		<module>eclipse.platform.text-generic_editor/org.eclipse.ui.genericeditor</module>
 		<module>org.eclipse.languageserver</module>
 		<module>repository</module>
 	</modules>
+	
   <build>
   	<plugins>
   		<plugin>
   			<groupId>org.eclipse.tycho</groupId>
   			<artifactId>tycho-maven-plugin</artifactId>
-  			<version>0.25.0</version>
+  			<version>${tycho-version}</version>
   			<extensions>true</extensions>
   		</plugin>
   	</plugins>

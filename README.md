@@ -19,8 +19,9 @@ Extensions to the [Generic Editor proposal for Eclipse Platform Text](https://bu
 * JSON (with schema) using VSCode LSP impl
 * CSS using VSCode LSP impl.
 
-See also [Documentation Index](/adoc/index.adoc).
+See also [Documentation Index](/adoc/index.adoc) and [Contributors Guide](/Contributors_Guide.md).
 
 This has been initiated during the EclipseCon France 2016 Unconference. Contributions are highly welcome using GitHub issues and PR at the moment.
 
 This piece of work is meant to move to some Eclipse.org project then inside the Eclipse IDE package directly as soon as it is considered stable and isable enough.
+
