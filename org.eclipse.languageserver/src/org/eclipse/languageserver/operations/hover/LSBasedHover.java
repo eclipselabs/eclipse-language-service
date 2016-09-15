@@ -10,28 +10,23 @@
  *******************************************************************************/
 package org.eclipse.languageserver.operations.hover;
 
-import java.net.URI;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
-import org.eclipse.core.filebuffers.FileBuffers;
-import org.eclipse.core.resources.IFile;
-import org.eclipse.core.resources.ResourcesPlugin;
-import org.eclipse.core.runtime.IPath;
 import org.eclipse.jface.text.IRegion;
 import org.eclipse.jface.text.ITextHover;
 import org.eclipse.jface.text.ITextViewer;
 import org.eclipse.jface.text.Region;
 import org.eclipse.languageserver.LSPEclipseUtils;
+import org.eclipse.languageserver.LanguageServiceAccessor.LSPDocumentInfo;
 import org.eclipse.languageserver.LanguageServiceAccessor;
 
 import io.typefox.lsapi.Hover;
 import io.typefox.lsapi.MarkedString;
 import io.typefox.lsapi.Range;
 import io.typefox.lsapi.ServerCapabilities;
-import io.typefox.lsapi.services.transport.client.LanguageClientEndpoint;
 
 public class LSBasedHover implements ITextHover {
 
@@ -62,30 +57,23 @@ public class LSBasedHover implements ITextHover {
 	@Override
 	public IRegion getHoverRegion(ITextViewer textViewer, int offset) {
 		IRegion res = new Region(offset, 0);
-		// TODO: factorize!
-		IPath location = FileBuffers.getTextFileBufferManager().getTextFileBuffer(textViewer.getDocument()).getLocation();
-		IFile iFile = ResourcesPlugin.getWorkspace().getRoot().getFile(location);
-		LanguageClientEndpoint languageClient = null;
-		URI fileUri = null;
-		try {
-			if (iFile.exists()) {
-				languageClient = LanguageServiceAccessor.getLanguageServer(iFile, textViewer.getDocument(), ServerCapabilities::isHoverProvider);
-				fileUri = iFile.getLocationURI();
-			} else {
-				fileUri = location.toFile().toURI();
-			}
-			if (languageClient != null) {
-				hover = languageClient.getTextDocumentService().hover(LSPEclipseUtils.toTextDocumentPosistionParams(fileUri, offset, textViewer.getDocument()));
+		final LSPDocumentInfo info = LanguageServiceAccessor.getLSPDocumentInfoFor(textViewer, ServerCapabilities::isHoverProvider);
+		if (info.languageClient != null) {
+			try {
+				hover = info.languageClient.getTextDocumentService().hover(LSPEclipseUtils.toTextDocumentPosistionParams(info.fileUri, offset, textViewer.getDocument()));
 				Range range = hover.get(800, TimeUnit.MILLISECONDS).getRange();
 				if (range != null) {
 					int rangeOffset = LSPEclipseUtils.toOffset(range.getStart(), textViewer.getDocument());
 					res = new Region(rangeOffset, LSPEclipseUtils.toOffset(range.getEnd(), textViewer.getDocument()) - rangeOffset);
 				}
+			} catch (Exception e) {
+				e.printStackTrace();
+				res = new Region(offset, 1);
 			}
-		} catch (Exception ex) {
-			ex.printStackTrace(); // TODO
-			res = new Region(offset, 1); 
+		} else {
+			res = new Region(offset, 1);
 		}
+
 		this.lastRegion = res;
 		this.textViewer = textViewer;
 		return res;

@@ -21,8 +21,6 @@ import org.eclipse.core.filebuffers.ITextFileBufferManager;
 import org.eclipse.core.filebuffers.LocationKind;
 import org.eclipse.core.resources.IFile;
 import org.eclipse.core.resources.IResource;
-import org.eclipse.core.resources.ResourcesPlugin;
-import org.eclipse.core.runtime.IPath;
 import org.eclipse.core.runtime.Path;
 import org.eclipse.jface.text.BadLocationException;
 import org.eclipse.jface.text.IDocument;
@@ -33,6 +31,7 @@ import org.eclipse.jface.text.hyperlink.AbstractHyperlinkDetector;
 import org.eclipse.jface.text.hyperlink.IHyperlink;
 import org.eclipse.languageserver.LSPEclipseUtils;
 import org.eclipse.languageserver.LanguageServiceAccessor;
+import org.eclipse.languageserver.LanguageServiceAccessor.LSPDocumentInfo;
 import org.eclipse.languageserver.ui.Messages;
 import org.eclipse.ui.IEditorPart;
 import org.eclipse.ui.PartInitException;
@@ -42,7 +41,6 @@ import org.eclipse.ui.texteditor.AbstractTextEditor;
 
 import io.typefox.lsapi.Location;
 import io.typefox.lsapi.ServerCapabilities;
-import io.typefox.lsapi.services.transport.client.LanguageClientEndpoint;
 
 public class OpenDeclarationHyperlinkDetector extends AbstractHyperlinkDetector {
 
@@ -81,10 +79,10 @@ public class OpenDeclarationHyperlinkDetector extends AbstractHyperlinkDetector 
 			try {
 				if (targetResource != null && targetResource.getType() == IResource.FILE) {
 					part = IDE.openEditor(PlatformUI.getWorkbench().getActiveWorkbenchWindow().getActivePage(), (IFile)targetResource);
-					targetDocument = ITextFileBufferManager.DEFAULT.getTextFileBuffer(targetResource.getFullPath(), LocationKind.IFILE).getDocument();
+					targetDocument = FileBuffers.getTextFileBufferManager().getTextFileBuffer(targetResource.getFullPath(), LocationKind.IFILE).getDocument();
 				} else {
 					part = IDE.openEditor(PlatformUI.getWorkbench().getActiveWorkbenchWindow().getActivePage(), fileUri, null, true);
-					targetDocument = ITextFileBufferManager.DEFAULT.getTextFileBuffer(new Path(fileUri.getPath()), LocationKind.LOCATION).getDocument();
+					targetDocument = FileBuffers.getTextFileBufferManager().getTextFileBuffer(new Path(fileUri.getPath()), LocationKind.LOCATION).getDocument();
 				}
 			} catch (PartInitException e) {
 				// TODO Auto-generated catch block
@@ -107,31 +105,24 @@ public class OpenDeclarationHyperlinkDetector extends AbstractHyperlinkDetector 
 
 	@Override
 	public IHyperlink[] detectHyperlinks(ITextViewer textViewer, IRegion region, boolean canShowMultipleHyperlinks) {
-		IPath location = FileBuffers.getTextFileBufferManager().getTextFileBuffer(textViewer.getDocument()).getLocation();
-		IFile iFile = ResourcesPlugin.getWorkspace().getRoot().getFile(location);
-		LanguageClientEndpoint languageClient = null;
-		URI fileUri = null;
-		try {
-			if (iFile.exists()) {
-				languageClient = LanguageServiceAccessor.getLanguageServer(iFile, textViewer.getDocument(), ServerCapabilities::isDefinitionProvider);
-				fileUri = iFile.getLocationURI();
-			} else {
-				fileUri = location.toFile().toURI();
-			}
-			if (languageClient != null) {
-				CompletableFuture<List<? extends Location>> documentHighlight = languageClient.getTextDocumentService().definition(LSPEclipseUtils.toTextDocumentPosistionParams(fileUri, region.getOffset(), textViewer.getDocument()));
+		final LSPDocumentInfo info = LanguageServiceAccessor.getLSPDocumentInfoFor(textViewer, ServerCapabilities::isDefinitionProvider);
+		if (info.languageClient != null) {
+			try {
+				CompletableFuture<List<? extends Location>> documentHighlight = info.languageClient.getTextDocumentService()
+						.definition(LSPEclipseUtils.toTextDocumentPosistionParams(info.fileUri, region.getOffset(), textViewer.getDocument()));
 				List<? extends Location> response = documentHighlight.get(2, TimeUnit.SECONDS);
 				if (response.isEmpty()) {
 					return null;
 				}
 				List<IHyperlink> hyperlinks = new ArrayList<IHyperlink>(response.size());
 				for (Location responseLocation : response) {
-					hyperlinks.add(new LSBasedHyperlink(responseLocation, fileUri, region));
+					hyperlinks.add(new LSBasedHyperlink(responseLocation, info.fileUri, region));
 				}
 				return hyperlinks.toArray(new IHyperlink[hyperlinks.size()]);
+			} catch (Exception e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
 			}
-		} catch (Exception ex) {
-			ex.printStackTrace(); // TODO
 		}
 		return null;
 	}

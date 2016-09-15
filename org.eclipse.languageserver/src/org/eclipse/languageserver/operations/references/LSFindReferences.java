@@ -18,17 +18,21 @@ import org.eclipse.core.commands.AbstractHandler;
 import org.eclipse.core.commands.ExecutionEvent;
 import org.eclipse.core.commands.ExecutionException;
 import org.eclipse.core.commands.IHandler;
+import org.eclipse.core.filebuffers.FileBuffers;
 import org.eclipse.core.filebuffers.ITextFileBufferManager;
 import org.eclipse.core.filebuffers.LocationKind;
 import org.eclipse.core.resources.IFile;
 import org.eclipse.core.runtime.NullProgressMonitor;
 import org.eclipse.core.runtime.Path;
+import org.eclipse.jface.text.BadLocationException;
 import org.eclipse.jface.text.IDocument;
 import org.eclipse.jface.text.ITextSelection;
+import org.eclipse.jface.text.ITextViewer;
 import org.eclipse.jface.text.TextSelection;
 import org.eclipse.jface.viewers.ISelection;
 import org.eclipse.languageserver.LSPEclipseUtils;
 import org.eclipse.languageserver.LanguageServiceAccessor;
+import org.eclipse.languageserver.LanguageServiceAccessor.LSPDocumentInfo;
 import org.eclipse.search2.internal.ui.SearchView;
 import org.eclipse.ui.IEditorInput;
 import org.eclipse.ui.IEditorPart;
@@ -39,6 +43,7 @@ import org.eclipse.ui.PartInitException;
 import org.eclipse.ui.PlatformUI;
 import org.eclipse.ui.handlers.HandlerUtil;
 import org.eclipse.ui.texteditor.AbstractTextEditor;
+import org.eclipse.ui.texteditor.ITextEditor;
 
 import io.typefox.lsapi.Location;
 import io.typefox.lsapi.ServerCapabilities;
@@ -59,77 +64,48 @@ public class LSFindReferences extends AbstractHandler implements IHandler {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-		if (part instanceof AbstractTextEditor) {
-			IEditorInput input = part.getEditorInput();
-			LanguageClientEndpoint languageClient = null;
-			URI fileUri = null;
-			try {
-				IDocument document = null;
-				if (input instanceof IFileEditorInput) { // TODO, also support non resource file
-					IFile file = ((IFileEditorInput) input).getFile();
-					fileUri = file.getLocation().toFile().toURI();
-					document = ITextFileBufferManager.DEFAULT.getTextFileBuffer(file.getFullPath(),	LocationKind.IFILE).getDocument();
-					languageClient = LanguageServiceAccessor.getLanguageServer(file, document, ServerCapabilities::isReferencesProvider);
-				} else if (input instanceof IURIEditorInput) {
-					fileUri = ((IURIEditorInput)input).getURI();
-					document = ITextFileBufferManager.DEFAULT.getTextFileBuffer(new Path(fileUri.getPath()), LocationKind.LOCATION).getDocument();
-					// TODO server
-				}
-		
-				if (languageClient != null) {
-					ISelection sel = ((AbstractTextEditor) part).getSelectionProvider().getSelection();
-					if (sel instanceof TextSelection) {
-					    ReferenceParamsImpl params = new ReferenceParamsImpl();
-					    params.setPosition(LSPEclipseUtils.toPosition(((TextSelection) sel).getOffset(), document));
-                        TextDocumentIdentifierImpl identifier = new TextDocumentIdentifierImpl();
-					    identifier.setUri(fileUri.toString());
-					    params.setTextDocument(identifier);
-					    ReferenceContextImpl context = new ReferenceContextImpl();
-					    context.setIncludeDeclaration(true);
-					    params.setContext(context);
-					    CompletableFuture<List<? extends Location>> references = languageClient.getTextDocumentService().references(params);
-					    LSSearchResult search = new LSSearchResult(references, document);
+		if (part instanceof ITextEditor) {
+			ITextEditor editor = (ITextEditor) part;
+			LSPDocumentInfo info = LanguageServiceAccessor.getLSPDocumentInfoFor(editor,
+					ServerCapabilities::isReferencesProvider);
+
+			if (info.languageClient != null) {
+				ISelection sel = ((AbstractTextEditor) part).getSelectionProvider().getSelection();
+				if (sel instanceof TextSelection) {
+					try {
+						ReferenceParamsImpl params = new ReferenceParamsImpl();
+						params.setPosition(LSPEclipseUtils.toPosition(((TextSelection) sel).getOffset(), info.document));
+						TextDocumentIdentifierImpl identifier = new TextDocumentIdentifierImpl();
+						identifier.setUri(info.fileUri.toString());
+						params.setTextDocument(identifier);
+						ReferenceContextImpl context = new ReferenceContextImpl();
+						context.setIncludeDeclaration(true);
+						params.setContext(context);
+						CompletableFuture<List<? extends Location>> references = info.languageClient.getTextDocumentService().references(params);
+						LSSearchResult search = new LSSearchResult(references, info.document);
 						search.getQuery().run(new NullProgressMonitor());
 						searchView.showSearchResult(search);
-
+					} catch (BadLocationException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
 					}
 				}
-			} catch (Exception ex) {
-				ex.printStackTrace();
 			}
 		}
 		return null;
 	}
-	
+
 	@Override
 	public boolean isEnabled() {
 		IWorkbenchPart part = PlatformUI.getWorkbench().getActiveWorkbenchWindow().getActivePage().getActivePart();
-		if (part instanceof AbstractTextEditor) {
-			IEditorInput input = ((AbstractTextEditor)part).getEditorInput();
-			LanguageClientEndpoint languageClient = null;
-			URI fileUri = null;
-			try {
-				IDocument document = null;
-				if (input instanceof IFileEditorInput) { // TODO, also support non resource file
-					IFile file = ((IFileEditorInput) input).getFile();
-					fileUri = file.getLocation().toFile().toURI();
-					document = ITextFileBufferManager.DEFAULT.getTextFileBuffer(file.getFullPath(),	LocationKind.IFILE).getDocument();
-					languageClient = LanguageServiceAccessor.getLanguageServer(file, document, ServerCapabilities::isReferencesProvider);
-				} else if (input instanceof IURIEditorInput) {
-					fileUri = ((IURIEditorInput)input).getURI();
-					document = ITextFileBufferManager.DEFAULT.getTextFileBuffer(new Path(fileUri.getPath()), LocationKind.LOCATION).getDocument();
-					// TODO server
-				}
-		
-				ISelection selection = ((AbstractTextEditor)part).getSelectionProvider().getSelection();
-				return languageClient != null && !selection.isEmpty() && selection instanceof ITextSelection;
-			} catch (Exception ex) {
-				return false;
-			}
+		if (part instanceof ITextEditor) {
+			LSPDocumentInfo info = LanguageServiceAccessor.getLSPDocumentInfoFor((ITextEditor) part, ServerCapabilities::isReferencesProvider);
+			ISelection selection = ((ITextEditor) part).getSelectionProvider().getSelection();
+			return info.languageClient != null && !selection.isEmpty() && selection instanceof ITextSelection;
 		}
 		return false;
 	}
-	
+
 	@Override
 	public boolean isHandled() {
 		return true;
