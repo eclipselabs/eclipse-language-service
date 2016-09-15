@@ -15,6 +15,7 @@ import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.BiConsumer;
 
+import org.eclipse.core.filebuffers.FileBuffers;
 import org.eclipse.core.filebuffers.ITextFileBufferManager;
 import org.eclipse.core.filebuffers.LocationKind;
 import org.eclipse.core.resources.IFile;
@@ -23,10 +24,12 @@ import org.eclipse.core.runtime.IStatus;
 import org.eclipse.core.runtime.Path;
 import org.eclipse.core.runtime.Status;
 import org.eclipse.jface.action.ContributionItem;
+import org.eclipse.jface.text.BadLocationException;
 import org.eclipse.jface.text.IDocument;
 import org.eclipse.jface.text.ITextSelection;
 import org.eclipse.languageserver.LSPEclipseUtils;
 import org.eclipse.languageserver.LanguageServiceAccessor;
+import org.eclipse.languageserver.LanguageServiceAccessor.LSPDocumentInfo;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.widgets.Menu;
 import org.eclipse.swt.widgets.MenuItem;
@@ -53,40 +56,27 @@ import io.typefox.lsapi.services.transport.client.LanguageClientEndpoint;
 
 public class LSPCodeActionsMenu extends ContributionItem implements IWorkbenchContribution {
 
-	private LanguageClientEndpoint languageClient;
-	private URI fileUri;
+	private LSPDocumentInfo info;
 	private Range range;
 
 	@Override
 	public void initialize(IServiceLocator serviceLocator) {
 		IEditorPart editor = PlatformUI.getWorkbench().getActiveWorkbenchWindow().getActivePage().getActiveEditor();
 		if (editor instanceof ITextEditor) {
-			IEditorInput input = editor.getEditorInput();
-			languageClient = null;
-			fileUri = null;
+			info = LanguageServiceAccessor.getLSPDocumentInfoFor((ITextEditor) editor, ServerCapabilities::isCodeActionProvider);
+			ITextSelection selection = (ITextSelection) ((ITextEditor) editor).getSelectionProvider().getSelection();
 			try {
-				IDocument document = null;
-				if (input instanceof IFileEditorInput) { // TODO, also support non resource file
-					IFile file = ((IFileEditorInput) input).getFile();
-					fileUri = file.getLocation().toFile().toURI();
-					document = ITextFileBufferManager.DEFAULT.getTextFileBuffer(file.getFullPath(),	LocationKind.IFILE).getDocument();
-					languageClient = LanguageServiceAccessor.getLanguageServer(file, document, ServerCapabilities::isCodeActionProvider);
-				} else if (input instanceof IURIEditorInput) {
-					fileUri = ((IURIEditorInput)input).getURI();
-					document = ITextFileBufferManager.DEFAULT.getTextFileBuffer(new Path(fileUri.getPath()), LocationKind.LOCATION).getDocument();
-					// TODO server
-				}
-				ITextSelection selection = (ITextSelection) ((ITextEditor) editor).getSelectionProvider().getSelection();
 				this.range = new RangeBuilder()
-						.start(LSPEclipseUtils.toPosition(selection.getOffset(), document))
-						.end(LSPEclipseUtils.toPosition(selection.getOffset() + selection.getLength(), document))
+						.start(LSPEclipseUtils.toPosition(selection.getOffset(), info.document))
+						.end(LSPEclipseUtils.toPosition(selection.getOffset() + selection.getLength(), info.document))
 						.build();
-			} catch (Exception e) {
-				// TODO: handle exception
+			} catch (BadLocationException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
 			}
 		}
 	}
-	
+
 	@Override
 	public void fill(final Menu menu, int index) {
 		final MenuItem item = new MenuItem(menu, SWT.NONE, index);
@@ -96,11 +86,11 @@ public class LSPCodeActionsMenu extends ContributionItem implements IWorkbenchCo
 				.diagnostic((Diagnostic)null)
 				.build();
 		CodeActionParams param = new CodeActionParamsBuilder()
-				.textDocument(fileUri.toString())
+				.textDocument(info.fileUri.toString())
 				.range(this.range)
 				.context(context)
 				.build();
-		final CompletableFuture<List<? extends Command>> codeActions = this.languageClient.getTextDocumentService().codeAction(param);
+		final CompletableFuture<List<? extends Command>> codeActions = info.languageClient.getTextDocumentService().codeAction(param);
 		codeActions.whenComplete(new BiConsumer<List<? extends Command>, Throwable>() {
 
 			@Override

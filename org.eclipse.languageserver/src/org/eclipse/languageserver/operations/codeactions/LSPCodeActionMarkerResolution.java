@@ -16,6 +16,7 @@ import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 
+import org.eclipse.core.filebuffers.FileBuffers;
 import org.eclipse.core.filebuffers.ITextFileBufferManager;
 import org.eclipse.core.filebuffers.LocationKind;
 import org.eclipse.core.resources.IFile;
@@ -24,17 +25,20 @@ import org.eclipse.core.resources.IResource;
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.jface.text.IDocument;
 import org.eclipse.languageserver.LanguageServiceAccessor;
+import org.eclipse.languageserver.LanguageServiceAccessor.LSPDocumentInfo;
 import org.eclipse.languageserver.operations.diagnostics.LSPDiagnosticsToMarkers;
 import org.eclipse.languageserver.ui.Messages;
 import org.eclipse.swt.graphics.Image;
 import org.eclipse.ui.IMarkerResolution;
 import org.eclipse.ui.IMarkerResolutionGenerator2;
+import org.eclipse.ui.texteditor.ITextEditor;
 import org.eclipse.ui.views.markers.WorkbenchMarkerResolution;
 
 import io.typefox.lsapi.CodeActionContext;
 import io.typefox.lsapi.CodeActionParams;
 import io.typefox.lsapi.Command;
 import io.typefox.lsapi.Diagnostic;
+import io.typefox.lsapi.ServerCapabilities;
 import io.typefox.lsapi.builders.CodeActionContextBuilder;
 import io.typefox.lsapi.builders.CodeActionParamsBuilder;
 import io.typefox.lsapi.services.transport.client.LanguageClientEndpoint;
@@ -91,8 +95,8 @@ public class LSPCodeActionMarkerResolution extends WorkbenchMarkerResolution imp
 			if (marker.getAttribute(LSP_REMEDIATION) != null) {
 				resolutions = (List<? extends Command>)marker.getAttribute(LSP_REMEDIATION);
 			} else if (marker.getResource().getType() == IResource.FILE) {
-				IDocument document = ITextFileBufferManager.DEFAULT.getTextFileBuffer(marker.getResource().getFullPath(), LocationKind.IFILE).getDocument();
-				LanguageClientEndpoint lsp = LanguageServiceAccessor.getLanguageServer((IFile)marker.getResource(), document);
+				IDocument document = FileBuffers.getTextFileBufferManager().getTextFileBuffer(marker.getResource().getFullPath(), LocationKind.IFILE).getDocument();
+				LanguageClientEndpoint lsp = LanguageServiceAccessor.getLanguageServer((IFile)marker.getResource(), document, null);
 				if (lsp != null) {
 					Diagnostic diagnostic = (Diagnostic)marker.getAttribute(LSPDiagnosticsToMarkers.LSP_DIAGNOSTIC);
 					CodeActionContext context = new CodeActionContextBuilder()

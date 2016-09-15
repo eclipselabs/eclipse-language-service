@@ -12,18 +12,46 @@ package org.eclipse.languageserver;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.URI;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
 import java.util.function.Predicate;
 
+import org.eclipse.core.filebuffers.FileBuffers;
+import org.eclipse.core.filebuffers.ITextFileBufferManager;
+import org.eclipse.core.filebuffers.LocationKind;
 import org.eclipse.core.resources.IFile;
 import org.eclipse.core.resources.IProject;
+import org.eclipse.core.resources.ResourcesPlugin;
 import org.eclipse.core.runtime.CoreException;
+import org.eclipse.core.runtime.IPath;
+import org.eclipse.core.runtime.NullProgressMonitor;
+import org.eclipse.core.runtime.Path;
 import org.eclipse.core.runtime.Platform;
 import org.eclipse.core.runtime.content.IContentType;
 import org.eclipse.jface.text.IDocument;
+import org.eclipse.jface.text.ITextViewer;
+import org.eclipse.jface.text.TextSelection;
+import org.eclipse.jface.viewers.ISelection;
+import org.eclipse.languageserver.LanguageServiceAccessor.LSPDocumentInfo;
+import org.eclipse.languageserver.operations.references.LSSearchResult;
+import org.eclipse.search2.internal.ui.SearchView;
+import org.eclipse.ui.IEditorInput;
+import org.eclipse.ui.IEditorPart;
+import org.eclipse.ui.IFileEditorInput;
+import org.eclipse.ui.IURIEditorInput;
+import org.eclipse.ui.PartInitException;
+import org.eclipse.ui.handlers.HandlerUtil;
+import org.eclipse.ui.texteditor.AbstractTextEditor;
+import org.eclipse.ui.texteditor.ITextEditor;
 
+import io.typefox.lsapi.Location;
 import io.typefox.lsapi.ServerCapabilities;
+import io.typefox.lsapi.impl.ReferenceContextImpl;
+import io.typefox.lsapi.impl.ReferenceParamsImpl;
+import io.typefox.lsapi.impl.TextDocumentIdentifierImpl;
 import io.typefox.lsapi.services.transport.client.LanguageClientEndpoint;
 
 /**
@@ -32,11 +60,11 @@ import io.typefox.lsapi.services.transport.client.LanguageClientEndpoint;
  *
  */
 public class LanguageServiceAccessor {
-	
+
 	static class WrapperEntryKey {
 		final IProject project;
 		final IContentType contentType;
-		
+
 		public WrapperEntryKey(IProject project, IContentType contentType) {
 			this.project = project;
 			this.contentType = contentType;
@@ -72,24 +100,79 @@ public class LanguageServiceAccessor {
 				return false;
 			return true;
 		}
-		
-		
+
+
 	}
 
 	private static Map<WrapperEntryKey, ProjectSpecificLanguageServerWrapper> projectServers = new HashMap<>();
 
-	public static LanguageClientEndpoint getLanguageServer(IFile file, IDocument document, Predicate<ServerCapabilities> request) throws IOException {
+	public static class LSPDocumentInfo {
+
+		public final URI fileUri;
+		public final IFile file;
+		public final IDocument document;
+		public final LanguageClientEndpoint languageClient;
+
+		public LSPDocumentInfo(URI fileUri, IFile file, IDocument document, LanguageClientEndpoint languageClient) {
+			this.fileUri = fileUri;
+			this.file = file;
+			this.document = document;
+			this.languageClient = languageClient;
+		}
+	}
+
+	public static LSPDocumentInfo getLSPDocumentInfoFor(ITextViewer viewer, Predicate<ServerCapabilities> capability) {
+		IDocument document = viewer.getDocument();
+		final IPath location = FileBuffers.getTextFileBufferManager().getTextFileBuffer(document).getLocation();
+		final IFile file = ResourcesPlugin.getWorkspace().getRoot().getFile(location);
+		URI fileUri = null;
+		LanguageClientEndpoint languageClient = null;
+		if (file.exists()) { // TODO, also support non resource file
+			fileUri = file.getLocation().toFile().toURI();
+			try {
+				languageClient = getLanguageServer(file, document, capability);
+			} catch (final IOException e) {
+				// TODO report?
+				e.printStackTrace();
+			}
+		} else {
+			fileUri = location.toFile().toURI();
+		}
+		return new LSPDocumentInfo(fileUri, file, document, languageClient);
+	}
+
+	public static LSPDocumentInfo getLSPDocumentInfoFor(ITextEditor editor, Predicate<ServerCapabilities> capability) {
+		IEditorInput input = editor.getEditorInput();
+		LanguageClientEndpoint languageClient = null;
+		URI fileUri = null;
+		IFile file = null;
+		IDocument document = null;
+		try {
+			if (input instanceof IFileEditorInput) {
+				// TODO, also support non resource file
+				file = ((IFileEditorInput) input).getFile();
+				fileUri = file.getLocation().toFile().toURI();
+				document = FileBuffers.getTextFileBufferManager().getTextFileBuffer(file.getFullPath(), LocationKind.IFILE).getDocument();
+				languageClient = LanguageServiceAccessor.getLanguageServer(file, document, ServerCapabilities::isReferencesProvider);
+			} else if (input instanceof IURIEditorInput) {
+				fileUri = ((IURIEditorInput) input).getURI();
+				document = FileBuffers.getTextFileBufferManager().getTextFileBuffer(new Path(fileUri.getPath()), LocationKind.LOCATION).getDocument();
+				// TODO server
+			}
+		} catch (Exception ex) {
+			ex.printStackTrace();
+		}
+		return new LSPDocumentInfo(fileUri, file, document, languageClient);
+	}
+
+	public static LanguageClientEndpoint getLanguageServer(IFile file, IDocument document,
+			Predicate<ServerCapabilities> request) throws IOException {
 		ProjectSpecificLanguageServerWrapper wrapper = getLSWrapper(file, request);
 		if (wrapper != null) {
 			wrapper.connect(file, document);
 			return wrapper.getServer();
-		}			
+		}
 		return null;
-	}
-	
-	@Deprecated
-	public static LanguageClientEndpoint getLanguageServer(IFile file, IDocument document) throws IOException {
-		return getLanguageServer(file, document, null);
 	}
 
 	private static ProjectSpecificLanguageServerWrapper getLSWrapper(IFile file, Predicate<ServerCapabilities> request) throws IOException {
@@ -102,7 +185,7 @@ public class LanguageServiceAccessor {
 			e.printStackTrace();
 		}
 		ProjectSpecificLanguageServerWrapper wrapper = null;
-		
+
 		// 1st: search existing server for that file
 		for (IContentType contentType : fileContentTypes) {
 			WrapperEntryKey key = new WrapperEntryKey(project, contentType);
@@ -122,7 +205,7 @@ public class LanguageServiceAccessor {
 			for (IContentType contentType : fileContentTypes) {
 				for (StreamConnectionProvider connection : LSPStreamConnectionProviderRegistry.getInstance().findProviderFor(contentType)) {
 					wrapper = new ProjectSpecificLanguageServerWrapper(project, connection);
-					WrapperEntryKey key = new WrapperEntryKey(project, contentType); 
+					WrapperEntryKey key = new WrapperEntryKey(project, contentType);
 					projectServers.put(key, wrapper);
 					if (request == null
 						|| wrapper.getServerCapabilities() == null /* null check is workaround for https://github.com/TypeFox/ls-api/issues/47 */
