@@ -22,6 +22,7 @@ import org.eclipse.jface.text.IDocument;
 
 import io.typefox.lsapi.DiagnosticSeverity;
 import io.typefox.lsapi.Position;
+import io.typefox.lsapi.TextEdit;
 import io.typefox.lsapi.impl.PositionImpl;
 import io.typefox.lsapi.impl.TextDocumentIdentifierImpl;
 import io.typefox.lsapi.impl.TextDocumentPositionParamsImpl;
@@ -63,7 +64,7 @@ public class LSPEclipseUtils {
 		}
 
 	}
-	
+
 //	public static int toEclipseMarkerSeverity(int lspSeverity) {
 //		switch (lspSeverity) {
 //		case 1: return IMarker.SEVERITY_ERROR;
@@ -71,7 +72,7 @@ public class LSPEclipseUtils {
 //		}
 //		return IMarker.SEVERITY_INFO;
 //	}
-	
+
 	public static IResource findResourceFor(String uri) {
 		uri = uri.replace("file:///", "file:/");
 		uri = uri.replace("file://", "file:/");
@@ -89,6 +90,13 @@ public class LSPEclipseUtils {
 			//resource.refresh ?
 		}
 		return resource;
+	}
+
+	public static void replaceRangeInDocument(IDocument document, TextEdit textEdit) throws BadLocationException {
+		document.replace(
+				toOffset(textEdit.getRange().getStart(), document),
+				toOffset(textEdit.getRange().getEnd(), document) - toOffset(textEdit.getRange().getStart(), document),
+				textEdit.getNewText());
 	}
 
 }

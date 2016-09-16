@@ -56,10 +56,7 @@ public class LSPFormatHandler extends AbstractHandler implements IHandler {
 					formatter.thenAccept((List<? extends TextEdit> t) -> {
 						for (TextEdit textEdit : t) {
 							try {
-								document.replace(
-										LSPEclipseUtils.toOffset(textEdit.getRange().getStart(), document),
-										LSPEclipseUtils.toOffset(textEdit.getRange().getEnd(), document) - LSPEclipseUtils.toOffset(textEdit.getRange().getStart(), document),
-										textEdit.getNewText());
+								LSPEclipseUtils.replaceRangeInDocument(document, textEdit);
 							} catch (BadLocationException e) {
 								// TODO Auto-generated catch block
 								e.printStackTrace();
