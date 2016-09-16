@@ -106,17 +106,17 @@ public class OpenDeclarationHyperlinkDetector extends AbstractHyperlinkDetector 
 	@Override
 	public IHyperlink[] detectHyperlinks(ITextViewer textViewer, IRegion region, boolean canShowMultipleHyperlinks) {
 		final LSPDocumentInfo info = LanguageServiceAccessor.getLSPDocumentInfoFor(textViewer, ServerCapabilities::isDefinitionProvider);
-		if (info.languageClient != null) {
+		if (info != null) {
 			try {
-				CompletableFuture<List<? extends Location>> documentHighlight = info.languageClient.getTextDocumentService()
-						.definition(LSPEclipseUtils.toTextDocumentPosistionParams(info.fileUri, region.getOffset(), textViewer.getDocument()));
+				CompletableFuture<List<? extends Location>> documentHighlight = info.getTextDocumentService()
+						.definition(LSPEclipseUtils.toTextDocumentPosistionParams(info.getFileUri(), region.getOffset(), textViewer.getDocument()));
 				List<? extends Location> response = documentHighlight.get(2, TimeUnit.SECONDS);
 				if (response.isEmpty()) {
 					return null;
 				}
 				List<IHyperlink> hyperlinks = new ArrayList<IHyperlink>(response.size());
 				for (Location responseLocation : response) {
-					hyperlinks.add(new LSBasedHyperlink(responseLocation, info.fileUri, region));
+					hyperlinks.add(new LSBasedHyperlink(responseLocation, info.getFileUri(), region));
 				}
 				return hyperlinks.toArray(new IHyperlink[hyperlinks.size()]);
 			} catch (Exception e) {

@@ -58,9 +58,9 @@ public class LSBasedHover implements ITextHover {
 	public IRegion getHoverRegion(ITextViewer textViewer, int offset) {
 		IRegion res = new Region(offset, 0);
 		final LSPDocumentInfo info = LanguageServiceAccessor.getLSPDocumentInfoFor(textViewer, ServerCapabilities::isHoverProvider);
-		if (info.languageClient != null) {
+		if (info != null) {
 			try {
-				hover = info.languageClient.getTextDocumentService().hover(LSPEclipseUtils.toTextDocumentPosistionParams(info.fileUri, offset, textViewer.getDocument()));
+				hover = info.getTextDocumentService().hover(LSPEclipseUtils.toTextDocumentPosistionParams(info.getFileUri(), offset, textViewer.getDocument()));
 				Range range = hover.get(800, TimeUnit.MILLISECONDS).getRange();
 				if (range != null) {
 					int rangeOffset = LSPEclipseUtils.toOffset(range.getStart(), textViewer.getDocument());

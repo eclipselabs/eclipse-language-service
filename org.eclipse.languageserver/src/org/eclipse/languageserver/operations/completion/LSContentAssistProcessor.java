@@ -41,10 +41,10 @@ public class LSContentAssistProcessor implements IContentAssistProcessor {
 		final LSPDocumentInfo info = LanguageServiceAccessor.getLSPDocumentInfoFor(viewer, ServerCapabilities::isCodeActionProvider);
 		CompletableFuture<CompletionList> request = null;
 		try {
-			if (info.languageClient != null) {
+			if (info != null) {
 				IDocument document = viewer.getDocument();
-				TextDocumentPositionParamsImpl param = LSPEclipseUtils.toTextDocumentPosistionParams(info.fileUri, offset, document);
-				request = info.languageClient.getTextDocumentService().completion(param);
+				TextDocumentPositionParamsImpl param = LSPEclipseUtils.toTextDocumentPosistionParams(info.getFileUri(), offset, document);
+				request = info.getTextDocumentService().completion(param);
 				CompletionList completionList = request.get(5, TimeUnit.SECONDS);
 				res = toProposals(offset, completionList);
 			}

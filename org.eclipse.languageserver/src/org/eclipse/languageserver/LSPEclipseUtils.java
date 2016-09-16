@@ -92,7 +92,7 @@ public class LSPEclipseUtils {
 		return resource;
 	}
 
-	public static void replaceRangeInDocument(IDocument document, TextEdit textEdit) throws BadLocationException {
+	public static void applyTextEdit(IDocument document, TextEdit textEdit) throws BadLocationException {
 		document.replace(
 				toOffset(textEdit.getRange().getStart(), document),
 				toOffset(textEdit.getRange().getEnd(), document) - toOffset(textEdit.getRange().getStart(), document),
