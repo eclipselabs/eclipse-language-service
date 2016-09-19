@@ -67,8 +67,8 @@ public class LSPCodeActionsMenu extends ContributionItem implements IWorkbenchCo
 			ITextSelection selection = (ITextSelection) ((ITextEditor) editor).getSelectionProvider().getSelection();
 			try {
 				this.range = new RangeBuilder()
-						.start(LSPEclipseUtils.toPosition(selection.getOffset(), info.document))
-						.end(LSPEclipseUtils.toPosition(selection.getOffset() + selection.getLength(), info.document))
+						.start(LSPEclipseUtils.toPosition(selection.getOffset(), info.getDocument()))
+						.end(LSPEclipseUtils.toPosition(selection.getOffset() + selection.getLength(), info.getDocument()))
 						.build();
 			} catch (BadLocationException e) {
 				// TODO Auto-generated catch block
@@ -86,11 +86,11 @@ public class LSPCodeActionsMenu extends ContributionItem implements IWorkbenchCo
 				.diagnostic((Diagnostic)null)
 				.build();
 		CodeActionParams param = new CodeActionParamsBuilder()
-				.textDocument(info.fileUri.toString())
+				.textDocument(info.getFileUri().toString())
 				.range(this.range)
 				.context(context)
 				.build();
-		final CompletableFuture<List<? extends Command>> codeActions = info.languageClient.getTextDocumentService().codeAction(param);
+		final CompletableFuture<List<? extends Command>> codeActions = info.getTextDocumentService().codeAction(param);
 		codeActions.whenComplete(new BiConsumer<List<? extends Command>, Throwable>() {
 
 			@Override

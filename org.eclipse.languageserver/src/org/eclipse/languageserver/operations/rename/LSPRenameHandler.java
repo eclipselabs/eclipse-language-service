@@ -59,17 +59,17 @@ public class LSPRenameHandler extends AbstractHandler implements IHandler {
 		IEditorPart part = HandlerUtil.getActiveEditor(event);
 		if (part instanceof AbstractTextEditor) {
 			LSPDocumentInfo info = LanguageServiceAccessor.getLSPDocumentInfoFor((ITextEditor) part, ServerCapabilities::isRenameProvider);
-			if (info.languageClient != null) {
+			if (info != null) {
 				ISelection sel = ((AbstractTextEditor) part).getSelectionProvider().getSelection();
 				if (sel instanceof TextSelection) {
 					try {
 						RenameParamsImpl params = new RenameParamsImpl();
-						params.setPosition(LSPEclipseUtils.toPosition(((TextSelection) sel).getOffset(), info.document));
+						params.setPosition(LSPEclipseUtils.toPosition(((TextSelection) sel).getOffset(), info.getDocument()));
 						TextDocumentIdentifierImpl identifier = new TextDocumentIdentifierImpl();
-						identifier.setUri(info.fileUri.toString());
+						identifier.setUri(info.getFileUri().toString());
 						params.setTextDocument(identifier);
 						params.setNewName(askNewName());
-						CompletableFuture<WorkspaceEdit> rename = info.languageClient.getTextDocumentService().rename(params);
+						CompletableFuture<WorkspaceEdit> rename = info.getTextDocumentService().rename(params);
 						rename.thenAccept((WorkspaceEdit t) -> apply(t));
 					} catch (BadLocationException e) {
 						// TODO Auto-generated catch block
@@ -99,10 +99,7 @@ public class LSPRenameHandler extends AbstractHandler implements IHandler {
 						IDocument document = FileBuffers.getTextFileBufferManager().getTextFileBuffer(file.getFullPath(), LocationKind.IFILE).getDocument();
 						try {
 							for (TextEdit textEdit : entry.getValue()) {
-								document.replace(
-										LSPEclipseUtils.toOffset(textEdit.getRange().getStart(), document),
-										LSPEclipseUtils.toOffset(textEdit.getRange().getEnd(), document) - LSPEclipseUtils.toOffset(textEdit.getRange().getStart(), document),
-										textEdit.getNewText());
+								LSPEclipseUtils.applyTextEdit(document, textEdit);
 							}
 							file.setContents(new ByteArrayInputStream(document.get().getBytes(file.getCharset())), false, true, monitor);
 						} catch (UnsupportedEncodingException | BadLocationException e) {
@@ -122,7 +119,7 @@ public class LSPRenameHandler extends AbstractHandler implements IHandler {
 		if (part instanceof AbstractTextEditor) {
 			LSPDocumentInfo info = LanguageServiceAccessor.getLSPDocumentInfoFor((ITextEditor) part, ServerCapabilities::isRenameProvider);
 			ISelection selection = ((AbstractTextEditor) part).getSelectionProvider().getSelection();
-			return info.languageClient != null && !selection.isEmpty() && selection instanceof ITextSelection;
+			return info != null && !selection.isEmpty() && selection instanceof ITextSelection;
 		}
 		return false;
 	}
