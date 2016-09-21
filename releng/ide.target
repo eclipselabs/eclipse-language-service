@@ -19,6 +19,6 @@
 <unit id="org.eclipse.xtext.xbase.lib.feature.group" version="2.10.0.v201605250459"/>
 <repository location="http://download.eclipse.org/modeling/tmf/xtext/updates/composite/releases/"/>
 </location>
-<location path="${project_loc:eclipse-language-service}/deps-repository/target/repository/plugins" type="Directory"/>
+<location path="${project_loc:eclipse-language-service}/repository/target/repository/plugins" type="Directory"/>
 </locations>
 </target>

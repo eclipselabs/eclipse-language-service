@@ -14,7 +14,6 @@
 	</properties>
 
 	<modules>
-		<module>deps-repository</module>
 		<module>eclipse.platform.text-generic_editor/org.eclipse.ui.genericeditor</module>
 		<module>org.eclipse.languageserver</module>
 		<module>repository</module>
