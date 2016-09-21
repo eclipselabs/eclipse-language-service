@@ -31,6 +31,6 @@
       <repository location="http://services.typefox.io/open-source/jenkins///job/lsapi/lastSuccessfulBuild/artifact/build/p2-repository/"/>
     </location>
     <!-- Hopefully will be in Orbit repo soon -->
-    <location path="${env_var:M2_REPO}/com/google/code/gson/gson/2.5/" type="Directory"/>
-  </locations>
+    <location path="${project_loc:eclipse-language-service}/repository/target/repository/plugins" type="Directory"/>
+    </locations>
 </target>
