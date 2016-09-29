@@ -62,7 +62,7 @@ public class InitializeLaunchConfigurations implements IStartup {
 				workingCopy.setAttribute(IExternalToolConstants.ATTR_BUILD_SCOPE, "${none}");
 				workingCopy.setAttribute(DebugPlugin.ATTR_CAPTURE_OUTPUT, true);
 				workingCopy.setAttribute(IExternalToolConstants.ATTR_LOCATION, "/usr/bin/node");
-				workingCopy.setAttribute(IExternalToolConstants.ATTR_TOOL_ARGUMENTS, "/home/mistria/git/omnisharp-node-client/languageserver/server.js --stdio");
+				workingCopy.setAttribute(IExternalToolConstants.ATTR_TOOL_ARGUMENTS, "/home/mistria/git/omnisharp-node-client/languageserver/server.js");
 				workingCopy.setAttribute(ILaunchManager.ATTR_APPEND_ENVIRONMENT_VARIABLES, true);
 				Map<String, String> environment = new HashMap<>(1);
 				environment.put("LD_LIBRARY_PATH", "/home/mistria/apps/OmniSharp.NET/icu54:" + System.getenv("LD_LIBRARY_PATH"));
