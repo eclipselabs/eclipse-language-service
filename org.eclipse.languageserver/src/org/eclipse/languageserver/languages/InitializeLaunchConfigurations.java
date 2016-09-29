@@ -62,7 +62,7 @@ public class InitializeLaunchConfigurations implements IStartup {
 				workingCopy.setAttribute(IExternalToolConstants.ATTR_BUILD_SCOPE, "${none}");
 				workingCopy.setAttribute(DebugPlugin.ATTR_CAPTURE_OUTPUT, true);
 				workingCopy.setAttribute(IExternalToolConstants.ATTR_LOCATION, "/usr/bin/node");
-				workingCopy.setAttribute(IExternalToolConstants.ATTR_TOOL_ARGUMENTS, "/home/mistria/git/omnisharp-node-client/languageserver/server.js --stdio");
+				workingCopy.setAttribute(IExternalToolConstants.ATTR_TOOL_ARGUMENTS, "/home/mistria/git/omnisharp-node-client/languageserver/server.js");
 				workingCopy.setAttribute(ILaunchManager.ATTR_APPEND_ENVIRONMENT_VARIABLES, true);
 				Map<String, String> environment = new HashMap<>(1);
 				environment.put("LD_LIBRARY_PATH", "/home/mistria/apps/OmniSharp.NET/icu54:" + System.getenv("LD_LIBRARY_PATH"));
@@ -90,15 +90,10 @@ public class InitializeLaunchConfigurations implements IStartup {
 				workingCopy.setAttribute(IExternalToolConstants.ATTR_SHOW_CONSOLE, false);
 				workingCopy.setAttribute(IExternalToolConstants.ATTR_BUILD_SCOPE, "${none}");
 				workingCopy.setAttribute(DebugPlugin.ATTR_CAPTURE_OUTPUT, true);
-				// Steps to get a usable Language server (for language supported by VSCode LS implementations)
-				// 1. Make VSCode LS [for CSS here] use STDIN/STDOUT. In file extensions/css/server/cssServerMain.ts change connection line to
-				//       let connection: IConnection = createConnection(new StreamMessageReader(process.in), new StreamMessageWriter(process.out));
-				//    and add imports  StreamMessageReader, StreamMessageWriter (as same level as IPCMessageReader/Writer)
-				// 2. Build VSCode as explained in https://github.com/Microsoft/vscode/wiki/How-to-Contribute#build-and-run-from-source
-				//     (don't forget the `npm run watch` after the install script)
-				// 3. Then set language server location and adapt process builder.
 				workingCopy.setAttribute(IExternalToolConstants.ATTR_LOCATION, "/usr/bin/node");
-				workingCopy.setAttribute(IExternalToolConstants.ATTR_TOOL_ARGUMENTS, "/home/mistria/git/vscode/extensions/css/server/out/cssServerMain.js --stdio");
+				// Assume node is already installed on machine and uses it
+				// TODO: implement smarter and multi-platform discovery
+				workingCopy.setAttribute(IExternalToolConstants.ATTR_TOOL_ARGUMENTS, "/usr/share/code/resources/app/extensions/css/server/out/cssServerMain.js --stdio");
 				omniSharpLauch = workingCopy.doSave();
 				registry.registerAssociation(contentTypeManager.getContentType("org.eclipse.wst.css.core.csssource"), LaunchConfigurationStreamProvider.findLaunchConfiguration(IExternalToolConstants.ID_PROGRAM_LAUNCH_CONFIGURATION_TYPE, InitializeLaunchConfigurations.VSCODE_CSS_NAME));
 			}
@@ -122,15 +117,10 @@ public class InitializeLaunchConfigurations implements IStartup {
 				workingCopy.setAttribute(IExternalToolConstants.ATTR_SHOW_CONSOLE, false);
 				workingCopy.setAttribute(IExternalToolConstants.ATTR_BUILD_SCOPE, "${none}");
 				workingCopy.setAttribute(DebugPlugin.ATTR_CAPTURE_OUTPUT, true);
-				// Steps to get a usable Language server (for language supported by VSCode LS implementations)
-				// 1. Make VSCode LS [for JS here] use STDIN/STDOUT. In file extensions/json/server/jsonServerMain.ts change connection line to
-				//       let connection: IConnection = createConnection(new StreamMessageReader(process.in), new StreamMessageWriter(process.out));
-				//    and add imports  StreamMessageReader, StreamMessageWriter (as same level as IPCMessageReader/Writer)
-				// 2. Build VSCode as explained in https://github.com/Microsoft/vscode/wiki/How-to-Contribute#build-and-run-from-source
-				//     (don't forget the `npm run watch` after the install script)
-				// 3. Then set language server location and adapt process builder.
 				workingCopy.setAttribute(IExternalToolConstants.ATTR_LOCATION, "/usr/bin/node");
-				workingCopy.setAttribute(IExternalToolConstants.ATTR_TOOL_ARGUMENTS, "/home/mistria/git/vscode/extensions/json/server/out/jsonServerMain.js --stdio");
+				// Assume node is already installed on machine and uses it
+				// TODO: implement smarter and multi-platform discovery
+				workingCopy.setAttribute(IExternalToolConstants.ATTR_TOOL_ARGUMENTS, "/usr/share/code/resources/app/extensions/json/server/out/jsonServerMain.js --stdio");
 				omniSharpLauch = workingCopy.doSave();
 				registry.registerAssociation(contentTypeManager.getContentType("org.eclipse.wst.jsdt.core.jsonSource"), LaunchConfigurationStreamProvider.findLaunchConfiguration(IExternalToolConstants.ID_PROGRAM_LAUNCH_CONFIGURATION_TYPE, InitializeLaunchConfigurations.VSCODE_JSON_NAME));
 			}

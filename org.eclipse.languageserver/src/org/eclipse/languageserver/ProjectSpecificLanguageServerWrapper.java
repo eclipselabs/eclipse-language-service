@@ -25,6 +25,7 @@ import org.eclipse.core.resources.IProject;
 import org.eclipse.core.runtime.IPath;
 import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.core.runtime.IStatus;
+import org.eclipse.core.runtime.NullProgressMonitor;
 import org.eclipse.core.runtime.Platform;
 import org.eclipse.core.runtime.Status;
 import org.eclipse.core.runtime.jobs.Job;
@@ -311,7 +312,7 @@ public class ProjectSpecificLanguageServerWrapper {
 	public ServerCapabilities getServerCapabilities() {
 		try {
 			start();
-			this.initializeJob.join();
+			this.initializeJob.join(1000, new NullProgressMonitor());
 		} catch (InterruptedException | IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
