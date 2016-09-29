@@ -41,6 +41,7 @@ import io.typefox.lsapi.InitializeResult;
 import io.typefox.lsapi.Message;
 import io.typefox.lsapi.ServerCapabilities;
 import io.typefox.lsapi.TextDocumentContentChangeEvent;
+import io.typefox.lsapi.TextDocumentSyncKind;
 import io.typefox.lsapi.impl.ClientCapabilitiesImpl;
 import io.typefox.lsapi.impl.DidChangeTextDocumentParamsImpl;
 import io.typefox.lsapi.impl.DidOpenTextDocumentParamsImpl;
@@ -75,6 +76,9 @@ public class ProjectSpecificLanguageServerWrapper {
 
 		@Override
 		public void documentChanged(DocumentEvent event) {
+			if (this.change == null) {
+				return;
+			}
 			this.change.getContentChanges().get(0).setText(event.getDocument().get());
 			languageClient.getTextDocumentService().didChange(this.change);
 			version++;
@@ -82,18 +86,22 @@ public class ProjectSpecificLanguageServerWrapper {
 
 		@Override
 		public void documentAboutToBeChanged(DocumentEvent event) {
+			// create change event according synch
+			TextDocumentContentChangeEventImpl changeEvent = toChangeEvent(event);
+			if (changeEvent == null) {
+				return;
+			}
 			this.change = new DidChangeTextDocumentParamsImpl();
 			VersionedTextDocumentIdentifierImpl doc = new VersionedTextDocumentIdentifierImpl();
 			doc.setUri(fileURI.toString());
 			doc.setVersion(version);
 			this.change.setTextDocument(doc);
-			// create change event
-			TextDocumentContentChangeEventImpl changeEvent = toChangeEvent(event);
 			this.change.setContentChanges(Arrays.asList(new TextDocumentContentChangeEventImpl[] { changeEvent }));
 		}
 
 		/**
-		 * Convert Eclipse {@link DocumentEvent} to LS
+		 * Convert Eclipse {@link DocumentEvent} to LS according
+		 * {@link TextDocumentSyncKind}.
 		 * {@link TextDocumentContentChangeEventImpl}.
 		 * 
 		 * @param event
@@ -101,24 +109,50 @@ public class ProjectSpecificLanguageServerWrapper {
 		 * @return the converted LS {@link TextDocumentContentChangeEventImpl}.
 		 */
 		private TextDocumentContentChangeEventImpl toChangeEvent(DocumentEvent event) {
-			TextDocumentContentChangeEventImpl changeEvent = new TextDocumentContentChangeEventImpl();
 			IDocument document = event.getDocument();
-			String newText = event.getText();
-			int offset = event.getOffset();
-			int length = event.getLength();
-			try {
-				// try to convert the Eclipse start/end offset to LS range.
-				RangeImpl range = new RangeImpl(LSPEclipseUtils.toPosition(offset, document),
-				        LSPEclipseUtils.toPosition(offset + length, document));
-				changeEvent.setRange(range);
-				changeEvent.setText(newText);
-				changeEvent.setRangeLength(length);
-			} catch (BadLocationException e) {
-				// error while conversion (should never occur)
-				// set the full document text as changes.
+			TextDocumentContentChangeEventImpl changeEvent = null;
+			TextDocumentSyncKind syncKind = getTextDocumentSyncKind();
+			switch (syncKind) {
+			case None:
+				changeEvent = null;
+				break;
+			case Full:
+				changeEvent = new TextDocumentContentChangeEventImpl();
 				changeEvent.setText(document.get());
+				break;
+			case Incremental:
+				changeEvent = new TextDocumentContentChangeEventImpl();
+				String newText = event.getText();
+				int offset = event.getOffset();
+				int length = event.getLength();
+				try {
+					// try to convert the Eclipse start/end offset to LS range.
+					RangeImpl range = new RangeImpl(LSPEclipseUtils.toPosition(offset, document),
+					        LSPEclipseUtils.toPosition(offset + length, document));
+					changeEvent.setRange(range);
+					changeEvent.setText(newText);
+					changeEvent.setRangeLength(length);
+				} catch (BadLocationException e) {
+					// error while conversion (should never occur)
+					// set the full document text as changes.
+					changeEvent.setText(document.get());
+				}
+				break;
 			}
 			return changeEvent;
+		}
+
+		/**
+		 * Returns the text document sync kind capabilities of the server and
+		 * {@link TextDocumentSyncKind#Full} otherwise.
+		 * 
+		 * @return the text document sync kind capabilities of the server and
+		 *         {@link TextDocumentSyncKind#Full} otherwise.
+		 */
+		private TextDocumentSyncKind getTextDocumentSyncKind() {
+			TextDocumentSyncKind syncKind = initializeResult != null
+			        ? initializeResult.getCapabilities().getTextDocumentSync() : null;
+			return syncKind != null ? syncKind : TextDocumentSyncKind.Full;
 		}
 	}
 
