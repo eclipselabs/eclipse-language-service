@@ -11,7 +11,6 @@
 package org.eclipse.languageserver;
 
 import java.io.IOException;
-import java.lang.reflect.Type;
 import java.net.URI;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -21,7 +20,6 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-import org.apache.commons.logging.Log;
 import org.eclipse.core.resources.IFile;
 import org.eclipse.core.resources.IProject;
 import org.eclipse.core.runtime.IPath;
@@ -30,6 +28,7 @@ import org.eclipse.core.runtime.IStatus;
 import org.eclipse.core.runtime.Platform;
 import org.eclipse.core.runtime.Status;
 import org.eclipse.core.runtime.jobs.Job;
+import org.eclipse.jface.text.BadLocationException;
 import org.eclipse.jface.text.DocumentEvent;
 import org.eclipse.jface.text.IDocument;
 import org.eclipse.jface.text.IDocumentListener;
@@ -37,31 +36,15 @@ import org.eclipse.languageserver.operations.diagnostics.LSPDiagnosticsToMarkers
 import org.eclipse.swt.widgets.Display;
 import org.eclipse.ui.internal.progress.ProgressMonitorFocusJobDialog;
 
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
-import com.google.gson.JsonDeserializationContext;
-import com.google.gson.JsonDeserializer;
-import com.google.gson.JsonElement;
-import com.google.gson.JsonObject;
-import com.google.gson.JsonParseException;
-import com.google.gson.JsonSyntaxException;
-import com.google.gson.TypeAdapter;
-import com.google.gson.TypeAdapterFactory;
-import com.google.gson.reflect.TypeToken;
-import com.google.gson.stream.JsonReader;
-import com.google.gson.stream.JsonToken;
-import com.google.gson.stream.JsonWriter;
-
 import io.typefox.lsapi.InitializeResult;
-import io.typefox.lsapi.MarkedString;
 import io.typefox.lsapi.Message;
 import io.typefox.lsapi.ServerCapabilities;
-import io.typefox.lsapi.builders.MarkedStringBuilder;
+import io.typefox.lsapi.TextDocumentContentChangeEvent;
 import io.typefox.lsapi.impl.ClientCapabilitiesImpl;
 import io.typefox.lsapi.impl.DidChangeTextDocumentParamsImpl;
 import io.typefox.lsapi.impl.DidOpenTextDocumentParamsImpl;
 import io.typefox.lsapi.impl.InitializeParamsImpl;
-import io.typefox.lsapi.impl.MarkedStringImpl;
+import io.typefox.lsapi.impl.RangeImpl;
 import io.typefox.lsapi.impl.TextDocumentContentChangeEventImpl;
 import io.typefox.lsapi.impl.TextDocumentItemImpl;
 import io.typefox.lsapi.impl.VersionedTextDocumentIdentifierImpl;
@@ -103,9 +86,38 @@ public class ProjectSpecificLanguageServerWrapper {
 			doc.setUri(fileURI.toString());
 			doc.setVersion(version);
 			this.change.setTextDocument(doc);
-			TextDocumentContentChangeEventImpl changeEvent = new TextDocumentContentChangeEventImpl();
-			changeEvent.setText(event.getDocument().get()); // TODO set to value after change
+			// create change event
+			TextDocumentContentChangeEventImpl changeEvent = toChangeEvent(event);
 			this.change.setContentChanges(Arrays.asList(new TextDocumentContentChangeEventImpl[] { changeEvent }));
+		}
+
+		/**
+		 * Convert Eclipse {@link DocumentEvent} to LS
+		 * {@link TextDocumentContentChangeEventImpl}.
+		 * 
+		 * @param event
+		 *            Eclipse {@link DocumentEvent}
+		 * @return the converted LS {@link TextDocumentContentChangeEventImpl}.
+		 */
+		private TextDocumentContentChangeEventImpl toChangeEvent(DocumentEvent event) {
+			TextDocumentContentChangeEventImpl changeEvent = new TextDocumentContentChangeEventImpl();
+			IDocument document = event.getDocument();
+			String newText = event.getText();
+			int offset = event.getOffset();
+			int length = event.getLength();
+			try {
+				// try to convert the Eclipse start/end offset to LS range.
+				RangeImpl range = new RangeImpl(LSPEclipseUtils.toPosition(offset, document),
+				        LSPEclipseUtils.toPosition(offset + length, document));
+				changeEvent.setRange(range);
+				changeEvent.setText(newText);
+				changeEvent.setRangeLength(length);
+			} catch (BadLocationException e) {
+				// error while conversion (should never occur)
+				// set the full document text as changes.
+				changeEvent.setText(document.get());
+			}
+			return changeEvent;
 		}
 	}
 
