@@ -98,6 +98,7 @@ public class InitializeLaunchConfigurations implements IStartup {
 				//     (don't forget the `npm run watch` after the install script)
 				// 3. Then set language server location and adapt process builder.
 				workingCopy.setAttribute(IExternalToolConstants.ATTR_LOCATION, "/usr/bin/node");
+				// Arguments are: CSS server & --stdio to support stdin/stdout on server side because launch can work only with stdio transport (not with IPC transport)
 				workingCopy.setAttribute(IExternalToolConstants.ATTR_TOOL_ARGUMENTS, "/home/mistria/git/vscode/extensions/css/server/out/cssServerMain.js --stdio");
 				omniSharpLauch = workingCopy.doSave();
 				registry.registerAssociation(contentTypeManager.getContentType("org.eclipse.wst.css.core.csssource"), LaunchConfigurationStreamProvider.findLaunchConfiguration(IExternalToolConstants.ID_PROGRAM_LAUNCH_CONFIGURATION_TYPE, InitializeLaunchConfigurations.VSCODE_CSS_NAME));
@@ -130,6 +131,7 @@ public class InitializeLaunchConfigurations implements IStartup {
 				//     (don't forget the `npm run watch` after the install script)
 				// 3. Then set language server location and adapt process builder.
 				workingCopy.setAttribute(IExternalToolConstants.ATTR_LOCATION, "/usr/bin/node");
+				// Arguments are: JSON server & --stdio to support stdin/stdout on server side because launch can work only with stdio transport (not with IPC transport)
 				workingCopy.setAttribute(IExternalToolConstants.ATTR_TOOL_ARGUMENTS, "/home/mistria/git/vscode/extensions/json/server/out/jsonServerMain.js --stdio");
 				omniSharpLauch = workingCopy.doSave();
 				registry.registerAssociation(contentTypeManager.getContentType("org.eclipse.wst.jsdt.core.jsonSource"), LaunchConfigurationStreamProvider.findLaunchConfiguration(IExternalToolConstants.ID_PROGRAM_LAUNCH_CONFIGURATION_TYPE, InitializeLaunchConfigurations.VSCODE_JSON_NAME));
