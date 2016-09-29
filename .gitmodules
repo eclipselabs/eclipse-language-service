@@ -1,4 +1,0 @@
-[submodule "eclipse.platform.text-generic_editor"]
-	path = eclipse.platform.text-generic_editor
-	url = https://github.com/mickaelistria/eclipse.platform.text.git
-	branch = generic_editor

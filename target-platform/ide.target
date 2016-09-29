@@ -20,15 +20,18 @@
       <repository location="http://download.eclipse.org/tools/orbit/downloads/drops/R20160520211859/repository/"/>
     </location>
     <location includeMode="slicer" includeAllPlatforms="false" includeSource="true" includeConfigurePhase="true" type="InstallableUnit">
-      <!-- Hopefully should soon include the generic editor, so we can get rid of the Git submodule to eclipse.platform.ui patch -->
       <unit id="org.eclipse.sdk.ide" version="0.0.0"/>
-      <repository location="http://download.eclipse.org/releases/neon/"/>
+      <repository location="http://download.eclipse.org/eclipse/updates/4.7-N-builds/"/>
     </location>
     <location includeMode="slicer" includeAllPlatforms="false" includeSource="true" includeConfigurePhase="true" type="InstallableUnit">
       <unit id="io.typefox.lsapi" version="0.0.0"/>
       <unit id="io.typefox.lsapi.services" version="0.0.0"/>
       <unit id="io.typefox.lsapi.annotations" version="0.0.0"/>
       <repository location="http://services.typefox.io/open-source/jenkins///job/lsapi/lastSuccessfulBuild/artifact/build/p2-repository/"/>
+    </location>
+    <location includeMode="slicer" includeAllPlatforms="false" includeSource="true" includeConfigurePhase="true" type="InstallableUnit">
+			<unit id="org.eclipse.xtext.xbase.lib" version="0.0.0"/>
+      <repository location="http://download.eclipse.org/modeling/tmf/xtext/updates/releases/2.10.0/"/>
     </location>
     <!-- Hopefully will be in Orbit repo soon -->
     <location path="${env_var:M2_REPO}/com/google/code/gson/gson/2.5/" type="Directory"/>

@@ -23,13 +23,13 @@ install: ''
 
 script:
 - export MAVEN_OPTS="-Xmx2g"
-- mvn clean verify -P build-individual-bundles
+- mvn clean verify
 
 # Deploy snapshot repository to repository.jboss.org 
 after_success: >
   [[ ${TRAVIS_PULL_REQUEST} == 'false' ]] &&
   [[ ${TRAVIS_TAG} == ''  ]] &&
-  mvn install -P build-individual-bundles -DskipTests &&
+  mvn install -DskipTests &&
   mvn deploy -DskipTests -f repository/pom.xml --settings repository/deploy-settings.xml
   
 # encrypted deploy credentials to repository.jboss.org

@@ -6,7 +6,6 @@
   <packaging>pom</packaging>
   
 	<modules>
-		<module>eclipse.platform.text-generic_editor/org.eclipse.ui.genericeditor</module>
 		<module>org.eclipse.languageserver</module>
 		<module>repository</module>
 	</modules>
@@ -33,13 +32,18 @@
 	<repositories>
 		<repository>
 			<layout>p2</layout>
-			<id>neon</id>
-			<url>http://download.eclipse.org/releases/neon</url>
+			<id>platform-4.7.N</id>
+			<url>http://download.eclipse.org/eclipse/updates/4.7-N-builds/</url>
 		</repository>
 		<repository>
 			<layout>p2</layout>
 			<id>ls-api-latest</id>
 			<url>http://services.typefox.io/open-source/jenkins///job/lsapi/lastSuccessfulBuild/artifact/build/p2-repository/</url>
+		</repository>
+		<repository>
+			<layout>p2</layout>
+			<id>xtext</id>
+			<url>http://download.eclipse.org/modeling/tmf/xtext/updates/releases/2.10.0/</url>
 		</repository>
 		<repository>
 			<layout>p2</layout>
