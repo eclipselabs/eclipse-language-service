@@ -151,7 +151,7 @@ public class InitializeLaunchConfigurations implements IStartup {
 			}
 			return res + uri;
 		}
-		return "/unknown/path/to/VSCode";
+		return "/unknown/path/to/VSCode" + uri;
 	}
 
 	private String getNodeJsLocation() {
