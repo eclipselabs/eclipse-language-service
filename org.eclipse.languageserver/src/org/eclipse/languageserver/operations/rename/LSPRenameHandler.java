@@ -99,10 +99,7 @@ public class LSPRenameHandler extends AbstractHandler implements IHandler {
 						IDocument document = FileBuffers.getTextFileBufferManager().getTextFileBuffer(file.getFullPath(), LocationKind.IFILE).getDocument();
 						try {
 							for (TextEdit textEdit : entry.getValue()) {
-								document.replace(
-										LSPEclipseUtils.toOffset(textEdit.getRange().getStart(), document),
-										LSPEclipseUtils.toOffset(textEdit.getRange().getEnd(), document) - LSPEclipseUtils.toOffset(textEdit.getRange().getStart(), document),
-										textEdit.getNewText());
+								LSPEclipseUtils.applyEdit(textEdit, document);
 							}
 							file.setContents(new ByteArrayInputStream(document.get().getBytes(file.getCharset())), false, true, monitor);
 						} catch (UnsupportedEncodingException | BadLocationException e) {

@@ -22,6 +22,7 @@ import org.eclipse.jface.text.IDocument;
 
 import io.typefox.lsapi.DiagnosticSeverity;
 import io.typefox.lsapi.Position;
+import io.typefox.lsapi.TextEdit;
 import io.typefox.lsapi.impl.PositionImpl;
 import io.typefox.lsapi.impl.TextDocumentIdentifierImpl;
 import io.typefox.lsapi.impl.TextDocumentPositionParamsImpl;
@@ -89,6 +90,13 @@ public class LSPEclipseUtils {
 			//resource.refresh ?
 		}
 		return resource;
+	}
+	
+	public static void applyEdit(TextEdit textEdit, IDocument document) throws BadLocationException {
+		document.replace(
+				LSPEclipseUtils.toOffset(textEdit.getRange().getStart(), document),
+				LSPEclipseUtils.toOffset(textEdit.getRange().getEnd(), document) - LSPEclipseUtils.toOffset(textEdit.getRange().getStart(), document),
+				textEdit.getNewText());
 	}
 
 }

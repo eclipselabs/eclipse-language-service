@@ -30,6 +30,7 @@ import org.eclipse.jface.text.contentassist.ICompletionProposalExtension6;
 import org.eclipse.jface.text.contentassist.ICompletionProposalExtension7;
 import org.eclipse.jface.text.contentassist.IContextInformation;
 import org.eclipse.jface.viewers.StyledString;
+import org.eclipse.languageserver.LSPEclipseUtils;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.graphics.Point;
@@ -166,43 +167,51 @@ public class LSCompletionProposal implements ICompletionProposal, ICompletionPro
 	
 	@Override
 	public void apply(IDocument document) {
-		String insertText = getInsertText();
-		this.selectionOffset = insertText.length();
-		
-		// Look for letters that are available before completion offset
-		try {
-			int backOffset = 0;
-			int size = Math.min(this.initialOffset, insertText.length());
-			while (backOffset == 0 && size != 0) {
-				if (document.get(this.initialOffset - size, size).equals(insertText.substring(0, size))) {
-					backOffset = size;
+		if (item.getTextEdit() != null) {
+			try {
+				LSPEclipseUtils.applyEdit(item.getTextEdit(), document);
+			} catch (BadLocationException e) {
+				e.printStackTrace();
+			}
+		} else { //compute a best edit by reusing prefixes and suffixes
+			String insertText = getInsertText();
+			this.selectionOffset = insertText.length();
+			
+			// Look for letters that are available before completion offset
+			try {
+				int backOffset = 0;
+				int size = Math.min(this.initialOffset, insertText.length());
+				while (backOffset == 0 && size != 0) {
+					if (document.get(this.initialOffset - size, size).equals(insertText.substring(0, size))) {
+						backOffset = size;
+					}
+					size--;
 				}
-				size--;
+				if (backOffset != 0) {
+					insertText = insertText.substring(backOffset);
+					this.selectionOffset -= backOffset;
+				}
+			} catch (BadLocationException ex) {
+				ex.printStackTrace();
 			}
-			if (backOffset != 0) {
-				insertText = insertText.substring(backOffset);
-				this.selectionOffset -= backOffset;
+			
+			// Looks for letters that were added after completion was triggered
+			int aheadOffset = 0;
+			try {
+				while (aheadOffset < document.getLength() && aheadOffset < insertText.length() && document.getChar(this.initialOffset + aheadOffset) == insertText.charAt(aheadOffset)) {
+					aheadOffset++;
+				}
+				insertText = insertText.substring(aheadOffset);
+			} catch (BadLocationException x) {
+				x.printStackTrace();
 			}
-		} catch (BadLocationException ex) {
-			ex.printStackTrace();
-		}
-		
-		// Looks for letters that were added after completion was triggered
-		int aheadOffset = 0;
-		try {
-			while (aheadOffset < document.getLength() && aheadOffset < insertText.length() && document.getChar(this.initialOffset + aheadOffset) == insertText.charAt(aheadOffset)) {
-				aheadOffset++;
+			
+			try {
+				document.replace(this.initialOffset + aheadOffset, 0, insertText);
+			} catch (BadLocationException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
 			}
-			insertText = insertText.substring(aheadOffset);
-		} catch (BadLocationException x) {
-			x.printStackTrace();
-		}
-		
-		try {
-			document.replace(this.initialOffset + aheadOffset, 0, insertText);
-		} catch (BadLocationException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
 		}
 	}
 
