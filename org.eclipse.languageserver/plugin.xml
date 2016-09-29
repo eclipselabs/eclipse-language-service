@@ -4,36 +4,6 @@
    <!-- Extension point will ideally be "org.eclipse.text...." because
    the feature should be part of the generic text editor -->
    <extension
-         point="org.eclipse.ui.genericeditor.contentAssistProcessors">
-      <contentAssistProcessor
-            class="org.eclipse.languageserver.operations.completion.LSContentAssistProcessor"
-            contentType="org.eclipse.wst.css.core.csssource">
-      </contentAssistProcessor>
-      <contentAssistProcessor
-            class="org.eclipse.languageserver.operations.completion.LSContentAssistProcessor"
-            contentType="org.eclipse.wst.jsdt.core.jsonSource">
-      </contentAssistProcessor>
-      <contentAssistProcessor
-            class="org.eclipse.languageserver.operations.completion.LSContentAssistProcessor"
-            contentType="org.eclipse.languageserver.csharp">
-      </contentAssistProcessor>
-   </extension>
-   <extension
-         point="org.eclipse.ui.genericeditor.hoverProviders">
-      <hoverProvider
-            class="org.eclipse.languageserver.operations.hover.LSBasedHover"
-            contentType="org.eclipse.wst.css.core.csssource">
-      </hoverProvider>
-      <hoverProvider
-            class="org.eclipse.languageserver.operations.hover.LSBasedHover"
-            contentType="org.eclipse.wst.jsdt.core.jsonSource">
-      </hoverProvider>
-      <hoverProvider
-            class="org.eclipse.languageserver.operations.hover.LSBasedHover"
-            contentType="org.eclipse.languageserver.csharp">
-      </hoverProvider>
-   </extension>
-   <extension
          id="diagnostic"
          point="org.eclipse.core.resources.markers">
       <super
@@ -46,16 +16,6 @@
             class="org.eclipse.languageserver.operations.codeactions.LSPCodeActionMarkerResolution"
             markerType="org.eclipse.languageserver.diagnostic">
       </markerResolutionGenerator>
-   </extension>
-   <extension
-         point="org.eclipse.core.contenttype.contentTypes">
-      <content-type
-            base-type="org.eclipse.core.runtime.text"
-            file-extensions="cs"
-            id="org.eclipse.languageserver.csharp"
-            name="C Sharp"
-            priority="normal">
-      </content-type>
    </extension>
    <extension
          point="org.eclipse.ui.workbench.texteditor.hyperlinkDetectors">
@@ -127,19 +87,6 @@
             id="org.eclipse.languageserver.lsResultPage"
             searchResultClass="org.eclipse.languageserver.operations.references.LSSearchResult">
       </viewPage>
-   </extension>
-   <extension
-         point="org.eclipse.ui.genericeditor.presentationReconcilers">
-      <presentationReconciler
-            class="org.eclipse.languageserver.languages.csharp.CSharpKeywordsHighlighter"
-            contentType="org.eclipse.languageserver.csharp">
-      </presentationReconciler>
-   </extension>
-   <extension
-         point="org.eclipse.ui.startup">
-      <startup
-            class="org.eclipse.languageserver.languages.InitializeLaunchConfigurations">
-      </startup>
    </extension>
    <extension
          point="org.eclipse.ui.preferencePages">

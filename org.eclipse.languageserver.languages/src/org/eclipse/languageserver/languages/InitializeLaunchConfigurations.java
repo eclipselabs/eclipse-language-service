@@ -73,7 +73,7 @@ public class InitializeLaunchConfigurations implements IStartup {
 				environment.put("LD_LIBRARY_PATH", "/home/mistria/apps/OmniSharp.NET/icu54:" + System.getenv("LD_LIBRARY_PATH"));
 				workingCopy.setAttribute(ILaunchManager.ATTR_ENVIRONMENT_VARIABLES, environment);
 				omniSharpLauch = workingCopy.doSave();
-				registry.registerAssociation(contentTypeManager.getContentType("org.eclipse.languageserver.csharp"), LaunchConfigurationStreamProvider.findLaunchConfiguration(IExternalToolConstants.ID_PROGRAM_LAUNCH_CONFIGURATION_TYPE, InitializeLaunchConfigurations.OMNISHARP_NAME));
+				registry.registerAssociation(contentTypeManager.getContentType("org.eclipse.languageserver.languages.csharp"), LaunchConfigurationStreamProvider.findLaunchConfiguration(IExternalToolConstants.ID_PROGRAM_LAUNCH_CONFIGURATION_TYPE, InitializeLaunchConfigurations.OMNISHARP_NAME));
 			}
 		} catch (CoreException e) {
 			e.printStackTrace();
@@ -101,6 +101,8 @@ public class InitializeLaunchConfigurations implements IStartup {
 				workingCopy.setAttribute(IExternalToolConstants.ATTR_TOOL_ARGUMENTS, getVSCodeLocation() + "/resources/app/extensions/css/server/out/cssServerMain.js --stdio");
 				omniSharpLauch = workingCopy.doSave();
 				registry.registerAssociation(contentTypeManager.getContentType("org.eclipse.wst.css.core.csssource"), LaunchConfigurationStreamProvider.findLaunchConfiguration(IExternalToolConstants.ID_PROGRAM_LAUNCH_CONFIGURATION_TYPE, InitializeLaunchConfigurations.VSCODE_CSS_NAME));
+				registry.registerAssociation(contentTypeManager.getContentType("org.eclipse.languageserver.languages.less"), LaunchConfigurationStreamProvider.findLaunchConfiguration(IExternalToolConstants.ID_PROGRAM_LAUNCH_CONFIGURATION_TYPE, InitializeLaunchConfigurations.VSCODE_CSS_NAME));
+				registry.registerAssociation(contentTypeManager.getContentType("org.eclipse.languageserver.languages.scss"), LaunchConfigurationStreamProvider.findLaunchConfiguration(IExternalToolConstants.ID_PROGRAM_LAUNCH_CONFIGURATION_TYPE, InitializeLaunchConfigurations.VSCODE_CSS_NAME));
 			}
 		} catch (CoreException e) {
 			e.printStackTrace();
