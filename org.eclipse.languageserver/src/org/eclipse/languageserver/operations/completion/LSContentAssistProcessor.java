@@ -27,7 +27,6 @@ import org.eclipse.languageserver.LanguageServiceAccessor.LSPDocumentInfo;
 
 import io.typefox.lsapi.CompletionItem;
 import io.typefox.lsapi.CompletionList;
-import io.typefox.lsapi.ServerCapabilities;
 import io.typefox.lsapi.impl.TextDocumentPositionParamsImpl;
 
 public class LSContentAssistProcessor implements IContentAssistProcessor {
@@ -38,7 +37,7 @@ public class LSContentAssistProcessor implements IContentAssistProcessor {
 	@Override
 	public ICompletionProposal[] computeCompletionProposals(ITextViewer viewer, int offset) {
 		ICompletionProposal[] res = new ICompletionProposal[0];
-		final LSPDocumentInfo info = LanguageServiceAccessor.getLSPDocumentInfoFor(viewer, ServerCapabilities::isCodeActionProvider);
+		final LSPDocumentInfo info = LanguageServiceAccessor.getLSPDocumentInfoFor(viewer, capabilities -> capabilities.getCodeLensProvider() != null);
 		CompletableFuture<CompletionList> request = null;
 		try {
 			if (info.languageClient != null) {
