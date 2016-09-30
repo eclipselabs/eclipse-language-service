@@ -98,7 +98,7 @@ public class InitializeLaunchConfigurations implements IStartup {
 				workingCopy.setAttribute(IExternalToolConstants.ATTR_LOCATION, getNodeJsLocation());
 				// Assume node is already installed on machine and uses it
 				// TODO: implement smarter and multi-platform discovery
-				workingCopy.setAttribute(IExternalToolConstants.ATTR_TOOL_ARGUMENTS, getVSCodeLocation() + "/resources/app/extensions/css/server/out/cssServerMain.js --stdio");
+				workingCopy.setAttribute(IExternalToolConstants.ATTR_TOOL_ARGUMENTS, getVSCodeLocation("/resources/app/extensions/css/server/out/cssServerMain.js") + " --stdio");
 				omniSharpLauch = workingCopy.doSave();
 				registry.registerAssociation(contentTypeManager.getContentType("org.eclipse.wst.css.core.csssource"), LaunchConfigurationStreamProvider.findLaunchConfiguration(IExternalToolConstants.ID_PROGRAM_LAUNCH_CONFIGURATION_TYPE, InitializeLaunchConfigurations.VSCODE_CSS_NAME));
 				registry.registerAssociation(contentTypeManager.getContentType("org.eclipse.languageserver.languages.less"), LaunchConfigurationStreamProvider.findLaunchConfiguration(IExternalToolConstants.ID_PROGRAM_LAUNCH_CONFIGURATION_TYPE, InitializeLaunchConfigurations.VSCODE_CSS_NAME));
@@ -127,7 +127,7 @@ public class InitializeLaunchConfigurations implements IStartup {
 				workingCopy.setAttribute(IExternalToolConstants.ATTR_LOCATION, getNodeJsLocation());
 				// Assume node is already installed on machine and uses it
 				// TODO: implement smarter and multi-platform discovery
-				workingCopy.setAttribute(IExternalToolConstants.ATTR_TOOL_ARGUMENTS, getVSCodeLocation() + "/resources/app/extensions/json/server/out/jsonServerMain.js --stdio");
+				workingCopy.setAttribute(IExternalToolConstants.ATTR_TOOL_ARGUMENTS, getVSCodeLocation("/resources/app/extensions/json/server/out/jsonServerMain.js") + " --stdio");
 				omniSharpLauch = workingCopy.doSave();
 				registry.registerAssociation(contentTypeManager.getContentType("org.eclipse.wst.jsdt.core.jsonSource"), LaunchConfigurationStreamProvider.findLaunchConfiguration(IExternalToolConstants.ID_PROGRAM_LAUNCH_CONFIGURATION_TYPE, InitializeLaunchConfigurations.VSCODE_JSON_NAME));
 			}
@@ -136,7 +136,7 @@ public class InitializeLaunchConfigurations implements IStartup {
 		}
 	}
 
-	private String getVSCodeLocation() {
+	private String getVSCodeLocation(String uri) {
 		String res = null;
 		if (Platform.getOS().equals(Platform.OS_LINUX)) {
 			res = "/usr/share/code";
@@ -146,9 +146,12 @@ public class InitializeLaunchConfigurations implements IStartup {
 			res = "/usr/share/code";
 		}
 		if (new File(res).isDirectory()) {
-			return res;
+			if (res.contains(" ")) {
+				return "\"" + res + uri + "\"";
+			}
+			return res + uri;
 		}
-		return "/unknown/path/to/VSCode";
+		return "/unknown/path/to/VSCode" + uri;
 	}
 
 	private String getNodeJsLocation() {
