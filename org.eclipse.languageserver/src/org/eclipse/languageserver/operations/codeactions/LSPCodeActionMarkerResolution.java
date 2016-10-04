@@ -35,6 +35,7 @@ import io.typefox.lsapi.CodeActionContext;
 import io.typefox.lsapi.CodeActionParams;
 import io.typefox.lsapi.Command;
 import io.typefox.lsapi.Diagnostic;
+import io.typefox.lsapi.ServerCapabilities;
 import io.typefox.lsapi.builders.CodeActionContextBuilder;
 import io.typefox.lsapi.builders.CodeActionParamsBuilder;
 import io.typefox.lsapi.services.transport.client.LanguageClientEndpoint;
@@ -92,7 +93,7 @@ public class LSPCodeActionMarkerResolution extends WorkbenchMarkerResolution imp
 				resolutions = (List<? extends Command>)marker.getAttribute(LSP_REMEDIATION);
 			} else if (marker.getResource().getType() == IResource.FILE) {
 				IDocument document = FileBuffers.getTextFileBufferManager().getTextFileBuffer(marker.getResource().getFullPath(), LocationKind.IFILE).getDocument();
-				LanguageClientEndpoint lsp = LanguageServiceAccessor.getLanguageServer((IFile)marker.getResource(), document, null);
+				LanguageClientEndpoint lsp = LanguageServiceAccessor.getLanguageServer((IFile)marker.getResource(), document, ServerCapabilities::isCodeActionProvider);
 				if (lsp != null) {
 					Diagnostic diagnostic = (Diagnostic)marker.getAttribute(LSPDiagnosticsToMarkers.LSP_DIAGNOSTIC);
 					CodeActionContext context = new CodeActionContextBuilder()
