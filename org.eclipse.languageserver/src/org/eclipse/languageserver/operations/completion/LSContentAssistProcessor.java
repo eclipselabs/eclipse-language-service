@@ -37,7 +37,7 @@ public class LSContentAssistProcessor implements IContentAssistProcessor {
 	@Override
 	public ICompletionProposal[] computeCompletionProposals(ITextViewer viewer, int offset) {
 		ICompletionProposal[] res = new ICompletionProposal[0];
-		final LSPDocumentInfo info = LanguageServiceAccessor.getLSPDocumentInfoFor(viewer, capabilities -> capabilities.getCodeLensProvider() != null);
+		final LSPDocumentInfo info = LanguageServiceAccessor.getLSPDocumentInfoFor(viewer, capabilities -> capabilities.getCompletionProvider() != null);
 		CompletableFuture<CompletionList> request = null;
 		try {
 			if (info.languageClient != null) {
