@@ -131,7 +131,8 @@ public class LaunchConfigurationStreamProvider implements StreamConnectionProvid
 	public OutputStream getOutputStream() {
 		if (this.outputStream == null) {
 			try {
-				Method systemProcessGetter = RuntimeProcess.class.getDeclaredMethod("getSystemProcess");
+				// TODO: Ugly hack, find something better to retrieve stream!
+				Method systemProcessGetter = RuntimeProcess.class.getDeclaredMethod("getSystemProcess"); //$NON-NLS-1$
 				systemProcessGetter.setAccessible(true);
 				Process systemProcess = (Process)systemProcessGetter.invoke(process);
 				this.outputStream = systemProcess.getOutputStream();

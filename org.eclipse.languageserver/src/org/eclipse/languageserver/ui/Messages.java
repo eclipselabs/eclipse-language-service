@@ -24,8 +24,15 @@ public class Messages extends NLS {
 	public static String PreferencesPage_Intro;
 	public static String codeActions_description;
 	public static String codeActions_label;
+	public static String updateCodeActions_menu;
+	public static String initializeLanguageServer_job;
+	public static String rename_job;
+	public static String referenceSearchQuery;
+	public static String computing;
+	public static String updateCodelensMenu_job;
+
 
 	static {
-		NLS.initializeMessages(Messages.class.getPackage().getName() + ".messages", Messages.class);
+		NLS.initializeMessages(Messages.class.getPackage().getName() + ".messages", Messages.class); //$NON-NLS-1$
 	}
 }

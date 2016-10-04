@@ -15,7 +15,6 @@ import java.io.UnsupportedEncodingException;
 import java.util.List;
 import java.util.Map.Entry;
 import java.util.concurrent.CompletableFuture;
-import java.util.function.Consumer;
 
 import org.eclipse.core.commands.AbstractHandler;
 import org.eclipse.core.commands.ExecutionEvent;
@@ -39,6 +38,7 @@ import org.eclipse.languageserver.LSPEclipseUtils;
 import org.eclipse.languageserver.LanguageServerPluginActivator;
 import org.eclipse.languageserver.LanguageServiceAccessor;
 import org.eclipse.languageserver.LanguageServiceAccessor.LSPDocumentInfo;
+import org.eclipse.languageserver.ui.Messages;
 import org.eclipse.ui.IEditorPart;
 import org.eclipse.ui.IWorkbenchPart;
 import org.eclipse.ui.PlatformUI;
@@ -89,7 +89,7 @@ public class LSPRenameHandler extends AbstractHandler implements IHandler {
 				// save all open modified editors?
 			}
 		}
-		WorkspaceJob job = new WorkspaceJob("Rename") {
+		WorkspaceJob job = new WorkspaceJob(Messages.rename_job) {
 			@Override
 			public IStatus runInWorkspace(IProgressMonitor monitor) throws CoreException {
 				for (Entry<String, ? extends List<? extends TextEdit>> entry : workspaceEdit.getChanges().entrySet()) {
@@ -125,7 +125,8 @@ public class LSPRenameHandler extends AbstractHandler implements IHandler {
 	}
 
 	private String askNewName() {
-		return "blah";
+		// TODO: show popup to ask user
+		return "blah"; //$NON-NLS-1$
 	}
 
 }

@@ -106,13 +106,13 @@ public class LSCompletionProposal implements ICompletionProposal, ICompletionPro
 	public Object getAdditionalProposalInfo(IProgressMonitor monitor) {
 		StringBuilder res = new StringBuilder();
 		if (this.item.getDocumentation() != null) {
-			res.append(this.item.getDocumentation().replaceAll("\\n", "<br/>"));
+			res.append(this.item.getDocumentation().replaceAll("\\n", "<br/>")); //$NON-NLS-1$ //$NON-NLS-2$
 		}
 		if (res.length() > 0) {
-			res.append("<br/>");
+			res.append("<br/>"); //$NON-NLS-1$
 		}
 		if (this.item.getDetail() != null) {
-			res.append(this.item.getDetail().replaceAll("\\n", "<br/>"));
+			res.append(this.item.getDetail().replaceAll("\\n", "<br/>")); //$NON-NLS-1$ //$NON-NLS-2$
 		}
 		
 		return res.toString();

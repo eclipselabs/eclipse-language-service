@@ -10,7 +10,6 @@
  *******************************************************************************/
 package org.eclipse.languageserver.operations.references;
 
-import java.net.URI;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
@@ -18,26 +17,16 @@ import org.eclipse.core.commands.AbstractHandler;
 import org.eclipse.core.commands.ExecutionEvent;
 import org.eclipse.core.commands.ExecutionException;
 import org.eclipse.core.commands.IHandler;
-import org.eclipse.core.filebuffers.FileBuffers;
-import org.eclipse.core.filebuffers.ITextFileBufferManager;
-import org.eclipse.core.filebuffers.LocationKind;
-import org.eclipse.core.resources.IFile;
 import org.eclipse.core.runtime.NullProgressMonitor;
-import org.eclipse.core.runtime.Path;
 import org.eclipse.jface.text.BadLocationException;
-import org.eclipse.jface.text.IDocument;
 import org.eclipse.jface.text.ITextSelection;
-import org.eclipse.jface.text.ITextViewer;
 import org.eclipse.jface.text.TextSelection;
 import org.eclipse.jface.viewers.ISelection;
 import org.eclipse.languageserver.LSPEclipseUtils;
 import org.eclipse.languageserver.LanguageServiceAccessor;
 import org.eclipse.languageserver.LanguageServiceAccessor.LSPDocumentInfo;
 import org.eclipse.search2.internal.ui.SearchView;
-import org.eclipse.ui.IEditorInput;
 import org.eclipse.ui.IEditorPart;
-import org.eclipse.ui.IFileEditorInput;
-import org.eclipse.ui.IURIEditorInput;
 import org.eclipse.ui.IWorkbenchPart;
 import org.eclipse.ui.PartInitException;
 import org.eclipse.ui.PlatformUI;
@@ -50,7 +39,6 @@ import io.typefox.lsapi.ServerCapabilities;
 import io.typefox.lsapi.impl.ReferenceContextImpl;
 import io.typefox.lsapi.impl.ReferenceParamsImpl;
 import io.typefox.lsapi.impl.TextDocumentIdentifierImpl;
-import io.typefox.lsapi.services.transport.client.LanguageClientEndpoint;
 
 public class LSFindReferences extends AbstractHandler implements IHandler {
 
@@ -59,7 +47,7 @@ public class LSFindReferences extends AbstractHandler implements IHandler {
 		IEditorPart part = HandlerUtil.getActiveEditor(event);
 		SearchView searchView = null;
 		try {
-			searchView = (SearchView) HandlerUtil.getActiveWorkbenchWindow(event).getActivePage().showView("org.eclipse.search.ui.views.SearchView");
+			searchView = (SearchView) HandlerUtil.getActiveWorkbenchWindow(event).getActivePage().showView("org.eclipse.search.ui.views.SearchView"); //$NON-NLS-1$
 		} catch (PartInitException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();

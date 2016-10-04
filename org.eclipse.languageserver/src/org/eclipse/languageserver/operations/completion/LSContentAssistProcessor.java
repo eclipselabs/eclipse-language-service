@@ -95,7 +95,7 @@ public class LSContentAssistProcessor implements IContentAssistProcessor {
 
 	@Override
 	public String getErrorMessage() {
-		return "Error";
+		return "Error"; //$NON-NLS-1$
 	}
 
 	@Override

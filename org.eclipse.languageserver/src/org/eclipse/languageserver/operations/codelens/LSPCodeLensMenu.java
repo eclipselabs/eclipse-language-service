@@ -20,6 +20,7 @@ import org.eclipse.core.runtime.Status;
 import org.eclipse.jface.action.ContributionItem;
 import org.eclipse.languageserver.LanguageServiceAccessor;
 import org.eclipse.languageserver.LanguageServiceAccessor.LSPDocumentInfo;
+import org.eclipse.languageserver.ui.Messages;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.widgets.Menu;
 import org.eclipse.swt.widgets.MenuItem;
@@ -50,7 +51,7 @@ public class LSPCodeLensMenu extends ContributionItem implements IWorkbenchContr
 	@Override
 	public void fill(final Menu menu, int index) {
 		final MenuItem item = new MenuItem(menu, SWT.NONE, index);
-		item.setText("Computing...");
+		item.setText(Messages.computing);
 		item.setEnabled(false);
 		CodeLensParams param = new CodeLensParamsBuilder().textDocument(info.fileUri.toString()).build();
 		final CompletableFuture<List<? extends CodeLens>> codeLens = info.languageClient.getTextDocumentService().codeLens(param);
@@ -58,7 +59,7 @@ public class LSPCodeLensMenu extends ContributionItem implements IWorkbenchContr
 
 			@Override
 			public void accept(List<? extends CodeLens> t, Throwable u) {
-				UIJob job = new UIJob(menu.getDisplay(), "Update codelens menu") {
+				UIJob job = new UIJob(menu.getDisplay(), Messages.updateCodelensMenu_job) {
 					@Override
 					public IStatus runInUIThread(IProgressMonitor monitor) {
 						if (u != null) {

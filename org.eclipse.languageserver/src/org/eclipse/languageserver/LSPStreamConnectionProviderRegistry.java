@@ -36,7 +36,7 @@ import org.eclipse.jface.preference.IPreferenceStore;
  */
 public class LSPStreamConnectionProviderRegistry {
 	
-	private static final String CONTENT_TYPE_TO_LSP_LAUNCH_PREF_KEY = "contentTypeToLSPLauch";
+	private static final String CONTENT_TYPE_TO_LSP_LAUNCH_PREF_KEY = "contentTypeToLSPLauch"; //$NON-NLS-1$
 	
 	private static LSPStreamConnectionProviderRegistry INSTANCE = null;
 	public static LSPStreamConnectionProviderRegistry getInstance() {
@@ -58,11 +58,11 @@ public class LSPStreamConnectionProviderRegistry {
 		IContentTypeManager contentTypeManager = Platform.getContentTypeManager();
 		String prefs = preferenceStore.getString(CONTENT_TYPE_TO_LSP_LAUNCH_PREF_KEY);
 		if (prefs != null && !prefs.isEmpty()) {
-			String[] entries = prefs.split(",");
+			String[] entries = prefs.split(","); //$NON-NLS-1$
 			for (String entry : entries) {
-				String[] parts = entry.split(":");
+				String[] parts = entry.split(":"); //$NON-NLS-1$
 				String contentTypeId = parts[0];
-				String[] launchParts = parts[1].split("/");
+				String[] launchParts = parts[1].split("/"); //$NON-NLS-1$
 				String launchType = launchParts[0];
 				String launchName = launchParts[1];
 				IContentType contentType = contentTypeManager.getContentType(contentTypeId);

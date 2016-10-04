@@ -30,6 +30,8 @@ import org.eclipse.jface.text.BadLocationException;
 import org.eclipse.jface.text.IDocument;
 import org.eclipse.jface.text.IRegion;
 import org.eclipse.languageserver.LSPEclipseUtils;
+import org.eclipse.languageserver.LanguageServerPluginActivator;
+import org.eclipse.languageserver.ui.Messages;
 import org.eclipse.search.internal.ui.text.FileMatch;
 import org.eclipse.search.internal.ui.text.FileSearchQuery;
 import org.eclipse.search.internal.ui.text.FileSearchResult;
@@ -75,12 +77,12 @@ public class LSSearchResult extends FileSearchResult {
 
 	@Override
 	public String getLabel() {
-		return "References TODO Label";
+		return "References TODO Label";  //$NON-NLS-1$
 	}
 
 	@Override
 	public String getTooltip() {
-		return "References TODO Tooltip";
+		return "References TODO Tooltip"; //$NON-NLS-1$
 	}
 
 	@Override
@@ -92,7 +94,7 @@ public class LSSearchResult extends FileSearchResult {
 	@Override
 	public ISearchQuery getQuery() {
 		if (this.query == null) {
-			this.query = new FileSearchQuery("reference", false, false, null) {
+			this.query = new FileSearchQuery(Messages.referenceSearchQuery, false, false, null) {
 				@Override
 				public IStatus run(IProgressMonitor monitor) throws OperationCanceledException {
 					try {
@@ -102,7 +104,7 @@ public class LSSearchResult extends FileSearchResult {
 						}
 						return Status.OK_STATUS;
 					} catch (Exception ex) {
-						return new Status(IStatus.ERROR, "TODO", "TODO"); // TODO
+						return new Status(IStatus.ERROR, LanguageServerPluginActivator.getDefault().getBundle().getSymbolicName(), ex.getMessage(), ex);
 					}
 				}
 				

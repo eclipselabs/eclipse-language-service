@@ -17,7 +17,6 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 
 import org.eclipse.core.filebuffers.FileBuffers;
-import org.eclipse.core.filebuffers.ITextFileBufferManager;
 import org.eclipse.core.filebuffers.LocationKind;
 import org.eclipse.core.resources.IFile;
 import org.eclipse.core.resources.IMarker;
@@ -25,27 +24,24 @@ import org.eclipse.core.resources.IResource;
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.jface.text.IDocument;
 import org.eclipse.languageserver.LanguageServiceAccessor;
-import org.eclipse.languageserver.LanguageServiceAccessor.LSPDocumentInfo;
 import org.eclipse.languageserver.operations.diagnostics.LSPDiagnosticsToMarkers;
 import org.eclipse.languageserver.ui.Messages;
 import org.eclipse.swt.graphics.Image;
 import org.eclipse.ui.IMarkerResolution;
 import org.eclipse.ui.IMarkerResolutionGenerator2;
-import org.eclipse.ui.texteditor.ITextEditor;
 import org.eclipse.ui.views.markers.WorkbenchMarkerResolution;
 
 import io.typefox.lsapi.CodeActionContext;
 import io.typefox.lsapi.CodeActionParams;
 import io.typefox.lsapi.Command;
 import io.typefox.lsapi.Diagnostic;
-import io.typefox.lsapi.ServerCapabilities;
 import io.typefox.lsapi.builders.CodeActionContextBuilder;
 import io.typefox.lsapi.builders.CodeActionParamsBuilder;
 import io.typefox.lsapi.services.transport.client.LanguageClientEndpoint;
 
 public class LSPCodeActionMarkerResolution extends WorkbenchMarkerResolution implements IMarkerResolutionGenerator2 {
 
-	private static final String LSP_REMEDIATION = "lspCodeActions";
+	private static final String LSP_REMEDIATION = "lspCodeActions"; //$NON-NLS-1$
 
 	@Override
 	public IMarkerResolution[] getResolutions(IMarker marker) {

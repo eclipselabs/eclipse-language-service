@@ -32,7 +32,7 @@
          point="org.eclipse.ui.commands">
       <command
             id="org.eclipse.languageserver.format"
-            name="Format">
+            name="%format.command.name">
       </command>
    </extension>
    <extension
@@ -93,7 +93,7 @@
       <page
             class="org.eclipse.languageserver.ui.LanguageServerPreferencePage"
             id="org.eclipse.languageserver.preferences"
-            name="Language Servers">
+            name="%languageservers.preference.page">
       </page>
    </extension>
    <extension
@@ -102,7 +102,7 @@
             allPopups="true"
             locationURI="popup:#TextEditorContext?after=additions">
          <menu
-               label="Refactorings">
+               label="%refactorings.menu.label">
             <command
                   commandId="org.eclipse.ui.edit.rename"
                   style="push">
@@ -116,14 +116,14 @@
                style="push">
          </command>
          <menu
-               label="Code Lens">
+               label="%codelens.menu.label">
             <dynamic
                   class="org.eclipse.languageserver.operations.codelens.LSPCodeLensMenu"
                   id="org.eclipse.languageserver.codelens">
             </dynamic>
          </menu>
          <menu
-               label="Code Actions">
+               label="%codeactions.menu.label">
             <dynamic
                   class="org.eclipse.languageserver.operations.codeactions.LSPCodeActionsMenu"
                   id="org.eclipse.languageserver.codeActions">

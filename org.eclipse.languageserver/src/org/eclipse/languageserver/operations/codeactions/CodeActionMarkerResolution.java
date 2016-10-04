@@ -32,7 +32,7 @@ public class CodeActionMarkerResolution implements IMarkerResolution {
 
 	@Override
 	public void run(IMarker marker) {
-		MessageDialog.openWarning(PlatformUI.getWorkbench().getActiveWorkbenchWindow().getShell(), "Not yet supported", "LSP Commands are not yet supported");
+		MessageDialog.openWarning(PlatformUI.getWorkbench().getActiveWorkbenchWindow().getShell(), "Not yet supported", "LSP Commands are not yet supported");  //$NON-NLS-1$//$NON-NLS-2$
 	}
 
 }

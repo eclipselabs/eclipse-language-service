@@ -34,13 +34,13 @@ import org.eclipse.jface.text.DocumentEvent;
 import org.eclipse.jface.text.IDocument;
 import org.eclipse.jface.text.IDocumentListener;
 import org.eclipse.languageserver.operations.diagnostics.LSPDiagnosticsToMarkers;
+import org.eclipse.languageserver.ui.Messages;
 import org.eclipse.swt.widgets.Display;
 import org.eclipse.ui.internal.progress.ProgressMonitorFocusJobDialog;
 
 import io.typefox.lsapi.InitializeResult;
 import io.typefox.lsapi.Message;
 import io.typefox.lsapi.ServerCapabilities;
-import io.typefox.lsapi.TextDocumentContentChangeEvent;
 import io.typefox.lsapi.TextDocumentSyncKind;
 import io.typefox.lsapi.impl.ClientCapabilitiesImpl;
 import io.typefox.lsapi.impl.DidChangeTextDocumentParamsImpl;
@@ -183,43 +183,45 @@ public class ProjectSpecificLanguageServerWrapper {
 		try {
 			ExecutorService executorService = Executors.newCachedThreadPool();
 			this.languageClient = new LanguageClientEndpoint(executorService);
-			this.languageClient.setMessageTracer(new MessageTracer() {
-				@Override
-				public void onWrite(Message message, String json) {
-					if (json.contains("telemetry/event")) {
-						return;
+			if (Boolean.getBoolean("ls.log")) { //$NON-NLS-1$
+				this.languageClient.setMessageTracer(new MessageTracer() {
+					@Override
+					public void onWrite(Message message, String json) {
+						if (json.contains("telemetry/event")) {  //$NON-NLS-1$
+							return;
+						}
+						System.out.println("WRITE: "); //$NON-NLS-1$
+						System.out.println(json);
+						System.out.println(message);
+						System.out.println("");  //$NON-NLS-1$
 					}
-					System.out.println("WRITE: ");
-					System.out.println(json);
-					System.out.println(message);
-					System.out.println("");
-				}
-				
-				@Override
-				public void onRead(Message message, String json) {
-					if (json.contains("telemetry/event")) {
-						return;
+					
+					@Override
+					public void onRead(Message message, String json) {
+						if (json.contains("telemetry/event")) { //$NON-NLS-1$
+							return;
+						}
+						System.out.println("READ: "); //$NON-NLS-1$
+						System.out.println(json);
+						System.out.println(message);
+						System.out.println(""); //$NON-NLS-1$
 					}
-					System.out.println("READ: ");
-					System.out.println(json);
-					System.out.println(message);
-					System.out.println("");
-				}
-				
-				@Override
-				public void onError(String message, Throwable throwable) {
-					System.err.println("ERR:");
-					System.err.println("message: " + message);
-					System.err.println("ex: " );
-					if (throwable != null) {
-						throwable.printStackTrace(System.err);
+					
+					@Override
+					public void onError(String message, Throwable throwable) {
+						System.err.println("ERR:"); //$NON-NLS-1$
+						System.err.println("message: " + message); //$NON-NLS-1$
+						System.err.println("ex: " ); //$NON-NLS-1$
+						if (throwable != null) {
+							throwable.printStackTrace(System.err);
+						}
+						if (throwable instanceof InvalidMessageException) {
+							//System.err.println("json unavailable, see https://github.com/TypeFox/ls-api/issues/51");
+							System.err.println("json: " + ((InvalidMessageException)throwable).getJson()); //$NON-NLS-1$
+						}
 					}
-					if (throwable instanceof InvalidMessageException) {
-						//System.err.println("json unavailable, see https://github.com/TypeFox/ls-api/issues/51");
-						System.err.println("json: " + ((InvalidMessageException)throwable).getJson());
-					}
-				}
-			});
+				});
+			}
 			this.lspStreamProvider.start();
 			MessageJsonHandler jsonHandler = new MessageJsonHandler();
 			jsonHandler.setMethodResolver(this.languageClient);
@@ -227,11 +229,11 @@ public class ProjectSpecificLanguageServerWrapper {
 			ConcurrentMessageReader multiThreadReader = new ConcurrentMessageReader(baseMessageReader, executorService);
 			MessageWriter writer = new StreamMessageWriter(this.lspStreamProvider.getOutputStream(), jsonHandler);
 			languageClient.connect(multiThreadReader, writer);
-			this.initializeJob = new Job("Initialize language server") {
+			this.initializeJob = new Job(Messages.initializeLanguageServer_job) {
 				protected IStatus run(IProgressMonitor monitor) {
 					InitializeParamsImpl initParams = new InitializeParamsImpl();
 					initParams.setRootPath(project.getLocation().toFile().getAbsolutePath());
-					String name = "Eclipse IDE";
+					String name = "Eclipse IDE"; //$NON-NLS-1$
 					if (Platform.getProduct() != null) {
 						name = Platform.getProduct().getName();
 					}

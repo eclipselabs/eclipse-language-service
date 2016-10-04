@@ -74,8 +74,8 @@ public class LSPEclipseUtils {
 //	}
 	
 	public static IResource findResourceFor(String uri) {
-		uri = uri.replace("file:///", "file:/");
-		uri = uri.replace("file://", "file:/");
+		uri = uri.replace("file:///", "file:/");  //$NON-NLS-1$//$NON-NLS-2$
+		uri = uri.replace("file://", "file:/");  //$NON-NLS-1$//$NON-NLS-2$
 		IProject project = null;
 		for (IProject aProject : ResourcesPlugin.getWorkspace().getRoot().getProjects()) {
 			if (uri.startsWith(aProject.getLocationURI().toString()) && (project == null || project.getLocation().segmentCount() < aProject.getLocation().segmentCount())) {
