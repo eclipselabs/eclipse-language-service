@@ -34,6 +34,6 @@
       <repository location="http://download.eclipse.org/modeling/tmf/xtext/updates/releases/2.10.0/"/>
     </location>
     <!-- Hopefully will be in Orbit repo soon -->
-    <location path="${env_var:M2_REPO}/com/google/code/gson/gson/2.5/" type="Directory"/>
-  </locations>
+    <location path="${project_loc:eclipse-language-service}/repository/target/repository/plugins" type="Directory"/>
+    </locations>
 </target>
