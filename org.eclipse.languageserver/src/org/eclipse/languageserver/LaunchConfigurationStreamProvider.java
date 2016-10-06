@@ -160,7 +160,9 @@ public class LaunchConfigurationStreamProvider implements StreamConnectionProvid
 		this.launch = null;
 		this.process = null;
 		try {
-			this.inputStream.close();
+			if (this.inputStream != null) {
+				this.inputStream.close();
+			}
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
