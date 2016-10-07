@@ -106,7 +106,7 @@ public class LSPStreamConnectionProviderRegistry {
 	public List<StreamConnectionProvider> findProviderFor(final IContentType contentType) {
 		return Arrays.asList(connections
 			.stream()
-			.filter(entry -> { return entry.getKey().equals(contentType); })
+			.filter(entry -> { return entry.getKey() != null && entry.getKey().equals(contentType); })
 			.map(entry -> { return new LaunchConfigurationStreamProvider(entry.getValue()); })
 			.toArray(StreamConnectionProvider[]::new));
 	}
