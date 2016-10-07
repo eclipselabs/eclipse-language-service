@@ -4,8 +4,13 @@
   <artifactId>parent</artifactId>
   <version>0.1.0-SNAPSHOT</version>
   <packaging>pom</packaging>
-  
+
+	<properties>
+		<tycho-version>0.26.0</tycho-version>
+	</properties>
+
 	<modules>
+		<module>target-platform</module>
 		<module>org.eclipse.languageserver</module>
 		<module>org.eclipse.languageserver.languages</module>
 		<module>repository</module>
@@ -15,42 +20,27 @@
   		<plugin>
   			<groupId>org.eclipse.tycho</groupId>
   			<artifactId>tycho-maven-plugin</artifactId>
-  			<version>0.25.0</version>
+  			<version>${tycho-version}</version>
   			<extensions>true</extensions>
+  		</plugin>
+  		<plugin>
+  			<groupId>org.eclipse.tycho</groupId>
+  			<artifactId>target-platform-configuration</artifactId>
+  			<version>${tycho-version}</version>
+  			<configuration>
+  				<target>
+  					<artifact>
+  						<groupId>${project.groupId}</groupId>
+  						<artifactId>target-platform</artifactId>
+  						<version>${project.version}</version>
+  					</artifact>
+  				</target>
+  			</configuration>
   		</plugin>
   	</plugins>
   </build>
-
-	<profiles>
-		<profile>
-			<id>build-individual-bundles</id>
-			<activation>
-				<activeByDefault>true</activeByDefault>
-			</activation>
-		</profile>
-	</profiles>
   
 	<repositories>
-		<repository>
-			<layout>p2</layout>
-			<id>platform-4.7.N</id>
-			<url>http://download.eclipse.org/eclipse/updates/4.7-N-builds/</url>
-		</repository>
-		<repository>
-			<layout>p2</layout>
-			<id>ls-api-latest</id>
-			<url>http://services.typefox.io/open-source/jenkins///job/lsapi/lastSuccessfulBuild/artifact/build/p2-repository/</url>
-		</repository>
-		<repository>
-			<layout>p2</layout>
-			<id>xtext</id>
-			<url>http://download.eclipse.org/modeling/tmf/xtext/updates/releases/2.10.0/</url>
-		</repository>
-		<repository>
-			<layout>p2</layout>
-			<id>orbit</id>
-			<url>http://download.eclipse.org/tools/orbit/downloads/drops/R20160520211859/repository/</url>
-		</repository>
 		<repository>
 			<id>oss.sonatype.org</id>
 			<url>https://oss.sonatype.org/content/repositories/snapshots/</url>
@@ -61,5 +51,14 @@
 			<url>https://repo.eclipse.org/content/groups/snapshots/</url>
 			<snapshots><enabled>true</enabled></snapshots>
 		</repository>
-  </repositories>
+	</repositories>
+  
+	<distributionManagement>
+		<snapshotRepository>
+			<id>jboss-snapshots-repository</id>
+			<name>JBoss Snapshots Repository</name>
+			<url>https://repository.jboss.org/nexus/content/repositories/snapshots/</url>
+			<uniqueVersion>false</uniqueVersion>
+		</snapshotRepository>
+	</distributionManagement>
 </project>
