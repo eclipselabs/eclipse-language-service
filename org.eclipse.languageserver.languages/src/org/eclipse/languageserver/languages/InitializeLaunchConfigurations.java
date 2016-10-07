@@ -100,7 +100,7 @@ public class InitializeLaunchConfigurations implements IStartup {
 				// TODO: implement smarter and multi-platform discovery
 				workingCopy.setAttribute(IExternalToolConstants.ATTR_TOOL_ARGUMENTS, getVSCodeLocation("/resources/app/extensions/css/server/out/cssServerMain.js") + " --stdio");
 				omniSharpLauch = workingCopy.doSave();
-				registry.registerAssociation(contentTypeManager.getContentType("org.eclipse.wst.css.core.csssource"), LaunchConfigurationStreamProvider.findLaunchConfiguration(IExternalToolConstants.ID_PROGRAM_LAUNCH_CONFIGURATION_TYPE, InitializeLaunchConfigurations.VSCODE_CSS_NAME));
+				registry.registerAssociation(contentTypeManager.getContentType("org.eclipse.languageserver.languages.css"), LaunchConfigurationStreamProvider.findLaunchConfiguration(IExternalToolConstants.ID_PROGRAM_LAUNCH_CONFIGURATION_TYPE, InitializeLaunchConfigurations.VSCODE_CSS_NAME));
 				registry.registerAssociation(contentTypeManager.getContentType("org.eclipse.languageserver.languages.less"), LaunchConfigurationStreamProvider.findLaunchConfiguration(IExternalToolConstants.ID_PROGRAM_LAUNCH_CONFIGURATION_TYPE, InitializeLaunchConfigurations.VSCODE_CSS_NAME));
 				registry.registerAssociation(contentTypeManager.getContentType("org.eclipse.languageserver.languages.scss"), LaunchConfigurationStreamProvider.findLaunchConfiguration(IExternalToolConstants.ID_PROGRAM_LAUNCH_CONFIGURATION_TYPE, InitializeLaunchConfigurations.VSCODE_CSS_NAME));
 			}
@@ -129,7 +129,7 @@ public class InitializeLaunchConfigurations implements IStartup {
 				// TODO: implement smarter and multi-platform discovery
 				workingCopy.setAttribute(IExternalToolConstants.ATTR_TOOL_ARGUMENTS, getVSCodeLocation("/resources/app/extensions/json/server/out/jsonServerMain.js") + " --stdio");
 				omniSharpLauch = workingCopy.doSave();
-				registry.registerAssociation(contentTypeManager.getContentType("org.eclipse.wst.jsdt.core.jsonSource"), LaunchConfigurationStreamProvider.findLaunchConfiguration(IExternalToolConstants.ID_PROGRAM_LAUNCH_CONFIGURATION_TYPE, InitializeLaunchConfigurations.VSCODE_JSON_NAME));
+				registry.registerAssociation(contentTypeManager.getContentType("org.eclipse.languageserver.languages.json"), LaunchConfigurationStreamProvider.findLaunchConfiguration(IExternalToolConstants.ID_PROGRAM_LAUNCH_CONFIGURATION_TYPE, InitializeLaunchConfigurations.VSCODE_JSON_NAME));
 			}
 		} catch (CoreException e) {
 			e.printStackTrace();
