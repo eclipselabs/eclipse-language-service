@@ -57,22 +57,24 @@ public class LSFindReferences extends AbstractHandler implements IHandler {
 			LSPDocumentInfo info = LanguageServiceAccessor.getLSPDocumentInfoFor(editor,
 					ServerCapabilities::isReferencesProvider);
 
-			if (info.languageClient != null) {
+			if (info != null) {
 				ISelection sel = ((AbstractTextEditor) part).getSelectionProvider().getSelection();
 				if (sel instanceof TextSelection) {
 					try {
 						ReferenceParamsImpl params = new ReferenceParamsImpl();
-						params.setPosition(LSPEclipseUtils.toPosition(((TextSelection) sel).getOffset(), info.document));
+						params.setPosition(LSPEclipseUtils.toPosition(((TextSelection) sel).getOffset(), info.getDocument()));
 						TextDocumentIdentifierImpl identifier = new TextDocumentIdentifierImpl();
-						identifier.setUri(info.fileUri.toString());
+						identifier.setUri(info.getFileUri().toString());
 						params.setTextDocument(identifier);
 						ReferenceContextImpl context = new ReferenceContextImpl();
 						context.setIncludeDeclaration(true);
 						params.setContext(context);
-						CompletableFuture<List<? extends Location>> references = info.languageClient.getTextDocumentService().references(params);
-						LSSearchResult search = new LSSearchResult(references, info.document);
+						CompletableFuture<List<? extends Location>> references = info.getLanguageClient().getTextDocumentService().references(params);
+						LSSearchResult search = new LSSearchResult(references, info.getDocument());
 						search.getQuery().run(new NullProgressMonitor());
-						searchView.showSearchResult(search);
+						if (searchView != null) {
+							searchView.showSearchResult(search);
+						}
 					} catch (BadLocationException e) {
 						// TODO Auto-generated catch block
 						e.printStackTrace();
@@ -89,7 +91,7 @@ public class LSFindReferences extends AbstractHandler implements IHandler {
 		if (part instanceof ITextEditor) {
 			LSPDocumentInfo info = LanguageServiceAccessor.getLSPDocumentInfoFor((ITextEditor) part, ServerCapabilities::isReferencesProvider);
 			ISelection selection = ((ITextEditor) part).getSelectionProvider().getSelection();
-			return info.languageClient != null && !selection.isEmpty() && selection instanceof ITextSelection;
+			return info != null && !selection.isEmpty() && selection instanceof ITextSelection;
 		}
 		return false;
 	}

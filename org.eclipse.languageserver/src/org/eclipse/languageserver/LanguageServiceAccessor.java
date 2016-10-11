@@ -12,6 +12,7 @@ package org.eclipse.languageserver;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.lang.reflect.Method;
 import java.net.URI;
 import java.util.HashMap;
 import java.util.Map;
@@ -27,11 +28,15 @@ import org.eclipse.core.runtime.IPath;
 import org.eclipse.core.runtime.Path;
 import org.eclipse.core.runtime.Platform;
 import org.eclipse.core.runtime.content.IContentType;
+import org.eclipse.jdt.annotation.NonNull;
+import org.eclipse.jdt.annotation.NonNullByDefault;
+import org.eclipse.jdt.annotation.Nullable;
 import org.eclipse.jface.text.IDocument;
 import org.eclipse.jface.text.ITextViewer;
 import org.eclipse.ui.IEditorInput;
 import org.eclipse.ui.IFileEditorInput;
 import org.eclipse.ui.IURIEditorInput;
+import org.eclipse.ui.texteditor.AbstractTextEditor;
 import org.eclipse.ui.texteditor.ITextEditor;
 
 import io.typefox.lsapi.ServerCapabilities;
@@ -89,31 +94,58 @@ public class LanguageServiceAccessor {
 
 	private static Map<WrapperEntryKey, ProjectSpecificLanguageServerWrapper> projectServers = new HashMap<>();
 
+	/**
+	 * A bean storing association of a Document/File with a language server.
+	 * See {@link LanguageServiceAccessor#getLSPDocumentInfoFor(ITextViewer, Predicate)} 
+	 */
 	public static class LSPDocumentInfo {
 
-		public final URI fileUri;
-		public final IFile file;
-		public final IDocument document;
-		public final LanguageClientEndpoint languageClient;
+		private final @NonNull URI fileUri;
+		private final @NonNull IDocument document;
+		private final @Nullable ServerCapabilities capabilities;
+		private final @NonNull LanguageClientEndpoint languageClient;
 
-		public LSPDocumentInfo(URI fileUri, IFile file, IDocument document, LanguageClientEndpoint languageClient) {
+		private LSPDocumentInfo(@NonNull URI fileUri, @NonNull IDocument document, @NonNull LanguageClientEndpoint languageClient, @Nullable ServerCapabilities capabilities) {
 			this.fileUri = fileUri;
-			this.file = file;
 			this.document = document;
 			this.languageClient = languageClient;
+			this.capabilities = capabilities;
+		}
+
+		public @NonNull IDocument getDocument() {
+			return this.document;
+		}
+
+		public @NonNull URI getFileUri() {
+			return this.fileUri;
+		}
+
+		public @NonNull LanguageClientEndpoint getLanguageClient() {
+			return this.languageClient;
+		}
+
+		public @Nullable ServerCapabilities getCapabilites() {
+			return this.capabilities;
 		}
 	}
 
-	public static LSPDocumentInfo getLSPDocumentInfoFor(ITextViewer viewer, Predicate<ServerCapabilities> capability) {
+	@Nullable public static LSPDocumentInfo getLSPDocumentInfoFor(ITextViewer viewer, Predicate<ServerCapabilities> capabilityRequest) {
 		IDocument document = viewer.getDocument();
 		final IPath location = FileBuffers.getTextFileBufferManager().getTextFileBuffer(document).getLocation();
 		final IFile file = ResourcesPlugin.getWorkspace().getRoot().getFile(location);
 		URI fileUri = null;
 		LanguageClientEndpoint languageClient = null;
+		ServerCapabilities capabilities = null;
 		if (file.exists()) { // TODO, also support non resource file
 			fileUri = file.getLocation().toFile().toURI();
 			try {
-				languageClient = getLanguageServer(file, document, capability);
+				ProjectSpecificLanguageServerWrapper wrapper = getLSWrapper(file, capabilityRequest);
+				if (wrapper != null) {
+					wrapper.connect(file, document);
+					languageClient = wrapper.getServer();
+					capabilities = wrapper.getServerCapabilities();
+					return new LSPDocumentInfo(fileUri, document, languageClient, capabilities);
+				}
 			} catch (final IOException e) {
 				// TODO report?
 				e.printStackTrace();
@@ -121,31 +153,21 @@ public class LanguageServiceAccessor {
 		} else {
 			fileUri = location.toFile().toURI();
 		}
-		return new LSPDocumentInfo(fileUri, file, document, languageClient);
+		// TODO handle case of plain file (no IFile)
+		return null;
 	}
 
-	public static LSPDocumentInfo getLSPDocumentInfoFor(ITextEditor editor, Predicate<ServerCapabilities> capability) {
-		IEditorInput input = editor.getEditorInput();
-		LanguageClientEndpoint languageClient = null;
-		URI fileUri = null;
-		IFile file = null;
-		IDocument document = null;
+	public static LSPDocumentInfo getLSPDocumentInfoFor(ITextEditor editor, Predicate<ServerCapabilities> capabilityRequest) {
+		// Ugly hack, but not worse than duplication
 		try {
-			if (input instanceof IFileEditorInput) {
-				// TODO, also support non resource file
-				file = ((IFileEditorInput) input).getFile();
-				fileUri = file.getLocation().toFile().toURI();
-				document = FileBuffers.getTextFileBufferManager().getTextFileBuffer(file.getFullPath(), LocationKind.IFILE).getDocument();
-				languageClient = LanguageServiceAccessor.getLanguageServer(file, document, ServerCapabilities::isReferencesProvider);
-			} else if (input instanceof IURIEditorInput) {
-				fileUri = ((IURIEditorInput) input).getURI();
-				document = FileBuffers.getTextFileBufferManager().getTextFileBuffer(new Path(fileUri.getPath()), LocationKind.LOCATION).getDocument();
-				// TODO server
-			}
+			Method getSourceViewerMethod= AbstractTextEditor.class.getDeclaredMethod("getSourceViewer"); //$NON-NLS-1$
+			getSourceViewerMethod.setAccessible(true);
+			ITextViewer viewer = (ITextViewer) getSourceViewerMethod.invoke(editor);
+			return getLSPDocumentInfoFor(viewer, capabilityRequest);
 		} catch (Exception ex) {
 			ex.printStackTrace();
+			return null;
 		}
-		return new LSPDocumentInfo(fileUri, file, document, languageClient);
 	}
 
 	public static LanguageClientEndpoint getLanguageServer(IFile file, IDocument document,
@@ -158,7 +180,7 @@ public class LanguageServiceAccessor {
 		return null;
 	}
 
-	private static ProjectSpecificLanguageServerWrapper getLSWrapper(IFile file, Predicate<ServerCapabilities> request) throws IOException {
+	@Nullable private static ProjectSpecificLanguageServerWrapper getLSWrapper(@NonNull IFile file, @Nullable Predicate<ServerCapabilities> request) throws IOException {
 		IProject project = file.getProject();
 		IContentType[] fileContentTypes = null;
 		try (InputStream contents = file.getContents()) {
@@ -166,6 +188,7 @@ public class LanguageServiceAccessor {
 		} catch (CoreException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
+			return null;
 		}
 		ProjectSpecificLanguageServerWrapper wrapper = null;
 

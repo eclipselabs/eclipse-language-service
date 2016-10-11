@@ -53,8 +53,8 @@ public class LSPCodeLensMenu extends ContributionItem implements IWorkbenchContr
 		final MenuItem item = new MenuItem(menu, SWT.NONE, index);
 		item.setText(Messages.computing);
 		item.setEnabled(false);
-		CodeLensParams param = new CodeLensParamsBuilder().textDocument(info.fileUri.toString()).build();
-		final CompletableFuture<List<? extends CodeLens>> codeLens = info.languageClient.getTextDocumentService().codeLens(param);
+		CodeLensParams param = new CodeLensParamsBuilder().textDocument(info.getFileUri().toString()).build();
+		final CompletableFuture<List<? extends CodeLens>> codeLens = info.getLanguageClient().getTextDocumentService().codeLens(param);
 		codeLens.whenComplete(new BiConsumer<List<? extends CodeLens>, Throwable>() {
 
 			@Override

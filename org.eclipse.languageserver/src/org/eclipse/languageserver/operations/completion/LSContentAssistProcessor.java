@@ -15,7 +15,6 @@ import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 
-import org.eclipse.jface.text.IDocument;
 import org.eclipse.jface.text.ITextViewer;
 import org.eclipse.jface.text.contentassist.ICompletionProposal;
 import org.eclipse.jface.text.contentassist.IContentAssistProcessor;
@@ -27,9 +26,14 @@ import org.eclipse.languageserver.LanguageServiceAccessor.LSPDocumentInfo;
 
 import io.typefox.lsapi.CompletionItem;
 import io.typefox.lsapi.CompletionList;
+import io.typefox.lsapi.ServerCapabilities;
 import io.typefox.lsapi.impl.TextDocumentPositionParamsImpl;
 
 public class LSContentAssistProcessor implements IContentAssistProcessor {
+
+	private LSPDocumentInfo info;
+	private LSPDocumentInfo lastCheckedForAutoActiveCharactersInfo;
+	private char[] triggerChars;
 
 	public LSContentAssistProcessor() {
 	}
@@ -37,13 +41,12 @@ public class LSContentAssistProcessor implements IContentAssistProcessor {
 	@Override
 	public ICompletionProposal[] computeCompletionProposals(ITextViewer viewer, int offset) {
 		ICompletionProposal[] res = new ICompletionProposal[0];
-		final LSPDocumentInfo info = LanguageServiceAccessor.getLSPDocumentInfoFor(viewer, capabilities -> capabilities.getCompletionProvider() != null);
+		info = LanguageServiceAccessor.getLSPDocumentInfoFor(viewer, capabilities -> capabilities.getCompletionProvider() != null);
 		CompletableFuture<CompletionList> request = null;
 		try {
-			if (info.languageClient != null) {
-				IDocument document = viewer.getDocument();
-				TextDocumentPositionParamsImpl param = LSPEclipseUtils.toTextDocumentPosistionParams(info.fileUri, offset, document);
-				request = info.languageClient.getTextDocumentService().completion(param);
+			if (info != null) {
+				TextDocumentPositionParamsImpl param = LSPEclipseUtils.toTextDocumentPosistionParams(info.getFileUri(), offset, info.getDocument());
+				request = info.getLanguageClient().getTextDocumentService().completion(param);
 				CompletionList completionList = request.get(5, TimeUnit.SECONDS);
 				res = toProposals(offset, completionList);
 			}
@@ -83,13 +86,34 @@ public class LSContentAssistProcessor implements IContentAssistProcessor {
 
 	@Override
 	public char[] getCompletionProposalAutoActivationCharacters() {
-		// TODO Auto-generated method stub
-		return null;
+		if (info != this.lastCheckedForAutoActiveCharactersInfo) {
+			ServerCapabilities currentCapabilites = info.getCapabilites();
+			if (currentCapabilites == null) {
+				return null;
+			}
+			List<Character> chars = new ArrayList<>();
+			List<String> triggerCharacters = currentCapabilites.getCompletionProvider().getTriggerCharacters();
+			if (triggerCharacters == null) {
+				return null;
+			}
+			for (String s : triggerCharacters) {
+				if (s.length() == 1) {
+					chars.add(s.charAt(0));
+				}
+			}
+			triggerChars = new char[chars.size()];
+			int i = 0;
+			for (Character c : chars) {
+				triggerChars[i] = c;
+				i++;
+			}
+			this.lastCheckedForAutoActiveCharactersInfo = info;
+		}
+		return triggerChars;
 	}
 
 	@Override
 	public char[] getContextInformationAutoActivationCharacters() {
-		// TODO Auto-generated method stub
 		return null;
 	}
 

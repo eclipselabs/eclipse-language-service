@@ -27,7 +27,8 @@ Require-Bundle: org.eclipse.core.runtime;bundle-version="3.12.0",
  org.eclipse.core.externaltools;bundle-version="1.0.400",
  org.eclipse.debug.ui;bundle-version="3.11.200",
  org.eclipse.swt,
- com.google.gson;bundle-version="2.5.0"
+ com.google.gson;bundle-version="2.5.0",
+ org.eclipse.jdt.annotation;bundle-version="2.1.0";resolution:=optional
 Bundle-ClassPath: .
 Bundle-Localization: plugin
 Bundle-ActivationPolicy: lazy

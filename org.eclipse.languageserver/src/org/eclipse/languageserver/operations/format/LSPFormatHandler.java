@@ -46,13 +46,13 @@ public class LSPFormatHandler extends AbstractHandler implements IHandler {
 		IEditorPart part = HandlerUtil.getActiveEditor(event);
 		if (part instanceof ITextEditor) {
 			LSPDocumentInfo info = LanguageServiceAccessor.getLSPDocumentInfoFor((ITextEditor) part, ServerCapabilities::isDocumentFormattingProvider);
-			if (info.languageClient != null) {
+			if (info != null) {
 				ISelection sel = ((AbstractTextEditor) part).getSelectionProvider().getSelection();
 				if (sel instanceof TextSelection) {
 					DocumentFormattingParams params = new DocumentFormattingParamsBuilder()
-							.textDocument(info.fileUri.toString())
+							.textDocument(info.getFileUri().toString())
 							.build();
-					CompletableFuture<List<? extends TextEdit>> formatter = info.languageClient.getTextDocumentService().formatting(params);
+					CompletableFuture<List<? extends TextEdit>> formatter = info.getLanguageClient().getTextDocumentService().formatting(params);
 					formatter.thenAccept((List<? extends TextEdit> t) -> {
 						for (TextEdit textEdit : t) {
 							try {
@@ -75,7 +75,7 @@ public class LSPFormatHandler extends AbstractHandler implements IHandler {
 		if (part instanceof ITextEditor) {
 			LSPDocumentInfo info = LanguageServiceAccessor.getLSPDocumentInfoFor((ITextEditor) part, ServerCapabilities::isDocumentFormattingProvider);
 			ISelection selection = ((ITextEditor) part).getSelectionProvider().getSelection();
-			return info.languageClient != null && !selection.isEmpty() && selection instanceof ITextSelection;
+			return info != null && !selection.isEmpty() && selection instanceof ITextSelection;
 		}
 		return false;
 	}

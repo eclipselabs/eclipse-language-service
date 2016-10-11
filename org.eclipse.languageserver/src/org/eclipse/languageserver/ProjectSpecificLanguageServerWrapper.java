@@ -29,6 +29,7 @@ import org.eclipse.core.runtime.NullProgressMonitor;
 import org.eclipse.core.runtime.Platform;
 import org.eclipse.core.runtime.Status;
 import org.eclipse.core.runtime.jobs.Job;
+import org.eclipse.jdt.annotation.NonNull;
 import org.eclipse.jface.text.BadLocationException;
 import org.eclipse.jface.text.DocumentEvent;
 import org.eclipse.jface.text.IDocument;
@@ -328,7 +329,7 @@ public class ProjectSpecificLanguageServerWrapper {
 		}
 	}
 
-	public LanguageClientEndpoint getServer() {
+	@NonNull public LanguageClientEndpoint getServer() {
 		if (this.initializeJob.getState() != Job.NONE) {
 			if (Display.getCurrent() != null) { // UI Thread
 				ProgressMonitorFocusJobDialog dialog = new ProgressMonitorFocusJobDialog(null);
