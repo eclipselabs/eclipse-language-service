@@ -31,12 +31,10 @@ import org.eclipse.core.runtime.NullProgressMonitor;
 import org.eclipse.core.runtime.Path;
 import org.eclipse.core.runtime.Platform;
 import org.eclipse.core.runtime.content.IContentType;
-import org.eclipse.jdt.annotation.NonNull;
 import org.eclipse.jface.text.IDocument;
 import org.eclipse.jface.text.ITextViewer;
 import org.eclipse.jface.text.TextSelection;
 import org.eclipse.jface.viewers.ISelection;
-import org.eclipse.languageserver.LanguageServiceAccessor.LSPDocumentInfo;
 import org.eclipse.languageserver.operations.references.LSSearchResult;
 import org.eclipse.search2.internal.ui.SearchView;
 import org.eclipse.ui.IEditorInput;
@@ -53,9 +51,6 @@ import io.typefox.lsapi.ServerCapabilities;
 import io.typefox.lsapi.impl.ReferenceContextImpl;
 import io.typefox.lsapi.impl.ReferenceParamsImpl;
 import io.typefox.lsapi.impl.TextDocumentIdentifierImpl;
-import io.typefox.lsapi.services.TextDocumentService;
-import io.typefox.lsapi.services.WindowService;
-import io.typefox.lsapi.services.WorkspaceService;
 import io.typefox.lsapi.services.transport.client.LanguageClientEndpoint;
 
 /**
@@ -110,60 +105,6 @@ public class LanguageServiceAccessor {
 
 	private static Map<WrapperEntryKey, ProjectSpecificLanguageServerWrapper> projectServers = new HashMap<>();
 
-	public static class LSPDocumentInfo {
-		@NonNull
-		private final URI fileUri;
-		private final IFile file;
-		private final IDocument document;
-		@NonNull
-		private final LanguageClientEndpoint languageClient;
-
-		public static LSPDocumentInfo create(URI fileUri, IFile file, IDocument document, LanguageClientEndpoint languageClient) {
-			if (fileUri == null || languageClient == null) {
-				return null;
-			}
-			return new LSPDocumentInfo(fileUri, file, document, languageClient);
-		}
-
-		private LSPDocumentInfo(@NonNull URI fileUri, IFile file, IDocument document, @NonNull LanguageClientEndpoint languageClient) {
-			this.fileUri = fileUri;
-			this.file = file;
-			this.document = document;
-			this.languageClient = languageClient;
-		}
-
-		@NonNull
-		public URI getFileUri() {
-			return fileUri;
-		}
-
-		public IFile getFile() {
-			return file;
-		}
-
-		public IDocument getDocument() {
-			return document;
-		}
-
-		@NonNull
-		public LanguageClientEndpoint getLanguageClient() {
-			return languageClient;
-		}
-
-		public TextDocumentService getTextDocumentService() {
-			return languageClient.getTextDocumentService();
-		}
-
-		public WindowService getWindowService() {
-			return languageClient.getWindowService();
-		}
-
-		public WorkspaceService getWorkspaceService() {
-			return languageClient.getWorkspaceService();
-		}
-
-	}
-
 	public static LSPDocumentInfo getLSPDocumentInfoFor(ITextViewer viewer, Predicate<ServerCapabilities> capability) {
 		IDocument document = viewer.getDocument();
 		final IPath location = FileBuffers.getTextFileBufferManager().getTextFileBuffer(document).getLocation();
@@ -181,7 +122,7 @@ public class LanguageServiceAccessor {
 		} else {
 			fileUri = location.toFile().toURI();
 		}
-		return LSPDocumentInfo.create(fileUri, file, document, languageClient);
+		return new LSPDocumentInfo(fileUri, file, document, languageClient);
 	}
 
 	public static LSPDocumentInfo getLSPDocumentInfoFor(ITextEditor editor, Predicate<ServerCapabilities> capability) {
@@ -202,7 +143,7 @@ public class LanguageServiceAccessor {
 				document = FileBuffers.getTextFileBufferManager().getTextFileBuffer(new Path(fileUri.getPath()), LocationKind.LOCATION).getDocument();
 				// TODO server
 			}
-			return LSPDocumentInfo.create(fileUri, file, document, languageClient);
+			return new LSPDocumentInfo(fileUri, file, document, languageClient);
 		} catch (Exception ex) {
 			ex.printStackTrace();
 			return null;

@@ -19,8 +19,8 @@ import org.eclipse.jface.text.IRegion;
 import org.eclipse.jface.text.ITextHover;
 import org.eclipse.jface.text.ITextViewer;
 import org.eclipse.jface.text.Region;
+import org.eclipse.languageserver.LSPDocumentInfo;
 import org.eclipse.languageserver.LSPEclipseUtils;
-import org.eclipse.languageserver.LanguageServiceAccessor.LSPDocumentInfo;
 import org.eclipse.languageserver.LanguageServiceAccessor;
 
 import io.typefox.lsapi.Hover;
