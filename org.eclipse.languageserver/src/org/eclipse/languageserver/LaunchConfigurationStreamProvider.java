@@ -16,7 +16,9 @@ import java.io.OutputStream;
 import java.lang.reflect.Method;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
 import org.eclipse.core.runtime.Assert;
@@ -44,6 +46,7 @@ public class LaunchConfigurationStreamProvider implements StreamConnectionProvid
 	private ILaunch launch;
 	private IProcess process;
 	private ILaunchConfiguration launchConfiguration;
+	private Set<String> launchModes;
 
 	protected static class StreamProxyInputStream extends InputStream implements IStreamListener {
 
@@ -87,10 +90,15 @@ public class LaunchConfigurationStreamProvider implements StreamConnectionProvid
 
 	}
 
-	public LaunchConfigurationStreamProvider(ILaunchConfiguration launchConfig) {
+	public LaunchConfigurationStreamProvider(ILaunchConfiguration launchConfig, Set<String> launchModes) {
 		super();
 		Assert.isNotNull(launchConfig);
 		this.launchConfiguration = launchConfig;
+		if (launchModes != null) {
+			this.launchModes = launchModes;
+		} else {
+			this.launchModes = Collections.singleton(ILaunchManager.RUN_MODE);
+		}
 	}
 
 	public static ILaunchConfiguration findLaunchConfiguration(String typeId, String name) {
@@ -112,7 +120,7 @@ public class LaunchConfigurationStreamProvider implements StreamConnectionProvid
 	@Override
 	public void start() throws IOException {
 		try {
-			launch = this.launchConfiguration.launch(ILaunchManager.RUN_MODE, new NullProgressMonitor());
+			launch = this.launchConfiguration.launch(this.launchModes.iterator().next(), new NullProgressMonitor());
 		} catch (Exception e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();

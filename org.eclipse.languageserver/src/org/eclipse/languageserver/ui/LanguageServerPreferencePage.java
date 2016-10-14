@@ -10,13 +10,9 @@
  *******************************************************************************/
 package org.eclipse.languageserver.ui;
 
-import java.util.AbstractMap.SimpleEntry;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map.Entry;
 
-import org.eclipse.core.runtime.content.IContentType;
-import org.eclipse.debug.core.ILaunchConfiguration;
 import org.eclipse.jface.dialogs.IDialogConstants;
 import org.eclipse.jface.preference.PreferencePage;
 import org.eclipse.jface.resource.ImageDescriptor;
@@ -29,6 +25,7 @@ import org.eclipse.jface.viewers.SelectionChangedEvent;
 import org.eclipse.jface.viewers.TableViewer;
 import org.eclipse.jface.viewers.TableViewerColumn;
 import org.eclipse.languageserver.LSPStreamConnectionProviderRegistry;
+import org.eclipse.languageserver.LSPStreamConnectionProviderRegistry.ContentTypeToLSPLaunchConfigEntry;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.SelectionAdapter;
 import org.eclipse.swt.events.SelectionEvent;
@@ -44,7 +41,7 @@ import org.eclipse.ui.IWorkbenchPreferencePage;
 public class LanguageServerPreferencePage extends PreferencePage implements IWorkbenchPreferencePage {
 
 	private LSPStreamConnectionProviderRegistry registry;
-	private List<Entry<IContentType, ILaunchConfiguration>> workingCopy;
+	private List<ContentTypeToLSPLaunchConfigEntry> workingCopy;
 	private Button removeButton;
 	private TableViewer viewer;
 
@@ -84,7 +81,7 @@ public class LanguageServerPreferencePage extends PreferencePage implements IWor
 		contentTypeColumn.setLabelProvider(new ColumnLabelProvider() {
 			@Override
 			public String getText(Object element) {
-				return ((Entry<IContentType, ILaunchConfiguration>)element).getKey().getName();
+				return ((ContentTypeToLSPLaunchConfigEntry)element).contentType.getName();
 			}
 		});
 		TableViewerColumn launchConfigColumn = new TableViewerColumn(viewer, SWT.NONE);
@@ -93,7 +90,24 @@ public class LanguageServerPreferencePage extends PreferencePage implements IWor
 		launchConfigColumn.setLabelProvider(new ColumnLabelProvider() {
 			@Override
 			public String getText(Object element) {
-				return ((Entry<IContentType, ILaunchConfiguration>)element).getValue().getName();
+				return ((ContentTypeToLSPLaunchConfigEntry)element).launchConfiguration.getName();
+			}
+		});
+		TableViewerColumn launchModeColumn = new TableViewerColumn(viewer, SWT.NONE);
+		launchModeColumn.getColumn().setText(Messages.PreferencesPage_LaunchMode);
+		launchModeColumn.getColumn().setWidth(100);
+		launchModeColumn.setLabelProvider(new ColumnLabelProvider() {
+			@Override
+			public String getText(Object element) {
+				StringBuilder res = new StringBuilder();
+				for (String s : ((ContentTypeToLSPLaunchConfigEntry)element).launchModes) {
+					res.append(s);
+					res.append(',');
+				}
+				if (res.length() > 0) {
+					res.deleteCharAt(res.length() - 1);
+				}
+				return res.toString();
 			}
 		});
 		viewer.getControl().setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, true));
@@ -108,7 +122,7 @@ public class LanguageServerPreferencePage extends PreferencePage implements IWor
 			public void widgetSelected(SelectionEvent e) {
 				NewContentTypeLSPLaunchDialog dialog = new NewContentTypeLSPLaunchDialog(getShell());
 				if (dialog.open() == IDialogConstants.OK_ID) {
-					workingCopy.add(new SimpleEntry<>(dialog.getContentType(), dialog.getLaunchConfiguration()));
+					workingCopy.add(new ContentTypeToLSPLaunchConfigEntry(dialog.getContentType(), dialog.getLaunchConfiguration(), dialog.getLaunchMode()));
 					viewer.refresh();
 				}
 				super.widgetSelected(e);
@@ -123,7 +137,7 @@ public class LanguageServerPreferencePage extends PreferencePage implements IWor
 				ISelection sel = viewer.getSelection();
 				if (!sel.isEmpty() && sel instanceof IStructuredSelection) {
 					for (Object item : ((IStructuredSelection)sel).toArray()) {
-						workingCopy.remove((Entry<IContentType, ILaunchConfiguration>)item);
+						workingCopy.remove((ContentTypeToLSPLaunchConfigEntry)item);
 					}
 					viewer.refresh();
 				}

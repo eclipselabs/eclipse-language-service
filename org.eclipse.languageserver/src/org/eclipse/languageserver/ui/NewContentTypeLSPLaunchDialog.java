@@ -11,26 +11,38 @@
 package org.eclipse.languageserver.ui;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
+import java.util.Set;
 
+import org.eclipse.core.runtime.CoreException;
+import org.eclipse.core.runtime.IStatus;
 import org.eclipse.core.runtime.Platform;
+import org.eclipse.core.runtime.Status;
 import org.eclipse.core.runtime.content.IContentType;
 import org.eclipse.core.runtime.content.IContentTypeManager;
 import org.eclipse.debug.core.DebugPlugin;
 import org.eclipse.debug.core.ILaunchConfiguration;
+import org.eclipse.debug.core.ILaunchManager;
 import org.eclipse.debug.internal.ui.launchConfigurations.LaunchConfigurationTreeContentProvider;
 import org.eclipse.debug.ui.DebugUITools;
+import org.eclipse.jdt.annotation.NonNull;
 import org.eclipse.jface.dialogs.Dialog;
 import org.eclipse.jface.util.Util;
+import org.eclipse.jface.viewers.ArrayContentProvider;
+import org.eclipse.jface.viewers.ComboViewer;
 import org.eclipse.jface.viewers.DecoratingLabelProvider;
+import org.eclipse.jface.viewers.ISelection;
 import org.eclipse.jface.viewers.ISelectionChangedListener;
 import org.eclipse.jface.viewers.IStructuredSelection;
 import org.eclipse.jface.viewers.ITreeContentProvider;
 import org.eclipse.jface.viewers.LabelProvider;
 import org.eclipse.jface.viewers.SelectionChangedEvent;
+import org.eclipse.jface.viewers.StructuredSelection;
 import org.eclipse.jface.viewers.TreeViewer;
 import org.eclipse.jface.viewers.Viewer;
 import org.eclipse.jface.viewers.ViewerComparator;
+import org.eclipse.languageserver.LanguageServerPluginActivator;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
@@ -97,6 +109,7 @@ public class NewContentTypeLSPLaunchDialog extends Dialog {
 
 	protected IContentType contentType;
 	protected ILaunchConfiguration launchConfig;
+	protected Set<String> launchMode;
 	
 	//
 	////
@@ -140,6 +153,25 @@ public class NewContentTypeLSPLaunchDialog extends Dialog {
 		launchConfigViewer.setLabelProvider(new DecoratingLabelProvider(DebugUITools.newDebugModelPresentation(), PlatformUI.getWorkbench().getDecoratorManager().getLabelDecorator()));
 		launchConfigViewer.setContentProvider(new LaunchConfigurationTreeContentProvider(null, getShell()));
 		launchConfigViewer.setInput(DebugPlugin.getDefault().getLaunchManager());
+		ComboViewer launchModeViewer = new ComboViewer(res);
+		GridData comboGridData = new GridData(SWT.RIGHT, SWT.DEFAULT, true, false, 2, 1);
+		comboGridData.widthHint = 100;
+		launchModeViewer.getControl().setLayoutData(comboGridData);
+		launchModeViewer.setContentProvider(new ArrayContentProvider());
+		launchModeViewer.setLabelProvider(new LabelProvider() {
+			@Override
+			public String getText(Object o) {
+				StringBuilder res = new StringBuilder();
+				for (String s : (Set<String>)o) {
+					res.append(s);
+					res.append(',');
+				}
+				if (res.length() > 0) {
+					res.deleteCharAt(res.length() - 1);
+				}
+				return res.toString();
+			}
+		});
 		launchConfigViewer.addSelectionChangedListener(new ISelectionChangedListener() {
 			@Override
 			public void selectionChanged(SelectionChangedEvent event) {
@@ -151,8 +183,18 @@ public class NewContentTypeLSPLaunchDialog extends Dialog {
 					}
 				}
 				launchConfig = newLaunchConfig;
+				updateLaunchModes(launchModeViewer);
 				updateButtons();
 			}
+		});
+		launchModeViewer.addSelectionChangedListener(event -> {
+			ISelection sel = event.getSelection();
+			if (sel.isEmpty()) {
+				launchMode = null;
+			} else if (sel instanceof IStructuredSelection) {
+				launchMode = (Set<String>) ((IStructuredSelection)sel).getFirstElement();
+			}
+			updateButtons();
 		});
 		return res;
 	}
@@ -173,7 +215,48 @@ public class NewContentTypeLSPLaunchDialog extends Dialog {
 	}
 	
 	private void updateButtons() {
-		getButton(OK).setEnabled(contentType != null && launchConfig != null);
+		getButton(OK).setEnabled(contentType != null && launchConfig != null && launchMode != null);
+	}
+
+	private void updateLaunchModes(ComboViewer launchModeViewer) {
+		if (launchConfig == null) {
+			launchModeViewer.setInput(Collections.EMPTY_LIST);
+		} else {
+			Set<Set<String>> modes = null;
+			try {
+				modes = launchConfig.getType().getSupportedModeCombinations();
+			} catch (CoreException e) {
+				LanguageServerPluginActivator.getDefault().getLog().log(new Status(IStatus.ERROR, LanguageServerPluginActivator.getDefault().getBundle().getSymbolicName(), e.getMessage(), e));
+			}
+			if (modes == null) {
+				modes = Collections.singleton(Collections.singleton(ILaunchManager.RUN_MODE));
+			}
+			launchModeViewer.setInput(modes);
+			Object currentMode = null;
+			if (!launchModeViewer.getStructuredSelection().isEmpty()) {
+				currentMode = launchModeViewer.getStructuredSelection().getFirstElement();
+			}
+			if (currentMode == null || !modes.contains(currentMode)) {
+				launchModeViewer.setSelection(new StructuredSelection());
+				currentMode = null;
+			}
+			if (currentMode == null) {
+				for (Set<String> mode : modes) {
+					if (mode.size() == 1 && mode.iterator().next().equals(ILaunchManager.RUN_MODE)) {
+						currentMode = mode;
+						launchModeViewer.setSelection(new StructuredSelection(currentMode));
+					}
+				}
+			}
+			if (currentMode == null && !modes.isEmpty()) {
+				launchModeViewer.setSelection(new StructuredSelection(modes.iterator().next()));
+			}
+		}
+		updateButtons();
+	}
+
+	public @NonNull Set<String> getLaunchMode() {
+		return this.launchMode;
 	}
 
 }

@@ -16,6 +16,7 @@ public class Messages extends NLS {
 
 	public static String hyperlinkLabel;
 	public static String PreferencesPage_LaunchConfiguration;
+	public static String PreferencesPage_LaunchMode;
 	public static String PreferencesPage_Add;
 	public static String PreferencesPage_Remove;
 	public static String PreferencesPage_contentType;

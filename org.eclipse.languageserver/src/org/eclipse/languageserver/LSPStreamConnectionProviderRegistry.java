@@ -11,18 +11,19 @@
 package org.eclipse.languageserver;
 
 import java.io.IOException;
-import java.util.AbstractMap.SimpleEntry;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
-import java.util.Map.Entry;
+import java.util.Set;
 
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.Platform;
 import org.eclipse.core.runtime.content.IContentType;
-import org.eclipse.core.runtime.content.IContentTypeManager;
 import org.eclipse.debug.core.ILaunchConfiguration;
+import org.eclipse.debug.core.ILaunchManager;
+import org.eclipse.jdt.annotation.NonNull;
 import org.eclipse.jface.preference.IPersistentPreferenceStore;
 import org.eclipse.jface.preference.IPreferenceStore;
 
@@ -37,6 +38,58 @@ import org.eclipse.jface.preference.IPreferenceStore;
 public class LSPStreamConnectionProviderRegistry {
 	
 	private static final String CONTENT_TYPE_TO_LSP_LAUNCH_PREF_KEY = "contentTypeToLSPLauch"; //$NON-NLS-1$
+
+	public static class ContentTypeToLSPLaunchConfigEntry {
+		public IContentType contentType;
+		public ILaunchConfiguration launchConfiguration;
+		public Set<String> launchModes;
+		
+		public ContentTypeToLSPLaunchConfigEntry(@NonNull IContentType contentType,
+		        @NonNull ILaunchConfiguration launchConfig, @NonNull Set<String> launchMode) {
+			this.contentType = contentType;
+			this.launchConfiguration = launchConfig;
+			this.launchModes = Collections.unmodifiableSet(launchMode);
+		}
+		
+		private ContentTypeToLSPLaunchConfigEntry() {
+		}
+
+		static ContentTypeToLSPLaunchConfigEntry readFromPreference(String preferenceEntry) {
+			ContentTypeToLSPLaunchConfigEntry res = new ContentTypeToLSPLaunchConfigEntry();
+			String[] parts = preferenceEntry.split(":"); //$NON-NLS-1$
+			String contentTypeId = parts[0];
+			String[] launchParts = parts[1].split("/"); //$NON-NLS-1$
+			String launchType = launchParts[0];
+			String launchName = launchParts[1];
+			res.launchModes = Collections.singleton(ILaunchManager.RUN_MODE);
+			if (launchParts.length > 2) {
+				res.launchModes = new HashSet<>(Arrays.asList(launchParts[2].split("\\+"))); //$NON-NLS-1$
+			}
+			res.contentType = Platform.getContentTypeManager().getContentType(contentTypeId);
+			if (res.contentType != null) {
+				res.launchConfiguration = LaunchConfigurationStreamProvider.findLaunchConfiguration(launchType, launchName);
+			}
+			return res;
+		}
+
+		void appendTo(StringBuilder builder) {
+			builder.append(contentType.getId());
+			builder.append(':');
+			try {
+				builder.append(launchConfiguration.getType().getIdentifier());
+			} catch (CoreException e) {
+				e.printStackTrace();
+			}
+			builder.append('/');
+			builder.append(launchConfiguration.getName());
+			builder.append('/');
+			for (String launchMode : launchModes) {
+				builder.append(launchMode);
+				builder.append('+');
+			}
+			builder.deleteCharAt(builder.length() - 1);
+		}
+	}
 	
 	private static LSPStreamConnectionProviderRegistry INSTANCE = null;
 	public static LSPStreamConnectionProviderRegistry getInstance() {
@@ -45,8 +98,8 @@ public class LSPStreamConnectionProviderRegistry {
 		}
 		return INSTANCE;
 	}
-	
-	private List<Entry<IContentType, ILaunchConfiguration>> connections = new ArrayList<>();
+
+	private List<ContentTypeToLSPLaunchConfigEntry> connections = new ArrayList<>();
 	private IPreferenceStore preferenceStore;
 	
 	private LSPStreamConnectionProviderRegistry() {
@@ -55,22 +108,13 @@ public class LSPStreamConnectionProviderRegistry {
 	}
 	
 	private void initialize() {
-		IContentTypeManager contentTypeManager = Platform.getContentTypeManager();
 		String prefs = preferenceStore.getString(CONTENT_TYPE_TO_LSP_LAUNCH_PREF_KEY);
 		if (prefs != null && !prefs.isEmpty()) {
 			String[] entries = prefs.split(","); //$NON-NLS-1$
 			for (String entry : entries) {
-				String[] parts = entry.split(":"); //$NON-NLS-1$
-				String contentTypeId = parts[0];
-				String[] launchParts = parts[1].split("/"); //$NON-NLS-1$
-				String launchType = launchParts[0];
-				String launchName = launchParts[1];
-				IContentType contentType = contentTypeManager.getContentType(contentTypeId);
-				if (contentType != null) {
-					ILaunchConfiguration config = LaunchConfigurationStreamProvider.findLaunchConfiguration(launchType, launchName);
-					if (config != null) {
-						connections.add(new SimpleEntry<>(contentType, config));
-					}
+				ContentTypeToLSPLaunchConfigEntry mapping = ContentTypeToLSPLaunchConfigEntry.readFromPreference(entry);
+				if (mapping.contentType != null && mapping.launchConfiguration != null && mapping.launchModes != null) {
+					connections.add(mapping);
 				}
 			}
 		}
@@ -78,16 +122,8 @@ public class LSPStreamConnectionProviderRegistry {
 	
 	private void persist() {
 		StringBuilder builder = new StringBuilder();
-		for (Entry<IContentType, ILaunchConfiguration> entry : connections) {
-			builder.append(entry.getKey().getId());
-			builder.append(':');
-			try {
-				builder.append(entry.getValue().getType().getIdentifier());
-			} catch (CoreException e) {
-				e.printStackTrace();
-			}
-			builder.append('/');
-			builder.append(entry.getValue().getName());
+		for (ContentTypeToLSPLaunchConfigEntry entry : connections) {
+			entry.appendTo(builder);
 			builder.append(',');
 		}
 		if (builder.length() > 0) {
@@ -106,21 +142,21 @@ public class LSPStreamConnectionProviderRegistry {
 	public List<StreamConnectionProvider> findProviderFor(final IContentType contentType) {
 		return Arrays.asList(connections
 			.stream()
-			.filter(entry -> { return entry.getKey().equals(contentType); })
-			.map(entry -> { return new LaunchConfigurationStreamProvider(entry.getValue()); })
+			.filter(entry -> { return entry.contentType.equals(contentType); })
+			.map(entry -> { return new LaunchConfigurationStreamProvider(entry.launchConfiguration, entry.launchModes); })
 			.toArray(StreamConnectionProvider[]::new));
 	}
 	
-	public void registerAssociation(IContentType contentType, ILaunchConfiguration launchConfig) {
-		connections.add(new SimpleEntry<>(contentType, launchConfig));
+	public void registerAssociation(@NonNull IContentType contentType, @NonNull ILaunchConfiguration launchConfig, @NonNull Set<String> launchMode) {
+		connections.add(new ContentTypeToLSPLaunchConfigEntry(contentType, launchConfig, launchMode));
 		persist();
 	}
 
-	public List<Entry<IContentType, ILaunchConfiguration>> getContentTypeToLSPLaunches() {
+	public List<ContentTypeToLSPLaunchConfigEntry> getContentTypeToLSPLaunches() {
 		return Collections.unmodifiableList(this.connections);
 	}
 
-	public void setAssociations(List<Entry<IContentType, ILaunchConfiguration>> wc) {
+	public void setAssociations(List<ContentTypeToLSPLaunchConfigEntry> wc) {
 		this.connections.clear();
 		this.connections.addAll(wc);
 		persist();
