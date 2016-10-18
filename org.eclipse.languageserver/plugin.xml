@@ -131,5 +131,19 @@
          </menu>
       </menuContribution>
    </extension>
+   <extension
+         point="org.eclipse.ui.genericeditor.contentAssistProcessors">
+      <contentAssistProcessor
+            class="org.eclipse.languageserver.operations.completion.LSContentAssistProcessor"
+            contentType="org.eclipse.core.runtime.text">
+      </contentAssistProcessor>
+   </extension>
+   <extension
+         point="org.eclipse.ui.genericeditor.hoverProviders">
+      <hoverProvider
+            class="org.eclipse.languageserver.operations.hover.LSBasedHover"
+            contentType="org.eclipse.core.runtime.text">
+      </hoverProvider>
+   </extension>
 
 </plugin>
