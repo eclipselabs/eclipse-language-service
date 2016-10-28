@@ -7,6 +7,7 @@
  *
  * Contributors:
  *  Mickael Istria (Red Hat Inc.) - initial implementation
+ *  Michał Niewrzał (Rogue Wave Software Inc.) - hyperlink range detection
  *******************************************************************************/
 package org.eclipse.languageserver.operations.declaration;
 
@@ -25,6 +26,7 @@ import org.eclipse.jface.text.BadLocationException;
 import org.eclipse.jface.text.IDocument;
 import org.eclipse.jface.text.IRegion;
 import org.eclipse.jface.text.ITextViewer;
+import org.eclipse.jface.text.Region;
 import org.eclipse.jface.text.TextSelection;
 import org.eclipse.jface.text.hyperlink.AbstractHyperlinkDetector;
 import org.eclipse.jface.text.hyperlink.IHyperlink;
@@ -113,9 +115,13 @@ public class OpenDeclarationHyperlinkDetector extends AbstractHyperlinkDetector 
 				if (response.isEmpty()) {
 					return null;
 				}
+				IRegion linkRegion = findWord(textViewer.getDocument(), region.getOffset());
+				if (linkRegion == null) {
+					linkRegion = region;
+				}
 				List<IHyperlink> hyperlinks = new ArrayList<IHyperlink>(response.size());
 				for (Location responseLocation : response) {
-					hyperlinks.add(new LSBasedHyperlink(responseLocation, info.getFileUri(), region));
+					hyperlinks.add(new LSBasedHyperlink(responseLocation, info.getFileUri(), linkRegion));
 				}
 				return hyperlinks.toArray(new IHyperlink[hyperlinks.size()]);
 			} catch (Exception e) {
@@ -123,6 +129,62 @@ public class OpenDeclarationHyperlinkDetector extends AbstractHyperlinkDetector 
 				e.printStackTrace();
 			}
 		}
+		return null;
+	}
+
+	/**
+	 * This method is only a workaround for missing range value (which can be
+	 * used to highlight hyperlink) in LSP 'definition' response.
+	 * 
+	 * Should be removed when protocol will be updated
+	 * (https://github.com/Microsoft/language-server-protocol/issues/3)
+	 * 
+	 * @param document
+	 * @param offset
+	 * @return
+	 */
+	private IRegion findWord(IDocument document, int offset) {
+		int start = -2;
+		int end = -1;
+
+		try {
+
+			int pos = offset;
+			char c;
+
+			while (pos >= 0) {
+				c = document.getChar(pos);
+				if (!Character.isUnicodeIdentifierPart(c))
+					break;
+				--pos;
+			}
+
+			start = pos;
+
+			pos = offset;
+			int length = document.getLength();
+
+			while (pos < length) {
+				c = document.getChar(pos);
+				if (!Character.isUnicodeIdentifierPart(c))
+					break;
+				++pos;
+			}
+
+			end = pos;
+
+		} catch (BadLocationException x) {
+		}
+
+		if (start >= -1 && end > -1) {
+			if (start == offset && end == offset)
+				return new Region(offset, 0);
+			else if (start == offset)
+				return new Region(start, end - start);
+			else
+				return new Region(start + 1, end - start - 1);
+		}
+
 		return null;
 	}
 
