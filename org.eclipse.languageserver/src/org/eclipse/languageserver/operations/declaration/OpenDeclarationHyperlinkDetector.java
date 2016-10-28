@@ -7,6 +7,7 @@
  *
  * Contributors:
  *  Mickael Istria (Red Hat Inc.) - initial implementation
+ *  Michał Niewrzał (Rogue Wave Software Inc.) - hyperlink range detection
  *******************************************************************************/
 package org.eclipse.languageserver.operations.declaration;
 
@@ -78,11 +79,15 @@ public class OpenDeclarationHyperlinkDetector extends AbstractHyperlinkDetector 
 			IResource targetResource = LSPEclipseUtils.findResourceFor(this.location.getUri());
 			try {
 				if (targetResource != null && targetResource.getType() == IResource.FILE) {
-					part = IDE.openEditor(PlatformUI.getWorkbench().getActiveWorkbenchWindow().getActivePage(), (IFile)targetResource);
-					targetDocument = FileBuffers.getTextFileBufferManager().getTextFileBuffer(targetResource.getFullPath(), LocationKind.IFILE).getDocument();
+					part = IDE.openEditor(PlatformUI.getWorkbench().getActiveWorkbenchWindow().getActivePage(),
+					        (IFile) targetResource);
+					targetDocument = FileBuffers.getTextFileBufferManager()
+					        .getTextFileBuffer(targetResource.getFullPath(), LocationKind.IFILE).getDocument();
 				} else {
-					part = IDE.openEditor(PlatformUI.getWorkbench().getActiveWorkbenchWindow().getActivePage(), fileUri, null, true);
-					targetDocument = FileBuffers.getTextFileBufferManager().getTextFileBuffer(new Path(fileUri.getPath()), LocationKind.LOCATION).getDocument();
+					part = IDE.openEditor(PlatformUI.getWorkbench().getActiveWorkbenchWindow().getActivePage(), fileUri,
+					        null, true);
+					targetDocument = FileBuffers.getTextFileBufferManager()
+					        .getTextFileBuffer(new Path(fileUri.getPath()), LocationKind.LOCATION).getDocument();
 				}
 			} catch (PartInitException e) {
 				// TODO Auto-generated catch block
@@ -93,7 +98,8 @@ public class OpenDeclarationHyperlinkDetector extends AbstractHyperlinkDetector 
 					AbstractTextEditor editor = (AbstractTextEditor) part;
 					int offset = LSPEclipseUtils.toOffset(location.getRange().getStart(), targetDocument);
 					int endOffset = LSPEclipseUtils.toOffset(location.getRange().getEnd(), targetDocument);
-					editor.getSelectionProvider().setSelection(new TextSelection(offset, endOffset > offset ? endOffset - offset : 0));
+					editor.getSelectionProvider()
+					        .setSelection(new TextSelection(offset, endOffset > offset ? endOffset - offset : 0));
 				}
 			} catch (BadLocationException e) {
 				// TODO Auto-generated catch block
@@ -105,17 +111,19 @@ public class OpenDeclarationHyperlinkDetector extends AbstractHyperlinkDetector 
 
 	@Override
 	public IHyperlink[] detectHyperlinks(ITextViewer textViewer, IRegion region, boolean canShowMultipleHyperlinks) {
-		final LSPDocumentInfo info = LanguageServiceAccessor.getLSPDocumentInfoFor(textViewer, ServerCapabilities::isDefinitionProvider);
+		final LSPDocumentInfo info = LanguageServiceAccessor.getLSPDocumentInfoFor(textViewer,
+		        ServerCapabilities::isDefinitionProvider);
 		if (info != null) {
 			try {
-				CompletableFuture<List<? extends Location>> documentHighlight = info.getLanguageClient().getTextDocumentService()
-						.definition(LSPEclipseUtils.toTextDocumentPosistionParams(info.getFileUri(), region.getOffset(), info.getDocument()));
+				CompletableFuture<List<? extends Location>> documentHighlight = info.getLanguageClient()
+				        .getTextDocumentService().definition(LSPEclipseUtils.toTextDocumentPosistionParams(
+				                info.getFileUri(), region.getOffset(), info.getDocument()));
 				List<? extends Location> response = documentHighlight.get(2, TimeUnit.SECONDS);
 				if (response.isEmpty()) {
 					return null;
 				}
 				IRegion linkRegion = findWord(textViewer.getDocument(), region.getOffset());
-				if (linkRegion == null){
+				if (linkRegion == null) {
 					linkRegion = region;
 				}
 				List<IHyperlink> hyperlinks = new ArrayList<IHyperlink>(response.size());
@@ -131,6 +139,17 @@ public class OpenDeclarationHyperlinkDetector extends AbstractHyperlinkDetector 
 		return null;
 	}
 
+	/**
+	 * This method is only a workaround for missing range value (which can be
+	 * used to highlight hyperlink) in LSP 'definition' response.
+	 * 
+	 * Should be removed when protocol will be updated
+	 * (https://github.com/Microsoft/language-server-protocol/issues/3)
+	 * 
+	 * @param document
+	 * @param offset
+	 * @return
+	 */
 	private IRegion findWord(IDocument document, int offset) {
 		int start = -2;
 		int end = -1;
