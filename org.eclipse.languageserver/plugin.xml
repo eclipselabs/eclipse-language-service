@@ -34,6 +34,10 @@
             id="org.eclipse.languageserver.format"
             name="%format.command.name">
       </command>
+      <command
+            id="org.eclipse.languageserver.symbolinfile"
+            name="Go to Symbol in File">
+      </command>
    </extension>
    <extension
          point="org.eclipse.ui.handlers">
@@ -78,6 +82,10 @@
                </with>
             </and>
          </enabledWhen>
+      </handler>
+      <handler
+            class="org.eclipse.languageserver.operations.symbols.LSPSymbolInFileHandler"
+            commandId="org.eclipse.languageserver.symbolinfile">
       </handler>
    </extension>
    <extension
@@ -144,6 +152,15 @@
             class="org.eclipse.languageserver.operations.hover.LSBasedHover"
             contentType="org.eclipse.core.runtime.text">
       </hoverProvider>
+   </extension>
+   <extension
+         point="org.eclipse.ui.bindings">
+      <key
+            commandId="org.eclipse.languageserver.symbolinfile"
+            contextId="org.eclipse.ui.textEditorScope"
+            schemeId="org.eclipse.ui.defaultAcceleratorConfiguration"
+            sequence="M1+M2+O">
+      </key>
    </extension>
 
 </plugin>
