@@ -7,10 +7,12 @@
  *
  * Contributors:
  *  Mickael Istria (Red Hat Inc.) - initial implementation
+ *  Michał Niewrzał (Rogue Wave Software Inc.)
  *******************************************************************************/
 package org.eclipse.languageserver;
 
 import java.net.URI;
+import java.util.List;
 
 import org.eclipse.core.resources.IMarker;
 import org.eclipse.core.resources.IProject;
@@ -19,6 +21,11 @@ import org.eclipse.core.resources.ResourcesPlugin;
 import org.eclipse.core.runtime.Path;
 import org.eclipse.jface.text.BadLocationException;
 import org.eclipse.jface.text.IDocument;
+import org.eclipse.text.edits.MalformedTreeException;
+import org.eclipse.text.edits.MultiTextEdit;
+import org.eclipse.text.edits.ReplaceEdit;
+import org.eclipse.text.undo.DocumentUndoManagerRegistry;
+import org.eclipse.text.undo.IDocumentUndoManager;
 
 import io.typefox.lsapi.DiagnosticSeverity;
 import io.typefox.lsapi.Position;
@@ -97,6 +104,47 @@ public class LSPEclipseUtils {
 				LSPEclipseUtils.toOffset(textEdit.getRange().getStart(), document),
 				LSPEclipseUtils.toOffset(textEdit.getRange().getEnd(), document) - LSPEclipseUtils.toOffset(textEdit.getRange().getStart(), document),
 				textEdit.getNewText());
+	}
+
+	/**
+	 * Method will apply all edits to document as single modification. Needs to
+	 * be executed in UI thread.
+	 * 
+	 * @param document
+	 *            document to modify
+	 * @param edits
+	 *            list of LSP TextEdits
+	 */
+	public static void applyEdits(IDocument document, List<? extends TextEdit> edits) {
+		if (document == null || edits.isEmpty()) {
+			return;
+		}
+
+		IDocumentUndoManager manager = DocumentUndoManagerRegistry.getDocumentUndoManager(document);
+		if (manager != null) {
+			manager.beginCompoundChange();
+		}
+
+		MultiTextEdit edit = new MultiTextEdit();
+		for (TextEdit textEdit : edits) {
+			try {
+				int offset = LSPEclipseUtils.toOffset(textEdit.getRange().getStart(), document);
+				int length = LSPEclipseUtils.toOffset(textEdit.getRange().getEnd(), document) - offset;
+				edit.addChild(new ReplaceEdit(offset, length, textEdit.getNewText()));
+			} catch (BadLocationException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+		}
+		try {
+			edit.apply(document);
+		} catch (MalformedTreeException | BadLocationException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		if (manager != null) {
+			manager.endCompoundChange();
+		}
 	}
 
 }

@@ -18,8 +18,6 @@ import org.eclipse.core.commands.AbstractHandler;
 import org.eclipse.core.commands.ExecutionEvent;
 import org.eclipse.core.commands.ExecutionException;
 import org.eclipse.core.commands.IHandler;
-import org.eclipse.jface.text.BadLocationException;
-import org.eclipse.jface.text.IDocument;
 import org.eclipse.jface.text.ITextSelection;
 import org.eclipse.jface.text.TextSelection;
 import org.eclipse.jface.viewers.ISelection;
@@ -27,11 +25,6 @@ import org.eclipse.languageserver.LSPEclipseUtils;
 import org.eclipse.languageserver.LanguageServiceAccessor;
 import org.eclipse.languageserver.LanguageServiceAccessor.LSPDocumentInfo;
 import org.eclipse.swt.widgets.Shell;
-import org.eclipse.text.edits.MalformedTreeException;
-import org.eclipse.text.edits.MultiTextEdit;
-import org.eclipse.text.edits.ReplaceEdit;
-import org.eclipse.text.undo.DocumentUndoManagerRegistry;
-import org.eclipse.text.undo.IDocumentUndoManager;
 import org.eclipse.ui.IEditorPart;
 import org.eclipse.ui.IWorkbenchPart;
 import org.eclipse.ui.PlatformUI;
@@ -57,51 +50,18 @@ public class LSPFormatHandler extends AbstractHandler implements IHandler {
 				if (sel instanceof TextSelection) {
 					final Shell shell = HandlerUtil.getActiveShell(event);
 					DocumentFormattingParams params = new DocumentFormattingParamsBuilder()
-					        .textDocument(info.getFileUri().toString())
-					        .options(new FormattingOptionsBuilder().build())
+					        .textDocument(info.getFileUri().toString()).options(new FormattingOptionsBuilder().build())
 					        .build();
 					CompletableFuture<List<? extends TextEdit>> formatter = info.getLanguageClient().getTextDocumentService().formatting(params);
 					formatter.thenAccept((List<? extends TextEdit> t) -> {
 						shell.getDisplay().asyncExec(() -> {
-							applyChanges(info.getDocument(), t);
+							LSPEclipseUtils.applyEdits(info.getDocument(), t);
 						});
 					});
 				}
 			}
 		}
 		return null;
-	}
-
-	private void applyChanges(IDocument document, List<? extends TextEdit> t) {
-		if (document == null || t.isEmpty()) {
-			return;
-		}
-
-		IDocumentUndoManager manager = DocumentUndoManagerRegistry.getDocumentUndoManager(document);
-		if (manager != null) {
-			manager.beginCompoundChange();
-		}
-
-		MultiTextEdit edit = new MultiTextEdit();
-		for (TextEdit textEdit : t) {
-			try {
-				int offset = LSPEclipseUtils.toOffset(textEdit.getRange().getStart(), document);
-				int length = LSPEclipseUtils.toOffset(textEdit.getRange().getEnd(), document) - offset;
-				edit.addChild(new ReplaceEdit(offset, length, textEdit.getNewText()));
-			} catch (BadLocationException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
-		}
-		try {
-			edit.apply(document);
-		} catch (MalformedTreeException | BadLocationException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-		if (manager != null) {
-			manager.endCompoundChange();
-		}
 	}
 
 	@Override
