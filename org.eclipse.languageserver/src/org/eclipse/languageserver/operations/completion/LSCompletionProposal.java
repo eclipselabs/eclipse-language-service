@@ -10,6 +10,8 @@
  *******************************************************************************/
 package org.eclipse.languageserver.operations.completion;
 
+import java.util.LinkedHashMap;
+
 import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.jface.text.AbstractReusableInformationControlCreator;
 import org.eclipse.jface.text.BadLocationException;
@@ -29,12 +31,17 @@ import org.eclipse.jface.text.contentassist.ICompletionProposalExtension5;
 import org.eclipse.jface.text.contentassist.ICompletionProposalExtension6;
 import org.eclipse.jface.text.contentassist.ICompletionProposalExtension7;
 import org.eclipse.jface.text.contentassist.IContextInformation;
+import org.eclipse.jface.text.link.LinkedModeModel;
+import org.eclipse.jface.text.link.LinkedModeUI;
+import org.eclipse.jface.text.link.LinkedPosition;
+import org.eclipse.jface.text.link.LinkedPositionGroup;
 import org.eclipse.jface.viewers.StyledString;
 import org.eclipse.languageserver.LSPEclipseUtils;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.widgets.Shell;
+import org.eclipse.ui.texteditor.link.EditorLinkedModeUI;
 
 import io.typefox.lsapi.CompletionItem;
 
@@ -42,9 +49,13 @@ public class LSCompletionProposal implements ICompletionProposal, ICompletionPro
 		ICompletionProposalExtension2, ICompletionProposalExtension3, ICompletionProposalExtension4,
 		ICompletionProposalExtension5, ICompletionProposalExtension6, ICompletionProposalExtension7, IContextInformation {
 
+	private static final String EDIT_AREA_OPEN_PATTERN = "{{"; //$NON-NLS-1$
+	private static final String EDIT_AREA_CLOSE_PATTERN = "}}"; //$NON-NLS-1$
 	private CompletionItem item;
 	private int initialOffset;
 	private int selectionOffset;
+	private ITextViewer viewer;
+	private LinkedPosition firstPosition;
 
 	public LSCompletionProposal(CompletionItem item, int offset) {
 		this.item = item;
@@ -136,6 +147,7 @@ public class LSCompletionProposal implements ICompletionProposal, ICompletionPro
 
 	@Override
 	public void selected(ITextViewer viewer, boolean smartToggle) {
+		this.viewer = viewer;
 	}
 
 	@Override
@@ -167,14 +179,18 @@ public class LSCompletionProposal implements ICompletionProposal, ICompletionPro
 	
 	@Override
 	public void apply(IDocument document) {
+		String insertText = null;
+		int insertionOffset = this.initialOffset;
 		if (item.getTextEdit() != null) {
 			try {
+				insertText = item.getTextEdit().getNewText();
+				insertionOffset = LSPEclipseUtils.toOffset(item.getTextEdit().getRange().getStart(), document);
 				LSPEclipseUtils.applyEdit(item.getTextEdit(), document);
 			} catch (BadLocationException e) {
 				e.printStackTrace();
 			}
 		} else { //compute a best edit by reusing prefixes and suffixes
-			String insertText = getInsertText();
+			insertText = getInsertText();
 			this.selectionOffset = insertText.length();
 			
 			// Look for letters that are available before completion offset
@@ -211,6 +227,50 @@ public class LSCompletionProposal implements ICompletionProposal, ICompletionPro
 			} catch (BadLocationException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
+				return;
+			}
+		}
+
+		if (viewer != null) {
+			LinkedHashMap<String, LinkedPositionGroup> groups = new LinkedHashMap<>();
+			int currentOffset = insertText.indexOf(EDIT_AREA_OPEN_PATTERN);
+			try {
+				while (currentOffset != -1) {
+					int closeOffset = insertText.indexOf(EDIT_AREA_CLOSE_PATTERN, currentOffset + EDIT_AREA_OPEN_PATTERN.length());
+					if (closeOffset != -1) {
+						String key = insertText.substring(currentOffset, closeOffset + EDIT_AREA_CLOSE_PATTERN.length());
+						if (!groups.containsKey(key)) {
+							groups.put(key, new LinkedPositionGroup());
+						}
+						LinkedPosition position = new LinkedPosition(document, insertionOffset + currentOffset, key.length());
+						if (firstPosition == null) {
+							firstPosition = position;
+						}
+						groups.get(key).addPosition(firstPosition);
+						currentOffset = closeOffset + EDIT_AREA_CLOSE_PATTERN.length();
+					} else {
+						// TODO log
+						currentOffset += EDIT_AREA_OPEN_PATTERN.length();
+					}
+					currentOffset = insertText.indexOf(EDIT_AREA_OPEN_PATTERN, currentOffset);
+				}
+				if (!groups.isEmpty()) {
+					LinkedModeModel model= new LinkedModeModel();
+					for (LinkedPositionGroup group : groups.values()) {
+						model.addGroup(group);
+					}
+					model.forceInstall();
+
+					LinkedModeUI ui= new EditorLinkedModeUI(model, viewer);
+					//ui.setSimpleMode(true);
+					//ui.setExitPolicy(new ExitPolicy(closingCharacter, document));
+					//ui.setExitPosition(getTextViewer(), exit, 0, Integer.MAX_VALUE);
+					ui.setCyclingMode(LinkedModeUI.CYCLE_NEVER);
+					ui.enter();
+				}
+			} catch (BadLocationException ex) {
+				// TODO log
+				ex.printStackTrace();
 			}
 		}
 	}
@@ -249,6 +309,9 @@ public class LSCompletionProposal implements ICompletionProposal, ICompletionPro
 
 	@Override
 	public Point getSelection(IDocument document) {
+		if (this.firstPosition != null) {
+			return new Point(this.firstPosition.getOffset(), this.firstPosition.getLength());
+		}
 		return new Point(this.initialOffset + this.selectionOffset, 0);
 	}
 
