@@ -14,10 +14,16 @@ package org.eclipse.languageserver;
 import java.net.URI;
 import java.util.List;
 
+import org.eclipse.core.filebuffers.FileBuffers;
+import org.eclipse.core.filebuffers.ITextFileBuffer;
+import org.eclipse.core.filebuffers.ITextFileBufferManager;
+import org.eclipse.core.filebuffers.LocationKind;
 import org.eclipse.core.resources.IMarker;
 import org.eclipse.core.resources.IProject;
 import org.eclipse.core.resources.IResource;
 import org.eclipse.core.resources.ResourcesPlugin;
+import org.eclipse.core.runtime.CoreException;
+import org.eclipse.core.runtime.NullProgressMonitor;
 import org.eclipse.core.runtime.Path;
 import org.eclipse.jface.text.BadLocationException;
 import org.eclipse.jface.text.IDocument;
@@ -145,6 +151,32 @@ public class LSPEclipseUtils {
 		if (manager != null) {
 			manager.endCompoundChange();
 		}
+	}
+
+	public static IDocument getDocument(IResource resource) throws BadLocationException {
+		if (resource == null) {
+			return null;
+		}
+
+		ITextFileBufferManager bufferManager = FileBuffers.getTextFileBufferManager();
+		IDocument document = null;
+		ITextFileBuffer buffer = bufferManager.getTextFileBuffer(resource.getFullPath(), LocationKind.IFILE);
+		if (buffer != null) {
+			document = buffer.getDocument();
+		} else if (resource.getType() == IResource.FILE) {
+			try {
+				bufferManager.connect(resource.getFullPath(), LocationKind.IFILE, new NullProgressMonitor());
+			} catch (CoreException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+				return document;
+			}
+			buffer = bufferManager.getTextFileBuffer(resource.getFullPath(), LocationKind.IFILE);
+			if (buffer != null) {
+				document = buffer.getDocument();
+			}
+		}
+		return document;
 	}
 
 }

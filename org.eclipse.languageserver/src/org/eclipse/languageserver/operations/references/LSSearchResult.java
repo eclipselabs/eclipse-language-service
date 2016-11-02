@@ -7,20 +7,16 @@
  *
  * Contributors:
  *   Mickael Istria (Red Hat Inc.) - initial implementation
+ *   Michał Niewrzał (Rogue Wave Software Inc.)
  *******************************************************************************/
 package org.eclipse.languageserver.operations.references;
 
-import java.net.URI;
-import java.net.URISyntaxException;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 
-import org.eclipse.core.filesystem.EFS;
-import org.eclipse.core.filesystem.IFileStore;
 import org.eclipse.core.resources.IFile;
 import org.eclipse.core.resources.IResource;
-import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.core.runtime.IStatus;
 import org.eclipse.core.runtime.OperationCanceledException;
@@ -38,38 +34,74 @@ import org.eclipse.search.internal.ui.text.FileSearchResult;
 import org.eclipse.search.internal.ui.text.LineElement;
 import org.eclipse.search.ui.ISearchQuery;
 import org.eclipse.search.ui.ISearchResult;
+import org.eclipse.search.ui.text.AbstractTextSearchResult;
 import org.eclipse.search.ui.text.IEditorMatchAdapter;
 import org.eclipse.search.ui.text.IFileMatchAdapter;
 import org.eclipse.search.ui.text.Match;
 
 import io.typefox.lsapi.Location;
+import io.typefox.lsapi.Position;
+import io.typefox.lsapi.Range;
 
 public class LSSearchResult extends FileSearchResult {
 
-	private IDocument document;
+	private class LSSearchQuery extends FileSearchQuery {
+
+		public LSSearchQuery() {
+			super(Messages.referenceSearchQuery, false, false, null);
+		}
+
+		@Override
+		public IStatus run(IProgressMonitor monitor) throws OperationCanceledException {
+			AbstractTextSearchResult textResult = (AbstractTextSearchResult) getSearchResult();
+			textResult.removeAll();
+
+			try {
+				for (Location loc : references.get(4, TimeUnit.SECONDS)) {
+					Match match = toMatch(loc, monitor);
+					addMatch(match);
+				}
+				return Status.OK_STATUS;
+			} catch (Exception ex) {
+				return new Status(IStatus.ERROR,
+				        LanguageServerPluginActivator.getDefault().getBundle().getSymbolicName(), ex.getMessage(), ex);
+			}
+		}
+
+		@Override
+		public ISearchResult getSearchResult() {
+			return LSSearchResult.this;
+		}
+	}
+
 	private ISearchQuery query;
 	private CompletableFuture<List<? extends Location>> references;
 
-	public LSSearchResult(CompletableFuture<List<? extends Location>> references, IDocument document) {
+	public LSSearchResult(CompletableFuture<List<? extends Location>> references) {
 		super(null);
-		this.document = document;
 		this.references = references;
 	}
 
-	protected Match toMatch(Location loc) {
+	protected Match toMatch(Location location, IProgressMonitor monitor) {
 		try {
-			int startOffset = LSPEclipseUtils.toOffset(loc.getRange().getStart(), document);
-			int endOffset = LSPEclipseUtils.toOffset(loc.getRange().getEnd(), document);
-			IResource resource = LSPEclipseUtils.findResourceFor(loc.getUri());
-			if (resource != null) {
+			IResource resource = LSPEclipseUtils.findResourceFor(location.getUri());
+			IDocument document = LSPEclipseUtils.getDocument(resource);
+			if (document != null) {
+				int startOffset = LSPEclipseUtils.toOffset(location.getRange().getStart(), document);
+				int endOffset = LSPEclipseUtils.toOffset(location.getRange().getEnd(), document);
+
 				IRegion lineInformation = document.getLineInformationOfOffset(startOffset);
-				LineElement lineEntry = new LineElement(resource, document.getLineOfOffset(startOffset), lineInformation.getOffset(), document.get(lineInformation.getOffset(), lineInformation.getLength()));
-				return new FileMatch((IFile)resource, startOffset, endOffset - startOffset, lineEntry);
-			} else {
-				IFileStore store = EFS.getStore(new URI(loc.getUri()));
-				return new Match(store, startOffset, endOffset - startOffset);
+				LineElement lineEntry = new LineElement(resource, document.getLineOfOffset(startOffset),
+				        lineInformation.getOffset(),
+				        document.get(lineInformation.getOffset(), lineInformation.getLength()));
+				return new FileMatch((IFile) resource, startOffset, endOffset - startOffset, lineEntry);
+
 			}
-		} catch (BadLocationException | CoreException | URISyntaxException ex) {
+			Position startPosition = location.getRange().getStart();
+			LineElement lineEntry = new LineElement(resource, startPosition.getLine(), 0,
+			        String.format("%s:%s", startPosition.getLine(), startPosition.getCharacter())); //$NON-NLS-1$
+			return new FileMatch((IFile) resource, 0, 0, lineEntry);
+		} catch (BadLocationException ex) {
 			ex.printStackTrace();
 		}
 		return null;
@@ -77,7 +109,7 @@ public class LSSearchResult extends FileSearchResult {
 
 	@Override
 	public String getLabel() {
-		return "References TODO Label";  //$NON-NLS-1$
+		return "References TODO Label"; //$NON-NLS-1$
 	}
 
 	@Override
@@ -94,25 +126,7 @@ public class LSSearchResult extends FileSearchResult {
 	@Override
 	public ISearchQuery getQuery() {
 		if (this.query == null) {
-			this.query = new FileSearchQuery(Messages.referenceSearchQuery, false, false, null) {
-				@Override
-				public IStatus run(IProgressMonitor monitor) throws OperationCanceledException {
-					try {
-						for (Location loc : references.get(4, TimeUnit.SECONDS)) {
-							Match match = toMatch(loc);
-							addMatch(match);
-						}
-						return Status.OK_STATUS;
-					} catch (Exception ex) {
-						return new Status(IStatus.ERROR, LanguageServerPluginActivator.getDefault().getBundle().getSymbolicName(), ex.getMessage(), ex);
-					}
-				}
-				
-				@Override
-				public ISearchResult getSearchResult() {
-					return LSSearchResult.this;
-				}
-			};
+			this.query = new LSSearchQuery();
 		}
 		return this.query;
 	}

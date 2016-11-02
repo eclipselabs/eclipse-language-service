@@ -7,6 +7,7 @@
  *
  * Contributors:
  *  Mickael Istria (Red Hat Inc.) - initial implementation
+ *  Michał Niewrzał (Rogue Wave Software Inc.)
  *******************************************************************************/
 package org.eclipse.languageserver.operations.references;
 
@@ -35,10 +36,9 @@ import org.eclipse.ui.texteditor.AbstractTextEditor;
 import org.eclipse.ui.texteditor.ITextEditor;
 
 import io.typefox.lsapi.Location;
+import io.typefox.lsapi.ReferenceParams;
 import io.typefox.lsapi.ServerCapabilities;
-import io.typefox.lsapi.impl.ReferenceContextImpl;
-import io.typefox.lsapi.impl.ReferenceParamsImpl;
-import io.typefox.lsapi.impl.TextDocumentIdentifierImpl;
+import io.typefox.lsapi.builders.ReferenceParamsBuilder;
 
 public class LSFindReferences extends AbstractHandler implements IHandler {
 
@@ -59,18 +59,17 @@ public class LSFindReferences extends AbstractHandler implements IHandler {
 
 			if (info != null) {
 				ISelection sel = ((AbstractTextEditor) part).getSelectionProvider().getSelection();
+				
 				if (sel instanceof TextSelection) {
 					try {
-						ReferenceParamsImpl params = new ReferenceParamsImpl();
-						params.setPosition(LSPEclipseUtils.toPosition(((TextSelection) sel).getOffset(), info.getDocument()));
-						TextDocumentIdentifierImpl identifier = new TextDocumentIdentifierImpl();
-						identifier.setUri(info.getFileUri().toString());
-						params.setTextDocument(identifier);
-						ReferenceContextImpl context = new ReferenceContextImpl();
-						context.setIncludeDeclaration(true);
-						params.setContext(context);
-						CompletableFuture<List<? extends Location>> references = info.getLanguageClient().getTextDocumentService().references(params);
-						LSSearchResult search = new LSSearchResult(references, info.getDocument());
+						ReferenceParams params = new ReferenceParamsBuilder().context(false)
+						        .textDocument(info.getFileUri().toString())
+						        .position(LSPEclipseUtils.toPosition(((TextSelection) sel).getOffset(), info.getDocument()))
+						        .build();
+
+						CompletableFuture<List<? extends Location>> references = info.getLanguageClient()
+						        .getTextDocumentService().references(params);
+						LSSearchResult search = new LSSearchResult(references);
 						search.getQuery().run(new NullProgressMonitor());
 						if (searchView != null) {
 							searchView.showSearchResult(search);
