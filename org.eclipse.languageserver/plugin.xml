@@ -162,5 +162,48 @@
             sequence="M1+M2+O">
       </key>
    </extension>
+   <extension
+         point="org.eclipse.core.runtime.adapters">
+      <factory
+            adaptableType="org.eclipse.ui.internal.genericeditor.ExtensionBasedTextEditor"
+            class="org.eclipse.languageserver.outline.EditorToOutlineAdapterFactory">
+         <adapter
+               type="org.eclipse.ui.views.contentoutline.IContentOutlinePage">
+         </adapter>
+      </factory>
+   </extension>
+   <extension
+         point="org.eclipse.ui.navigator.navigatorContent">
+      <navigatorContent
+            activeByDefault="true"
+            contentProvider="org.eclipse.languageserver.outline.LSSymbolsContentProvider"
+            labelProvider="org.eclipse.languageserver.outline.SymbolsLabelProvider"
+            id="org.eclipse.languageserver.outline.content"
+            name="LS Symbols">
+         <triggerPoints>
+            <or></or>
+         </triggerPoints>
+         <enablement>
+            <instanceof
+                  value="org.eclipse.languageserver.LanguageServiceAccessor$LSPDocumentInfo">
+            </instanceof>
+         </enablement>
+      </navigatorContent>
+   </extension>
+   <extension
+         point="org.eclipse.ui.navigator.viewer">
+      <viewer
+            viewerId="org.eclipse.languageserver.outline">
+      </viewer>
+      <viewerContentBinding
+            viewerId="org.eclipse.languageserver.outline">
+         <includes>
+            <contentExtension
+                  isRoot="true"
+                  pattern="org.eclipse.languageserver.outline.content">
+            </contentExtension>
+         </includes>
+      </viewerContentBinding>
+   </extension>
 
 </plugin>
