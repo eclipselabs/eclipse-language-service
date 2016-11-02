@@ -43,10 +43,10 @@ public class LSPSymbolInFileHandler extends AbstractHandler {
 			final Shell shell = HandlerUtil.getActiveShell(event);
 			DocumentSymbolParams params = new DocumentSymbolParamsBuilder().textDocument(info.getFileUri().toString())
 			        .build();
-			CompletableFuture<List<? extends SymbolInformation>> formatter = info.getLanguageClient()
+			CompletableFuture<List<? extends SymbolInformation>> symbols = info.getLanguageClient()
 			        .getTextDocumentService().documentSymbol(params);
 
-			formatter.thenAccept((List<? extends SymbolInformation> t) -> {
+			symbols.thenAccept((List<? extends SymbolInformation> t) -> {
 				shell.getDisplay().asyncExec(() -> {
 					LSPSymbolInFileDialog dialog = new LSPSymbolInFileDialog(shell, textEditor, t);
 					dialog.open();

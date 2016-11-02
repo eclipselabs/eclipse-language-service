@@ -31,6 +31,7 @@ public class Messages extends NLS {
 	public static String referenceSearchQuery;
 	public static String computing;
 	public static String updateCodelensMenu_job;
+	public static String outline_computingSymbols;
 
 
 	static {
