@@ -7,10 +7,15 @@
  *
  * Contributors:
  *   Mickael Istria (Red Hat Inc.) - initial implementation
+ *   Michał Niewrzał (Rogue Wave Software Inc.)
  *******************************************************************************/
 package org.eclipse.languageserver.operations.completion;
 
 import java.util.LinkedHashMap;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.jface.text.AbstractReusableInformationControlCreator;
@@ -37,6 +42,7 @@ import org.eclipse.jface.text.link.LinkedPosition;
 import org.eclipse.jface.text.link.LinkedPositionGroup;
 import org.eclipse.jface.viewers.StyledString;
 import org.eclipse.languageserver.LSPEclipseUtils;
+import org.eclipse.languageserver.LanguageServiceAccessor.LSPDocumentInfo;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.graphics.Point;
@@ -46,6 +52,9 @@ import org.eclipse.ui.PlatformUI;
 import org.eclipse.ui.texteditor.link.EditorLinkedModeUI;
 
 import io.typefox.lsapi.CompletionItem;
+import io.typefox.lsapi.CompletionOptions;
+import io.typefox.lsapi.ServerCapabilities;
+import io.typefox.lsapi.builders.CompletionItemBuilder;
 
 public class LSCompletionProposal implements ICompletionProposal, ICompletionProposalExtension,
 		ICompletionProposalExtension2, ICompletionProposalExtension3, ICompletionProposalExtension4,
@@ -58,10 +67,12 @@ public class LSCompletionProposal implements ICompletionProposal, ICompletionPro
 	private int selectionOffset;
 	private ITextViewer viewer;
 	private LinkedPosition firstPosition;
+	private LSPDocumentInfo info;
 
-	public LSCompletionProposal(CompletionItem item, int offset) {
+	public LSCompletionProposal(CompletionItem item, int offset, LSPDocumentInfo info) {
 		this.item = item;
 		this.initialOffset = offset;
+		this.info = info;
 	}
 
 	@Override
@@ -117,20 +128,36 @@ public class LSCompletionProposal implements ICompletionProposal, ICompletionPro
 	
 	@Override
 	public Object getAdditionalProposalInfo(IProgressMonitor monitor) {
+		ServerCapabilities capabilities = info.getCapabilites();
+		if (capabilities != null) {
+			CompletionOptions options = capabilities.getCompletionProvider();
+			if (options != null && options.getResolveProvider()) {
+				CompletionItem i = new CompletionItemBuilder().label(item.getLabel()).kind(item.getKind())
+				        .textEdit(item.getTextEdit()).data(item.getData()).build();
+				CompletableFuture<CompletionItem> resolvedItem = info.getLanguageClient().getTextDocumentService()
+				        .resolveCompletionItem(i);
+				try {
+					this.item = resolvedItem.get(500, TimeUnit.MILLISECONDS);
+				} catch (InterruptedException | ExecutionException | TimeoutException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+			}
+		}
+
 		StringBuilder res = new StringBuilder();
-		if (this.item.getDocumentation() != null) {
-			res.append(this.item.getDocumentation().replaceAll("\\n", "<br/>")); //$NON-NLS-1$ //$NON-NLS-2$
+		if (this.item.getDetail() != null) {
+			res.append("<p>" + this.item.getDetail() + "</p>"); //$NON-NLS-1$ //$NON-NLS-2$
 		}
 		if (res.length() > 0) {
 			res.append("<br/>"); //$NON-NLS-1$
 		}
-		if (this.item.getDetail() != null) {
-			res.append(this.item.getDetail().replaceAll("\\n", "<br/>")); //$NON-NLS-1$ //$NON-NLS-2$
+		if (this.item.getDocumentation() != null) {
+			res.append("<p>" + this.item.getDocumentation() + "</p>"); //$NON-NLS-1$ //$NON-NLS-2$
 		}
-		
+
 		return res.toString();
 	}
-
 
 	@Override
 	public boolean isValidFor(IDocument document, int offset) {
