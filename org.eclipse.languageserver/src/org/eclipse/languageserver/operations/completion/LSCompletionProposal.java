@@ -42,6 +42,7 @@ import org.eclipse.jface.text.link.LinkedPosition;
 import org.eclipse.jface.text.link.LinkedPositionGroup;
 import org.eclipse.jface.viewers.StyledString;
 import org.eclipse.languageserver.LSPEclipseUtils;
+import org.eclipse.languageserver.LSPImages;
 import org.eclipse.languageserver.LanguageServiceAccessor.LSPDocumentInfo;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.graphics.Image;
@@ -351,28 +352,7 @@ public class LSCompletionProposal implements ICompletionProposal, ICompletionPro
 
 	@Override
 	public Image getImage() {
-		switch (this.item.getKind()) {
-		case Text: break;
-		case Method: break;
-		case Function: break;
-		case Constructor: break;
-		case Field: break;
-		case Variable: break;
-		case Class: break;
-		case Interface: break;
-		case Module: break;
-		case Property: break;
-		case Unit: break;
-		case Value: break;
-		case Enum: break;
-		case Keyword: break;
-		case Snippet: break;
-		case Color: break; //Color TODO use Gef Palette icon or generate color image
-		case File: return PlatformUI.getWorkbench().getSharedImages().getImage(ISharedImages.IMG_OBJ_FILE);
-		case Reference: break;
-			// TODO
-		}
-		return null;
+		return LSPImages.imageFromCompletionKind(this.item.getKind());
 	}
 
 	@Override

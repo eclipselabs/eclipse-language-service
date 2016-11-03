@@ -1,10 +1,13 @@
 package org.eclipse.languageserver;
 
+import org.eclipse.jface.resource.ImageRegistry;
 import org.eclipse.ui.plugin.AbstractUIPlugin;
 import org.osgi.framework.BundleContext;
 
 public class LanguageServerPluginActivator extends AbstractUIPlugin {
 
+	public static final String PLUGIN_ID = "org.eclipse.languageserver"; //$NON-NLS-1$;
+	
 	// The shared instance
 	private static LanguageServerPluginActivator plugin;
 	
@@ -36,6 +39,11 @@ public class LanguageServerPluginActivator extends AbstractUIPlugin {
 	 */
 	public static LanguageServerPluginActivator getDefault() {
 		return plugin;
+	}
+
+	@Override
+	protected void initializeImageRegistry(ImageRegistry registry) {
+		LSPImages.initalize(registry);
 	}
 
 }
