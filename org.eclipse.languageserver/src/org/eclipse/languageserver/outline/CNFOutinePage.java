@@ -48,8 +48,10 @@ public class CNFOutinePage implements IContentOutlinePage {
 
 	@Override
 	public void setActionBars(IActionBars actionBars) {
-		// TODO Auto-generated method stub
-
+//		IMenuManager viewMenuManager= actionBars.getMenuManager();
+//		fToggleLinkingAction= new ToggleLinkingAction();
+//		fToggleLinkingAction.setActionDefinitionId(IWorkbenchCommandConstants.NAVIGATE_TOGGLE_LINK_WITH_EDITOR);
+//		viewMenuManager.add(fToggleLinkingAction);
 	}
 
 	@Override

@@ -41,6 +41,8 @@ import org.eclipse.swt.SWT;
 import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.widgets.Shell;
+import org.eclipse.ui.ISharedImages;
+import org.eclipse.ui.PlatformUI;
 import org.eclipse.ui.texteditor.link.EditorLinkedModeUI;
 
 import io.typefox.lsapi.CompletionItem;
@@ -323,24 +325,24 @@ public class LSCompletionProposal implements ICompletionProposal, ICompletionPro
 	@Override
 	public Image getImage() {
 		switch (this.item.getKind()) {
-		case Text: // Text
-		case Method: //Method
-		case Function: //Function
-		case Constructor: //Constructor
-		case Field: //Field
-		case Variable: //Variable
-		case Class: //Class
-		case Interface: //Interface
-		case Module: //Module
-		case Property: //Property
-		case Unit: //Unit
-		case Value: //Value
-		case Enum: //Enum
-		case Keyword: //Keyword
-		case Snippet: //Snippet
-		case Color: //Color
-		case File: //File
-		case Reference: //Reference
+		case Text: break;
+		case Method: break;
+		case Function: break;
+		case Constructor: break;
+		case Field: break;
+		case Variable: break;
+		case Class: break;
+		case Interface: break;
+		case Module: break;
+		case Property: break;
+		case Unit: break;
+		case Value: break;
+		case Enum: break;
+		case Keyword: break;
+		case Snippet: break;
+		case Color: break; //Color TODO use Gef Palette icon or generate color image
+		case File: return PlatformUI.getWorkbench().getSharedImages().getImage(ISharedImages.IMG_OBJ_FILE);
+		case Reference: break;
 			// TODO
 		}
 		return null;

@@ -10,6 +10,7 @@
  *******************************************************************************/
 package org.eclipse.languageserver.outline;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
@@ -33,6 +34,7 @@ public class LSSymbolsContentProvider implements ICommonContentProvider, ITreeCo
 	
 	private TreeViewer viewer;
 	private List<? extends SymbolInformation> lastResponse;
+	private Throwable lastError;
 	private LSPDocumentInfo info;
 
 	private CompletableFuture<List<? extends SymbolInformation>> symbols;
@@ -63,10 +65,16 @@ public class LSSymbolsContentProvider implements ICommonContentProvider, ITreeCo
 			
 	@Override
 	public Object[] getElements(Object inputElement) {
+		if (this.symbols != null && !this.symbols.isDone()) {
+			return new Object[] { COMPUTING };
+		}
+		if (this.lastError != null) {
+			return new Object[] { this.lastError };
+		}
 		if (lastResponse != null) {
 			return this.lastResponse.toArray();
 		}
-		return new Object[] { COMPUTING };
+		return null;
 	}
 
 	@Override
@@ -98,6 +106,7 @@ public class LSSymbolsContentProvider implements ICommonContentProvider, ITreeCo
 			symbols.cancel(true);
 		}
 		lastResponse = null;
+		lastError = null;
 		DocumentSymbolParams params = new DocumentSymbolParamsBuilder().textDocument(info.getFileUri().toString())
 		        .build();
 		symbols = info.getLanguageClient()
@@ -109,7 +118,18 @@ public class LSSymbolsContentProvider implements ICommonContentProvider, ITreeCo
 				viewer.refresh();
 			});
 		});
+		symbols.exceptionally(ex -> {
+			lastError = ex;
+			viewer.getControl().getDisplay().asyncExec(() -> {
+				viewer.refresh();
+			});
+ 			return Collections.emptyList();
+		});
 	}
 
-
+	@Override
+	public void dispose() {
+		info.getDocument().removeDocumentListener(this);
+		ICommonContentProvider.super.dispose();
+	}
 }

@@ -10,12 +10,16 @@
  *******************************************************************************/
 package org.eclipse.languageserver.outline;
 
+import org.eclipse.jface.resource.JFaceResources;
+import org.eclipse.jface.viewers.DelegatingStyledCellLabelProvider.IStyledLabelProvider;
 import org.eclipse.jface.viewers.ILabelProviderListener;
 import org.eclipse.jface.viewers.StyledString;
 import org.eclipse.languageserver.ui.Messages;
-import org.eclipse.jface.viewers.DelegatingStyledCellLabelProvider.IStyledLabelProvider;
 import org.eclipse.swt.graphics.Image;
 import org.eclipse.ui.IMemento;
+import org.eclipse.ui.ISharedImages;
+import org.eclipse.ui.PlatformUI;
+import org.eclipse.ui.internal.progress.ProgressManager;
 import org.eclipse.ui.navigator.ICommonContentExtensionSite;
 import org.eclipse.ui.navigator.ICommonLabelProvider;
 
@@ -25,15 +29,39 @@ public class SymbolsLabelProvider implements ICommonLabelProvider, IStyledLabelP
 
 	@Override
 	public Image getImage(Object element) {
+		if (element == LSSymbolsContentProvider.COMPUTING) {
+			return JFaceResources.getImage(ProgressManager.WAITING_JOB_KEY);
+		}
+		if (element instanceof Throwable) {
+			return PlatformUI.getWorkbench().getSharedImages().getImage(ISharedImages.IMG_OBJS_ERROR_TSK);
+		}
+		switch (((SymbolInformation)element).getKind()) {
+		// TODO
+		case Array: break;
+		case Boolean: break;
+		case Class: break;
+		case Constant: break;
+		case Constructor: break;
+		case Enum: break;
+		case Field: break;
+		case File: return PlatformUI.getWorkbench().getSharedImages().getImage(ISharedImages.IMG_OBJ_FILE);
+		case Function: break;
+		case Interface: break;
+		case Method: break;
+		case Module: break;
+		case Namespace: break;
+		case Number: break;
+		case Package: break;
+		case Property: break;
+		case String: break;
+		case Variable: break;
+		}
 		return null;
 	}
 
 	@Override
 	public String getText(Object element) {
-		if (element == LSSymbolsContentProvider.COMPUTING) {
-			return Messages.outline_computingSymbols;
-		}
-		return ((SymbolInformation)element).getName();
+		return getStyledText(element).getString();
 	}
 
 	@Override
@@ -76,7 +104,18 @@ public class SymbolsLabelProvider implements ICommonLabelProvider, IStyledLabelP
 
 	@Override
 	public StyledString getStyledText(Object element) {
-		return new StyledString(getText(element));
+		if (element == LSSymbolsContentProvider.COMPUTING) {
+			return new StyledString(Messages.outline_computingSymbols);
+		}
+		if (element instanceof Throwable) {
+			return new StyledString(((Throwable) element).getMessage());
+		}
+		SymbolInformation symbol = (SymbolInformation)element;
+		StyledString res = new StyledString();
+		res.append(symbol.getName(), null);
+		res.append(" :", null); //$NON-NLS-1$
+		res.append(symbol.getKind().toString(), StyledString.DECORATIONS_STYLER);
+		return res;
 	}
 
 }

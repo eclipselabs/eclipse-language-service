@@ -24,6 +24,7 @@ import org.eclipse.jface.viewers.ITreeContentProvider;
 import org.eclipse.jface.viewers.LabelProvider;
 import org.eclipse.jface.viewers.TreeViewer;
 import org.eclipse.languageserver.LSPEclipseUtils;
+import org.eclipse.languageserver.outline.SymbolsLabelProvider;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Control;
@@ -74,13 +75,7 @@ public class LSPSymbolInFileDialog extends PopupDialog {
 		TreeViewer viewer = fFilteredTree.getViewer();
 
 		viewer.setContentProvider(new SymbolsContentProvider());
-		viewer.setLabelProvider(new LabelProvider() {
-			@Override
-			public String getText(Object element) {
-				SymbolInformation information = (SymbolInformation) element;
-				return String.format("[%s] %s", information.getKind(), information.getName()); //$NON-NLS-1$
-			}
-		});
+		viewer.setLabelProvider(new SymbolsLabelProvider()); // TODO style
 		viewer.setUseHashlookup(true);
 		viewer.addSelectionChangedListener(event -> {
 			IStructuredSelection selection = (IStructuredSelection) event.getSelection();
