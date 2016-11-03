@@ -7,15 +7,14 @@
    xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
    xmlns:svg="http://www.w3.org/2000/svg"
    xmlns="http://www.w3.org/2000/svg"
-   xmlns:xlink="http://www.w3.org/1999/xlink"
    xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
    xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
    width="16"
    height="16"
    id="svg2"
    version="1.1"
-   inkscape:version="0.48.0 r9654"
-   sodipodi:docname="methdef_obj.svg">
+   inkscape:version="0.91 r13725"
+   sodipodi:docname="function.svg">
   <defs
      id="defs4">
     <linearGradient
@@ -33,16 +32,6 @@
          offset="1"
          id="stop6742" />
     </linearGradient>
-    <linearGradient
-       inkscape:collect="always"
-       xlink:href="#linearGradient6738"
-       id="linearGradient6744"
-       x1="-31.957434"
-       y1="1042.2544"
-       x2="-31.957434"
-       y2="1039.6025"
-       gradientUnits="userSpaceOnUse"
-       gradientTransform="matrix(1.4617999,0,0,1.4617999,38.859115,-483.60399)" />
   </defs>
   <sodipodi:namedview
      id="base"
@@ -51,17 +40,17 @@
      borderopacity="1.0"
      inkscape:pageopacity="0.0"
      inkscape:pageshadow="2"
-     inkscape:zoom="16"
-     inkscape:cx="17.346234"
-     inkscape:cy="6.5222058"
+     inkscape:zoom="32"
+     inkscape:cx="6.71043"
+     inkscape:cy="8.9866395"
      inkscape:document-units="px"
      inkscape:current-layer="g6438"
      showgrid="true"
-     inkscape:window-width="1287"
-     inkscape:window-height="862"
-     inkscape:window-x="623"
-     inkscape:window-y="113"
-     inkscape:window-maximized="0"
+     inkscape:window-width="1366"
+     inkscape:window-height="707"
+     inkscape:window-x="0"
+     inkscape:window-y="24"
+     inkscape:window-maximized="1"
      showguides="true"
      inkscape:guide-bbox="true"
      inkscape:snap-global="false">
@@ -107,11 +96,32 @@
          transform="scale(-1,1)"
          style="font-size:13.58917427px;font-style:normal;font-weight:normal;line-height:125%;letter-spacing:0px;word-spacing:0px;fill:#ffffff;fill-opacity:1;stroke:none;display:inline;font-family:Sans"
          id="g6438">
-        <path
-           style="fill:url(#linearGradient6744);fill-opacity:1;stroke:#2268a5;stroke-width:1.09095323;stroke-linecap:butt;stroke-linejoin:round;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none"
-           d="m -4.309851,1040.8676 -7.596137,0 3.798067,-6.3304 z"
-           id="path6736"
-           inkscape:connector-curvature="0" />
+        <text
+           xml:space="preserve"
+           style="font-style:normal;font-weight:normal;font-size:14.41653442px;line-height:125%;font-family:sans-serif;letter-spacing:0px;word-spacing:0px;fill:#236298;fill-opacity:1;stroke:#979797;stroke-width:0.1960291;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1;"
+           x="-12.173512"
+           y="1116.2036"
+           id="text4145"
+           sodipodi:linespacing="125%"
+           transform="scale(1.0736195,0.93142866)"><tspan
+             sodipodi:role="line"
+             id="tspan4147"
+             x="-12.173512"
+             y="1116.2036"
+             style="font-style:italic;font-variant:normal;font-weight:bold;font-stretch:normal;font-family:'DejaVu Serif';-inkscape-font-specification:'DejaVu Serif Bold Italic';fill:#236298;fill-opacity:1;stroke:#979797;stroke-width:0.1960291;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1;">f</tspan></text>
+        <text
+           xml:space="preserve"
+           style="font-style:normal;font-weight:normal;font-size:9.20804405px;line-height:125%;font-family:sans-serif;letter-spacing:0px;word-spacing:0px;fill:#236298;fill-opacity:1;stroke:#979797;stroke-width:0.12361836;stroke-linecap:butt;stroke-linejoin:round;stroke-miterlimit:0;stroke-dasharray:none;stroke-opacity:1;"
+           x="-7.9563789"
+           y="1075.7931"
+           id="text4149"
+           sodipodi:linespacing="125%"
+           transform="scale(1.0321481,0.96885323)"><tspan
+             sodipodi:role="line"
+             id="tspan4151"
+             x="-7.9563789"
+             y="1075.7931"
+             style="font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;font-family:'DejaVu Sans';-inkscape-font-specification:'DejaVu Sans Bold';stroke:#979797;stroke-width:0.12361836;stroke-opacity:1;">x</tspan></text>
       </g>
     </g>
   </g>
