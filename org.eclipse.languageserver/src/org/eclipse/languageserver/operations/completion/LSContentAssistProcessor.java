@@ -11,10 +11,13 @@
 package org.eclipse.languageserver.operations.completion;
 
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 
+import org.eclipse.jdt.annotation.NonNull;
 import org.eclipse.jface.text.ITextViewer;
 import org.eclipse.jface.text.contentassist.ICompletionProposal;
 import org.eclipse.jface.text.contentassist.IContentAssistProcessor;
@@ -63,19 +66,32 @@ public class LSContentAssistProcessor implements IContentAssistProcessor {
 		if (completionList == null) {
 			return new ICompletionProposal[0];
 		}
-		ICompletionProposal[] res;
-		List<ICompletionProposal> proposals = new ArrayList<>();
-		for (CompletionItem item : completionList.getItems()) {
-			String text = item.getInsertText();
-			if (text == null) {
-				text = item.getSortText();
+
+		Collections.sort(completionList.getItems(), new Comparator<CompletionItem>() {
+			@Override
+			public int compare(CompletionItem o1, CompletionItem o2) {
+				String c1 = getComparableLabel(o1);
+				String c2 = getComparableLabel(o2);
+				if (c1 == null) {
+					return -1;
+				}
+				return c1.compareToIgnoreCase(c2);
 			}
-			// TODO also consider item.getTextEdit
-			// TODO add description and so on
-			proposals.add(new LSCompletionProposal(item, offset));
+		});
+		List<ICompletionProposal> proposals = new ArrayList<>();
+		for (@NonNull CompletionItem item : completionList.getItems()) {
+			if (item.getLabel() != null && !item.getLabel().isEmpty()) {
+				proposals.add(new LSCompletionProposal(item, offset, info));
+			}
 		}
-		res = proposals.toArray(new ICompletionProposal[proposals.size()]);
-		return res;
+		return proposals.toArray(new ICompletionProposal[proposals.size()]);
+	}
+
+	private String getComparableLabel(CompletionItem item) {
+		if (item.getSortText() != null && !item.getSortText().isEmpty()) {
+			return item.getSortText();
+		}
+		return item.getLabel();
 	}
 
 	@Override
