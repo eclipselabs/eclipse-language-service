@@ -53,7 +53,7 @@ public class LSPCodeActionsMenu extends ContributionItem implements IWorkbenchCo
 	public void initialize(IServiceLocator serviceLocator) {
 		IEditorPart editor = PlatformUI.getWorkbench().getActiveWorkbenchWindow().getActivePage().getActiveEditor();
 		if (editor instanceof ITextEditor) {
-			info = LanguageServiceAccessor.getLSPDocumentInfoFor((ITextEditor) editor, ServerCapabilities::isCodeActionProvider);
+			info = LanguageServiceAccessor.getLSPDocumentInfoFor((ITextEditor) editor, (capabilities) -> Boolean.TRUE.equals(capabilities.isCodeActionProvider()));
 			ITextSelection selection = (ITextSelection) ((ITextEditor) editor).getSelectionProvider().getSelection();
 			try {
 				this.range = new RangeBuilder()

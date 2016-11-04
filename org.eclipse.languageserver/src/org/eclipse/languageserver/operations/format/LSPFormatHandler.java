@@ -44,7 +44,7 @@ public class LSPFormatHandler extends AbstractHandler implements IHandler {
 	public Object execute(ExecutionEvent event) throws ExecutionException {
 		IEditorPart part = HandlerUtil.getActiveEditor(event);
 		if (part instanceof ITextEditor) {
-			LSPDocumentInfo info = LanguageServiceAccessor.getLSPDocumentInfoFor((ITextEditor) part, ServerCapabilities::isDocumentFormattingProvider);
+			LSPDocumentInfo info = LanguageServiceAccessor.getLSPDocumentInfoFor((ITextEditor) part, (capabilities) -> Boolean.TRUE.equals(capabilities.isDocumentFormattingProvider()));
 			if (info != null) {
 				ISelection sel = ((AbstractTextEditor) part).getSelectionProvider().getSelection();
 				if (sel instanceof TextSelection) {
@@ -69,7 +69,7 @@ public class LSPFormatHandler extends AbstractHandler implements IHandler {
 		IWorkbenchPart part = PlatformUI.getWorkbench().getActiveWorkbenchWindow().getActivePage().getActivePart();
 		if (part instanceof ITextEditor) {
 			LSPDocumentInfo info = LanguageServiceAccessor.getLSPDocumentInfoFor((ITextEditor) part,
-			        ServerCapabilities::isDocumentFormattingProvider);
+			        (capabilities) -> Boolean.TRUE.equals(capabilities.isDocumentFormattingProvider()));
 			ISelection selection = ((ITextEditor) part).getSelectionProvider().getSelection();
 			return info != null && !selection.isEmpty() && selection instanceof ITextSelection;
 		}

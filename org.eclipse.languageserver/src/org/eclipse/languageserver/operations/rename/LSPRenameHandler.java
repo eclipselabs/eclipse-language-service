@@ -58,7 +58,7 @@ public class LSPRenameHandler extends AbstractHandler implements IHandler {
 	public Object execute(ExecutionEvent event) throws ExecutionException {
 		IEditorPart part = HandlerUtil.getActiveEditor(event);
 		if (part instanceof AbstractTextEditor) {
-			LSPDocumentInfo info = LanguageServiceAccessor.getLSPDocumentInfoFor((ITextEditor) part, ServerCapabilities::isRenameProvider);
+			LSPDocumentInfo info = LanguageServiceAccessor.getLSPDocumentInfoFor((ITextEditor) part, (capabilities) -> Boolean.TRUE.equals(capabilities.isRenameProvider()));
 			if (info != null) {
 				ISelection sel = ((AbstractTextEditor) part).getSelectionProvider().getSelection();
 				if (sel instanceof TextSelection) {
@@ -117,7 +117,7 @@ public class LSPRenameHandler extends AbstractHandler implements IHandler {
 	public boolean isEnabled() {
 		IWorkbenchPart part = PlatformUI.getWorkbench().getActiveWorkbenchWindow().getActivePage().getActivePart();
 		if (part instanceof AbstractTextEditor) {
-			LSPDocumentInfo info = LanguageServiceAccessor.getLSPDocumentInfoFor((ITextEditor) part, ServerCapabilities::isRenameProvider);
+			LSPDocumentInfo info = LanguageServiceAccessor.getLSPDocumentInfoFor((ITextEditor) part, (capabilities) -> Boolean.TRUE.equals(capabilities.isRenameProvider()));
 			ISelection selection = ((AbstractTextEditor) part).getSelectionProvider().getSelection();
 			return info != null && !selection.isEmpty() && selection instanceof ITextSelection;
 		}

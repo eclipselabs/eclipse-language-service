@@ -93,7 +93,7 @@ public class LSPCodeActionMarkerResolution extends WorkbenchMarkerResolution imp
 				resolutions = (List<? extends Command>)marker.getAttribute(LSP_REMEDIATION);
 			} else if (marker.getResource().getType() == IResource.FILE) {
 				IDocument document = FileBuffers.getTextFileBufferManager().getTextFileBuffer(marker.getResource().getFullPath(), LocationKind.IFILE).getDocument();
-				LanguageClientEndpoint lsp = LanguageServiceAccessor.getLanguageServer((IFile)marker.getResource(), document, ServerCapabilities::isCodeActionProvider);
+				LanguageClientEndpoint lsp = LanguageServiceAccessor.getLanguageServer((IFile)marker.getResource(), document, (capabilities) -> Boolean.TRUE.equals(capabilities.isCodeActionProvider()));
 				if (lsp != null) {
 					Diagnostic diagnostic = (Diagnostic)marker.getAttribute(LSPDiagnosticsToMarkers.LSP_DIAGNOSTIC);
 					CodeActionContext context = new CodeActionContextBuilder()
