@@ -36,7 +36,7 @@ public class LSPSymbolInFileHandler extends AbstractHandler {
 		if (part instanceof ITextEditor) {
 			final ITextEditor textEditor = (ITextEditor) part;
 			LSPDocumentInfo info = LanguageServiceAccessor.getLSPDocumentInfoFor(textEditor,
-			        ServerCapabilities::isDocumentSymbolProvider);
+			        (capabilities) -> Boolean.TRUE.equals(capabilities.isDocumentSymbolProvider()));
 			if (info == null) {
 				return null;
 			}

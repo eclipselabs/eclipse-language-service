@@ -55,7 +55,7 @@ public class LSFindReferences extends AbstractHandler implements IHandler {
 		if (part instanceof ITextEditor) {
 			ITextEditor editor = (ITextEditor) part;
 			LSPDocumentInfo info = LanguageServiceAccessor.getLSPDocumentInfoFor(editor,
-					ServerCapabilities::isReferencesProvider);
+					(capabilities) -> Boolean.TRUE.equals(capabilities.isReferencesProvider()));
 
 			if (info != null) {
 				ISelection sel = ((AbstractTextEditor) part).getSelectionProvider().getSelection();
@@ -88,7 +88,7 @@ public class LSFindReferences extends AbstractHandler implements IHandler {
 	public boolean isEnabled() {
 		IWorkbenchPart part = PlatformUI.getWorkbench().getActiveWorkbenchWindow().getActivePage().getActivePart();
 		if (part instanceof ITextEditor) {
-			LSPDocumentInfo info = LanguageServiceAccessor.getLSPDocumentInfoFor((ITextEditor) part, ServerCapabilities::isReferencesProvider);
+			LSPDocumentInfo info = LanguageServiceAccessor.getLSPDocumentInfoFor((ITextEditor) part, (capabilities) -> Boolean.TRUE.equals(capabilities.isReferencesProvider()));
 			ISelection selection = ((ITextEditor) part).getSelectionProvider().getSelection();
 			return info != null && !selection.isEmpty() && selection instanceof ITextSelection;
 		}
