@@ -25,6 +25,8 @@ import org.eclipse.ui.navigator.ICommonContentExtensionSite;
 import org.eclipse.ui.navigator.ICommonContentProvider;
 
 import io.typefox.lsapi.DocumentSymbolParams;
+import io.typefox.lsapi.Location;
+import io.typefox.lsapi.Position;
 import io.typefox.lsapi.SymbolInformation;
 import io.typefox.lsapi.builders.DocumentSymbolParamsBuilder;
 
@@ -72,24 +74,47 @@ public class LSSymbolsContentProvider implements ICommonContentProvider, ITreeCo
 			return new Object[] { this.lastError };
 		}
 		if (lastResponse != null) {
-			return this.lastResponse.toArray();
+			return this.lastResponse.stream().filter(symbol -> symbol.getContainerName() == null).toArray();
 		}
 		return null;
 	}
 
 	@Override
 	public Object[] getChildren(Object parentElement) {
-		return null;
+		// TODO: this can be optimized by building the tree upon response (O(n) instead of O(n^2))
+		return this.lastResponse.stream().filter(symbol -> getParent(symbol) == parentElement).toArray();
+	}
+
+	private boolean isIncluded(Location reference, Location included) {
+		return reference.getUri().equals(included.getUri()) &&
+			isAfter(reference.getRange().getStart(), included.getRange().getStart()) &&
+			isAfter(included.getRange().getEnd(), reference.getRange().getEnd());
+	}
+
+	private boolean isAfter(Position reference, Position included) {
+		return included.getLine() > reference.getLine() ||
+			(included.getLine() == reference.getLine() && included.getLine() > reference.getLine());
 	}
 
 	@Override
 	public Object getParent(Object element) {
+		if (element instanceof SymbolInformation) {
+			SymbolInformation child = (SymbolInformation)element;
+			SymbolInformation res = null;
+			for (SymbolInformation current : this.lastResponse) {
+				if (isIncluded(current.getLocation(), child.getLocation()) && (res == null || isIncluded(res.getLocation(), current.getLocation()))) {
+					res = current;
+				}
+			}
+			return res;
+		}
 		return null;
 	}
 
 	@Override
 	public boolean hasChildren(Object element) {
-		return false;
+		Object[] children = getChildren(element);
+		return children != null && children.length > 0;
 	}
 
 	@Override
