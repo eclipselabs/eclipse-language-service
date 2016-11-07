@@ -14,11 +14,18 @@ import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
+import org.eclipse.core.resources.IResource;
+import org.eclipse.core.resources.IResourceChangeEvent;
+import org.eclipse.core.resources.IResourceChangeListener;
+import org.eclipse.core.resources.IResourceDelta;
+import org.eclipse.core.runtime.CoreException;
 import org.eclipse.jface.text.DocumentEvent;
 import org.eclipse.jface.text.IDocumentListener;
 import org.eclipse.jface.viewers.ITreeContentProvider;
+import org.eclipse.jface.viewers.StructuredViewer;
 import org.eclipse.jface.viewers.TreeViewer;
 import org.eclipse.jface.viewers.Viewer;
+import org.eclipse.languageserver.LSPEclipseUtils;
 import org.eclipse.languageserver.LanguageServiceAccessor.LSPDocumentInfo;
 import org.eclipse.ui.IMemento;
 import org.eclipse.ui.navigator.ICommonContentExtensionSite;
@@ -30,7 +37,7 @@ import io.typefox.lsapi.Position;
 import io.typefox.lsapi.SymbolInformation;
 import io.typefox.lsapi.builders.DocumentSymbolParamsBuilder;
 
-public class LSSymbolsContentProvider implements ICommonContentProvider, ITreeContentProvider, IDocumentListener {
+public class LSSymbolsContentProvider implements ICommonContentProvider, ITreeContentProvider, IDocumentListener, IResourceChangeListener {
 	
 	public static final Object COMPUTING = new Object();
 	
@@ -40,6 +47,8 @@ public class LSSymbolsContentProvider implements ICommonContentProvider, ITreeCo
 	private LSPDocumentInfo info;
 
 	private CompletableFuture<List<? extends SymbolInformation>> symbols;
+
+	private IResource resource;
 	
 	@Override
 	public void restoreState(IMemento aMemento) {
@@ -62,6 +71,8 @@ public class LSSymbolsContentProvider implements ICommonContentProvider, ITreeCo
 		this.viewer = (TreeViewer)viewer;
 		this.info = (LSPDocumentInfo)newInput;
 		info.getDocument().addDocumentListener(this);
+		resource = LSPEclipseUtils.findResourceFor(info.getFileUri().toString());
+		resource.getWorkspace().addResourceChangeListener(this, IResourceChangeEvent.POST_CHANGE);
 		refreshTreeContentFromLS();
 	}
 			
@@ -158,6 +169,28 @@ public class LSSymbolsContentProvider implements ICommonContentProvider, ITreeCo
 	@Override
 	public void dispose() {
 		info.getDocument().removeDocumentListener(this);
+		resource.getWorkspace().removeResourceChangeListener(this);
 		ICommonContentProvider.super.dispose();
+	}
+
+	@Override
+	public void resourceChanged(IResourceChangeEvent event) {
+		if ((event.getDelta().getFlags() ^ IResourceDelta.MARKERS) != 0) {
+			try {
+				event.getDelta().accept(delta -> {
+					if (delta.getResource().equals(this.resource)) {
+						viewer.getControl().getDisplay().asyncExec(() -> {
+							if (viewer instanceof StructuredViewer) {
+								((TreeViewer)viewer).refresh(true);
+							}
+						});
+					}
+					return delta.getResource().getFullPath().isPrefixOf(this.resource.getFullPath());
+				});
+			} catch (CoreException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+		}
 	}
 }
