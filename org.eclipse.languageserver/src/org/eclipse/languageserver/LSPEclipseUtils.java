@@ -18,6 +18,7 @@ import org.eclipse.core.filebuffers.FileBuffers;
 import org.eclipse.core.filebuffers.ITextFileBuffer;
 import org.eclipse.core.filebuffers.ITextFileBufferManager;
 import org.eclipse.core.filebuffers.LocationKind;
+import org.eclipse.core.resources.IFile;
 import org.eclipse.core.resources.IMarker;
 import org.eclipse.core.resources.IProject;
 import org.eclipse.core.resources.IResource;
@@ -27,13 +28,20 @@ import org.eclipse.core.runtime.NullProgressMonitor;
 import org.eclipse.core.runtime.Path;
 import org.eclipse.jface.text.BadLocationException;
 import org.eclipse.jface.text.IDocument;
+import org.eclipse.jface.text.TextSelection;
 import org.eclipse.text.edits.MalformedTreeException;
 import org.eclipse.text.edits.MultiTextEdit;
 import org.eclipse.text.edits.ReplaceEdit;
 import org.eclipse.text.undo.DocumentUndoManagerRegistry;
 import org.eclipse.text.undo.IDocumentUndoManager;
+import org.eclipse.ui.IEditorPart;
+import org.eclipse.ui.IWorkbenchPage;
+import org.eclipse.ui.PartInitException;
+import org.eclipse.ui.ide.IDE;
+import org.eclipse.ui.texteditor.AbstractTextEditor;
 
 import io.typefox.lsapi.DiagnosticSeverity;
+import io.typefox.lsapi.Location;
 import io.typefox.lsapi.Position;
 import io.typefox.lsapi.TextEdit;
 import io.typefox.lsapi.impl.PositionImpl;
@@ -153,7 +161,7 @@ public class LSPEclipseUtils {
 		}
 	}
 
-	public static IDocument getDocument(IResource resource) throws BadLocationException {
+	public static IDocument getDocument(IResource resource) {
 		if (resource == null) {
 			return null;
 		}
@@ -177,6 +185,39 @@ public class LSPEclipseUtils {
 			}
 		}
 		return document;
+	}
+
+	public static void openInEditor(Location location, IWorkbenchPage page) {
+		IEditorPart part = null;
+		IDocument targetDocument = null;
+		IResource targetResource = LSPEclipseUtils.findResourceFor(location.getUri());
+		try {
+			if (targetResource != null && targetResource.getType() == IResource.FILE) {
+				part = IDE.openEditor(page, (IFile) targetResource);
+				targetDocument = FileBuffers.getTextFileBufferManager()
+				        .getTextFileBuffer(targetResource.getFullPath(), LocationKind.IFILE).getDocument();
+			} else {
+				URI fileUri = URI.create(location.getUri());
+				part = IDE.openEditor(page, fileUri, null, true);
+				targetDocument = FileBuffers.getTextFileBufferManager()
+				        .getTextFileBuffer(new Path(fileUri.getPath()), LocationKind.LOCATION).getDocument();
+			}
+		} catch (PartInitException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		try {
+			if (part instanceof AbstractTextEditor) {
+				AbstractTextEditor editor = (AbstractTextEditor) part;
+				int offset = LSPEclipseUtils.toOffset(location.getRange().getStart(), targetDocument);
+				int endOffset = LSPEclipseUtils.toOffset(location.getRange().getEnd(), targetDocument);
+				editor.getSelectionProvider()
+				        .setSelection(new TextSelection(offset, endOffset > offset ? endOffset - offset : 0));
+			}
+		} catch (BadLocationException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 	}
 
 }
