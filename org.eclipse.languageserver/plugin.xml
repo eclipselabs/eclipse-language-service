@@ -38,6 +38,10 @@
             id="org.eclipse.languageserver.symbolinfile"
             name="Go to Symbol in File">
       </command>
+      <command
+            id="org.eclipse.languageserver.symbolinworkspace"
+            name="Go to Symbol in Workspace">
+      </command>
    </extension>
    <extension
          point="org.eclipse.ui.handlers">
@@ -86,6 +90,10 @@
       <handler
             class="org.eclipse.languageserver.operations.symbols.LSPSymbolInFileHandler"
             commandId="org.eclipse.languageserver.symbolinfile">
+      </handler>
+      <handler
+            class="org.eclipse.languageserver.operations.symbols.LSPSymbolInWorkspaceHandler"
+            commandId="org.eclipse.languageserver.symbolinworkspace">
       </handler>
    </extension>
    <extension
@@ -160,6 +168,12 @@
             contextId="org.eclipse.ui.textEditorScope"
             schemeId="org.eclipse.ui.defaultAcceleratorConfiguration"
             sequence="M1+M2+O">
+      </key>
+      <key
+            commandId="org.eclipse.languageserver.symbolinworkspace"
+            contextId="org.eclipse.ui.contexts.window"
+            schemeId="org.eclipse.ui.defaultAcceleratorConfiguration"
+            sequence="M1+T">
       </key>
    </extension>
    <extension

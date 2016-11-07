@@ -10,6 +10,7 @@
  *******************************************************************************/
 package org.eclipse.languageserver.outline;
 
+import java.net.URI;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -42,8 +43,21 @@ public class SymbolsLabelProvider extends LabelProvider implements ICommonLabelP
 
 	private Map<Image, Image[]> overlays = new HashMap<>();
 	
+	private boolean showLocation;
+
+	public SymbolsLabelProvider() {
+		this(false);
+	}
+
+	public SymbolsLabelProvider(boolean showLocation) {
+		this.showLocation = showLocation;
+	}
+	
 	@Override
 	public Image getImage(Object element) {
+		if (element == null){
+			return null;
+		}
 		if (element == LSSymbolsContentProvider.COMPUTING) {
 			return JFaceResources.getImage(ProgressManager.WAITING_JOB_KEY);
 		}
@@ -108,6 +122,7 @@ public class SymbolsLabelProvider extends LabelProvider implements ICommonLabelP
 
 	@Override
 	public StyledString getStyledText(Object element) {
+
 		if (element == LSSymbolsContentProvider.COMPUTING) {
 			return new StyledString(Messages.outline_computingSymbols);
 		}
@@ -117,11 +132,20 @@ public class SymbolsLabelProvider extends LabelProvider implements ICommonLabelP
 		if (element instanceof LSPDocumentInfo) {
 			return new StyledString(((LSPDocumentInfo)element).getFileUri().getPath());
 		}
-		SymbolInformation symbol = (SymbolInformation) element;
 		StyledString res = new StyledString();
+		if (element == null){
+			return res;
+		}
+		SymbolInformation symbol = (SymbolInformation) element;
 		res.append(symbol.getName(), null);
 		res.append(" :", null); //$NON-NLS-1$
 		res.append(symbol.getKind().toString(), StyledString.DECORATIONS_STYLER);
+
+		if (showLocation) {
+			URI uri = URI.create(symbol.getLocation().getUri());
+			res.append(' ');
+			res.append(uri.getPath(), StyledString.QUALIFIER_STYLER);
+		}
 		return res;
 	}
 
