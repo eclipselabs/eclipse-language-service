@@ -14,28 +14,24 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.lang.reflect.Method;
 import java.net.URI;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.function.Predicate;
 
 import org.eclipse.core.filebuffers.FileBuffers;
-import org.eclipse.core.filebuffers.LocationKind;
 import org.eclipse.core.resources.IFile;
 import org.eclipse.core.resources.IProject;
 import org.eclipse.core.resources.ResourcesPlugin;
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IPath;
-import org.eclipse.core.runtime.Path;
 import org.eclipse.core.runtime.Platform;
 import org.eclipse.core.runtime.content.IContentType;
 import org.eclipse.jdt.annotation.NonNull;
-import org.eclipse.jdt.annotation.NonNullByDefault;
 import org.eclipse.jdt.annotation.Nullable;
 import org.eclipse.jface.text.IDocument;
 import org.eclipse.jface.text.ITextViewer;
-import org.eclipse.ui.IEditorInput;
-import org.eclipse.ui.IFileEditorInput;
-import org.eclipse.ui.IURIEditorInput;
 import org.eclipse.ui.texteditor.AbstractTextEditor;
 import org.eclipse.ui.texteditor.ITextEditor;
 
@@ -118,6 +114,35 @@ public class LanguageServiceAccessor {
 
 		public @NonNull URI getFileUri() {
 			return this.fileUri;
+		}
+
+		public @NonNull LanguageClientEndpoint getLanguageClient() {
+			return this.languageClient;
+		}
+
+		public @Nullable ServerCapabilities getCapabilites() {
+			return this.capabilities;
+		}
+	}
+
+	/**
+	 * A bean storing association of a IProject with a language server. 
+	 */
+	public static class LSPServerInfo {
+
+		private final @NonNull IProject project;
+		private final @Nullable ServerCapabilities capabilities;
+		private final @NonNull LanguageClientEndpoint languageClient;
+
+		private LSPServerInfo(@NonNull IProject project, @NonNull LanguageClientEndpoint languageClient,
+		        @Nullable ServerCapabilities capabilities) {
+			this.project = project;
+			this.languageClient = languageClient;
+			this.capabilities = capabilities;
+		}
+
+		public @NonNull IProject getProject() {
+			return project;
 		}
 
 		public @NonNull LanguageClientEndpoint getLanguageClient() {
@@ -222,6 +247,27 @@ public class LanguageServiceAccessor {
 			}
 		}
 		return wrapper;
+	}
+
+	/**
+	 * Gets list of LS initialized for given project. 
+	 * 
+	 * @param project
+	 * @param request
+	 * @return list of servers info
+	 */
+	@NonNull public static List<LSPServerInfo> getLSPServerInfos(@NonNull IProject project,
+	        Predicate<ServerCapabilities> request) {
+		List<LSPServerInfo> serverInfos = new ArrayList<>();
+		for (WrapperEntryKey wrapperEntryKey : projectServers.keySet()) {
+			ProjectSpecificLanguageServerWrapper wrapper = projectServers.get(wrapperEntryKey);
+			if (wrapperEntryKey.project.equals(project) && (request == null || wrapper
+			        .getServerCapabilities() == null /* null check is workaround for https://github.com/TypeFox/ls-api/issues/47 */
+			        || request.test(wrapper.getServerCapabilities()))) {
+				serverInfos.add(new LSPServerInfo(project, wrapper.getServer(), wrapper.getServerCapabilities()));
+			}
+		}
+		return serverInfos;
 	}
 
 }
