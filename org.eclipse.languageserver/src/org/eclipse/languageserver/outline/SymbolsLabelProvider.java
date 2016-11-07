@@ -26,6 +26,7 @@ import org.eclipse.jface.viewers.LabelProvider;
 import org.eclipse.jface.viewers.StyledString;
 import org.eclipse.languageserver.LSPEclipseUtils;
 import org.eclipse.languageserver.LSPImages;
+import org.eclipse.languageserver.LanguageServiceAccessor.LSPDocumentInfo;
 import org.eclipse.languageserver.ui.Messages;
 import org.eclipse.swt.graphics.Image;
 import org.eclipse.ui.IMemento;
@@ -112,6 +113,9 @@ public class SymbolsLabelProvider extends LabelProvider implements ICommonLabelP
 		}
 		if (element instanceof Throwable) {
 			return new StyledString(((Throwable) element).getMessage());
+		}
+		if (element instanceof LSPDocumentInfo) {
+			return new StyledString(((LSPDocumentInfo)element).getFileUri().getPath());
 		}
 		SymbolInformation symbol = (SymbolInformation) element;
 		StyledString res = new StyledString();
