@@ -81,8 +81,11 @@ public class LSSymbolsContentProvider implements ICommonContentProvider, ITreeCo
 
 	@Override
 	public Object[] getChildren(Object parentElement) {
-		// TODO: this can be optimized by building the tree upon response (O(n) instead of O(n^2))
-		return this.lastResponse.stream().filter(symbol -> getParent(symbol) == parentElement).toArray();
+		if (parentElement != null && parentElement instanceof SymbolInformation && this.lastResponse != null) {
+			// TODO: this can be optimized by building the tree upon response (O(n) instead of O(n^2))
+			return this.lastResponse.stream().filter(symbol -> getParent(symbol) == parentElement).toArray();
+		}
+		return null;
 	}
 
 	private boolean isIncluded(Location reference, Location included) {
