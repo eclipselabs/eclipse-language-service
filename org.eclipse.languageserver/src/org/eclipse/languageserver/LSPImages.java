@@ -44,12 +44,11 @@ public class LSPImages {
 	public static final String IMG_FUNCTION = "IMG_FUNCTION"; //$NON-NLS-1$
 	public static final String IMG_VARIABLE = "IMG_VARIABLE"; //$NON-NLS-1$
 	public static final String IMG_CONSTANT = "IMG_CONSTANT"; //$NON-NLS-1$
-	public static final String IMG_STRING = "IMG_STRING"; //$NON-NLS-1$
+	public static final String IMG_TEXT = "IMG_TEXT"; //$NON-NLS-1$
+	public static final String IMG_STRING = IMG_TEXT;
 	public static final String IMG_NUMBER = "IMG_NUMBER"; //$NON-NLS-1$
 	public static final String IMG_BOOLEAN = "IMG_BOOLEAN"; //$NON-NLS-1$
 	public static final String IMG_ARRAY = "IMG_ARRAY"; //$NON-NLS-1$
-
-	public static final String IMG_TEXT = "IMG_TEXT"; //$NON-NLS-1$
 	public static final String IMG_UNIT = "IMG_UNIT"; //$NON-NLS-1$
 	public static final String IMG_VALUE = "IMG_VALUE"; //$NON-NLS-1$
 	public static final String IMG_KEYWORD = "IMG_KEYWORD"; //$NON-NLS-1$
