@@ -230,6 +230,11 @@ public class ProjectSpecificLanguageServerWrapper {
 			ConcurrentMessageReader multiThreadReader = new ConcurrentMessageReader(baseMessageReader, executorService);
 			MessageWriter writer = new StreamMessageWriter(this.lspStreamProvider.getOutputStream(), jsonHandler);
 			languageClient.connect(multiThreadReader, writer);
+			
+			languageClient.getWindowService().onLogMessage(params -> ServerMessageHandler.logMessage(params));
+			languageClient.getWindowService().onShowMessage(params -> ServerMessageHandler.showMessage(params));
+			languageClient.getWindowService().onShowMessageRequest(params -> ServerMessageHandler.showMessageRequest(params));
+			
 			this.initializeJob = new Job(Messages.initializeLanguageServer_job) {
 				protected IStatus run(IProgressMonitor monitor) {
 					InitializeParamsImpl initParams = new InitializeParamsImpl();

@@ -219,5 +219,21 @@
          </includes>
       </viewerContentBinding>
    </extension>
+   <extension
+         point="org.eclipse.mylyn.commons.notifications.ui.notifications">
+        <category
+        	id="org.eclipse.languageserver"
+        	label="%notification.category.label">
+        </category>
+		<event
+		    categoryId="org.eclipse.languageserver"
+		    id="lsp.notification"
+		    label="%notification.event.label"
+		    selected="true">
+		    <defaultHandler
+		      sinkId="org.eclipse.mylyn.commons.notifications.sink.Popup">
+		    </defaultHandler>
+		</event>
+   </extension>
 
 </plugin>

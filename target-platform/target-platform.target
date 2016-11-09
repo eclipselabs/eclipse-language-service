@@ -25,6 +25,10 @@
       <repository location="http://download.eclipse.org/eclipse/updates/4.7-N-builds/"/>
     </location>
     <location includeMode="planner" includeAllPlatforms="false" includeSource="true" includeConfigurePhase="true" type="InstallableUnit">
+      <unit id="org.eclipse.mylyn.commons.notifications.feature.group" version="0.0.0"/>
+      <repository location="http://download.eclipse.org/mylyn/releases/latest"/>
+    </location>
+    <location includeMode="planner" includeAllPlatforms="false" includeSource="true" includeConfigurePhase="true" type="InstallableUnit">
       <unit id="io.typefox.lsapi" version="0.0.0"/>
       <unit id="io.typefox.lsapi.services" version="0.0.0"/>
       <unit id="io.typefox.lsapi.annotations" version="0.0.0"/>
