@@ -44,18 +44,14 @@ import org.eclipse.jface.viewers.StyledString;
 import org.eclipse.languageserver.LSPEclipseUtils;
 import org.eclipse.languageserver.LSPImages;
 import org.eclipse.languageserver.LanguageServiceAccessor.LSPDocumentInfo;
+import org.eclipse.lsp4j.CompletionItem;
+import org.eclipse.lsp4j.CompletionOptions;
+import org.eclipse.lsp4j.ServerCapabilities;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.widgets.Shell;
-import org.eclipse.ui.ISharedImages;
-import org.eclipse.ui.PlatformUI;
 import org.eclipse.ui.texteditor.link.EditorLinkedModeUI;
-
-import io.typefox.lsapi.CompletionItem;
-import io.typefox.lsapi.CompletionOptions;
-import io.typefox.lsapi.ServerCapabilities;
-import io.typefox.lsapi.builders.CompletionItemBuilder;
 
 public class LSCompletionProposal implements ICompletionProposal, ICompletionProposalExtension,
 		ICompletionProposalExtension2, ICompletionProposalExtension3, ICompletionProposalExtension4,
@@ -133,8 +129,12 @@ public class LSCompletionProposal implements ICompletionProposal, ICompletionPro
 		if (capabilities != null) {
 			CompletionOptions options = capabilities.getCompletionProvider();
 			if (options != null && options.getResolveProvider()) {
-				CompletionItem i = new CompletionItemBuilder().label(item.getLabel()).kind(item.getKind())
-				        .textEdit(item.getTextEdit()).data(item.getData()).build();
+				// TODO why a copy?
+				CompletionItem i = new CompletionItem();
+				i.setLabel(item.getLabel());
+				i.setKind(item.getKind());
+				i.setData(item.getData());
+				i.setTextEdit(i.getTextEdit());
 				CompletableFuture<CompletionItem> resolvedItem = info.getLanguageClient().getTextDocumentService()
 				        .resolveCompletionItem(i);
 				try {

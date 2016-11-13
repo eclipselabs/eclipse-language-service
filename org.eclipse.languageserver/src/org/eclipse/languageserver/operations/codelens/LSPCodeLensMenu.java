@@ -21,6 +21,9 @@ import org.eclipse.jface.action.ContributionItem;
 import org.eclipse.languageserver.LanguageServiceAccessor;
 import org.eclipse.languageserver.LanguageServiceAccessor.LSPDocumentInfo;
 import org.eclipse.languageserver.ui.Messages;
+import org.eclipse.lsp4j.CodeLens;
+import org.eclipse.lsp4j.CodeLensParams;
+import org.eclipse.lsp4j.TextDocumentIdentifier;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.widgets.Menu;
 import org.eclipse.swt.widgets.MenuItem;
@@ -30,10 +33,6 @@ import org.eclipse.ui.menus.IWorkbenchContribution;
 import org.eclipse.ui.progress.UIJob;
 import org.eclipse.ui.services.IServiceLocator;
 import org.eclipse.ui.texteditor.ITextEditor;
-
-import io.typefox.lsapi.CodeLens;
-import io.typefox.lsapi.CodeLensParams;
-import io.typefox.lsapi.builders.CodeLensParamsBuilder;
 
 public class LSPCodeLensMenu extends ContributionItem implements IWorkbenchContribution {
 
@@ -53,7 +52,7 @@ public class LSPCodeLensMenu extends ContributionItem implements IWorkbenchContr
 		final MenuItem item = new MenuItem(menu, SWT.NONE, index);
 		item.setText(Messages.computing);
 		item.setEnabled(false);
-		CodeLensParams param = new CodeLensParamsBuilder().textDocument(info.getFileUri().toString()).build();
+		CodeLensParams param = new CodeLensParams(new TextDocumentIdentifier(info.getFileUri().toString()));;
 		final CompletableFuture<List<? extends CodeLens>> codeLens = info.getLanguageClient().getTextDocumentService().codeLens(param);
 		codeLens.whenComplete(new BiConsumer<List<? extends CodeLens>, Throwable>() {
 
@@ -67,9 +66,11 @@ public class LSPCodeLensMenu extends ContributionItem implements IWorkbenchContr
 							item.setText(u.getMessage());
 						} else {
 							for (CodeLens lens : t) {
-								final MenuItem item = new MenuItem(menu, SWT.NONE, index);
-								item.setText(lens.getCommand().getTitle());
-								item.setEnabled(false);
+								if (lens != null) {
+									final MenuItem item = new MenuItem(menu, SWT.NONE, index);
+									item.setText(lens.getCommand().getTitle());
+									item.setEnabled(false);
+								}
 							}
 						}
 						return Status.OK_STATUS;

@@ -27,15 +27,14 @@ import org.eclipse.jface.viewers.TreeViewer;
 import org.eclipse.jface.viewers.Viewer;
 import org.eclipse.languageserver.LSPEclipseUtils;
 import org.eclipse.languageserver.LanguageServiceAccessor.LSPDocumentInfo;
+import org.eclipse.lsp4j.DocumentSymbolParams;
+import org.eclipse.lsp4j.Location;
+import org.eclipse.lsp4j.Position;
+import org.eclipse.lsp4j.SymbolInformation;
+import org.eclipse.lsp4j.TextDocumentIdentifier;
 import org.eclipse.ui.IMemento;
 import org.eclipse.ui.navigator.ICommonContentExtensionSite;
 import org.eclipse.ui.navigator.ICommonContentProvider;
-
-import io.typefox.lsapi.DocumentSymbolParams;
-import io.typefox.lsapi.Location;
-import io.typefox.lsapi.Position;
-import io.typefox.lsapi.SymbolInformation;
-import io.typefox.lsapi.builders.DocumentSymbolParamsBuilder;
 
 public class LSSymbolsContentProvider implements ICommonContentProvider, ITreeContentProvider, IDocumentListener, IResourceChangeListener {
 	
@@ -116,7 +115,7 @@ public class LSSymbolsContentProvider implements ICommonContentProvider, ITreeCo
 			SymbolInformation child = (SymbolInformation)element;
 			SymbolInformation res = null;
 			for (SymbolInformation current : this.lastResponse) {
-				if (isIncluded(current.getLocation(), child.getLocation()) && (res == null || isIncluded(res.getLocation(), current.getLocation()))) {
+				if (current != null && isIncluded(current.getLocation(), child.getLocation()) && (res == null || isIncluded(res.getLocation(), current.getLocation()))) {
 					res = current;
 				}
 			}
@@ -146,10 +145,8 @@ public class LSSymbolsContentProvider implements ICommonContentProvider, ITreeCo
 		}
 		lastResponse = null;
 		lastError = null;
-		DocumentSymbolParams params = new DocumentSymbolParamsBuilder().textDocument(info.getFileUri().toString())
-		        .build();
-		symbols = info.getLanguageClient()
-		        .getTextDocumentService().documentSymbol(params);
+		DocumentSymbolParams params = new DocumentSymbolParams(new TextDocumentIdentifier(info.getFileUri().toString()));
+		symbols = info.getLanguageClient().getTextDocumentService().documentSymbol(params);
 
 		symbols.thenAccept((List<? extends SymbolInformation> t) -> {
 			lastResponse = t;

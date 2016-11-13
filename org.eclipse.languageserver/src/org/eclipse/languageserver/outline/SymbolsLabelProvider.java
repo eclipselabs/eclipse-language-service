@@ -29,6 +29,7 @@ import org.eclipse.languageserver.LSPEclipseUtils;
 import org.eclipse.languageserver.LSPImages;
 import org.eclipse.languageserver.LanguageServiceAccessor.LSPDocumentInfo;
 import org.eclipse.languageserver.ui.Messages;
+import org.eclipse.lsp4j.SymbolInformation;
 import org.eclipse.swt.graphics.Image;
 import org.eclipse.ui.IMemento;
 import org.eclipse.ui.ISharedImages;
@@ -36,8 +37,6 @@ import org.eclipse.ui.PlatformUI;
 import org.eclipse.ui.internal.progress.ProgressManager;
 import org.eclipse.ui.navigator.ICommonContentExtensionSite;
 import org.eclipse.ui.navigator.ICommonLabelProvider;
-
-import io.typefox.lsapi.SymbolInformation;
 
 public class SymbolsLabelProvider extends LabelProvider implements ICommonLabelProvider, IStyledLabelProvider {
 

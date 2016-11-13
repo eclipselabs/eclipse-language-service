@@ -32,11 +32,11 @@ import org.eclipse.jdt.annotation.NonNull;
 import org.eclipse.jdt.annotation.Nullable;
 import org.eclipse.jface.text.IDocument;
 import org.eclipse.jface.text.ITextViewer;
+import org.eclipse.lsp4j.ServerCapabilities;
+import org.eclipse.lsp4j.TextDocumentIdentifier;
+import org.eclipse.lsp4j.services.LanguageServer;
 import org.eclipse.ui.texteditor.AbstractTextEditor;
 import org.eclipse.ui.texteditor.ITextEditor;
-
-import io.typefox.lsapi.ServerCapabilities;
-import io.typefox.lsapi.services.transport.client.LanguageClientEndpoint;
 
 /**
  * The entry-point to retrieve a Language Server for a given resource/project.
@@ -99,12 +99,12 @@ public class LanguageServiceAccessor {
 		private final @NonNull URI fileUri;
 		private final @NonNull IDocument document;
 		private final @Nullable ServerCapabilities capabilities;
-		private final @NonNull LanguageClientEndpoint languageClient;
+		private final @NonNull LanguageServer languageServer;
 
-		private LSPDocumentInfo(@NonNull URI fileUri, @NonNull IDocument document, @NonNull LanguageClientEndpoint languageClient, @Nullable ServerCapabilities capabilities) {
+		private LSPDocumentInfo(@NonNull URI fileUri, @NonNull IDocument document, @NonNull LanguageServer languageServer, @Nullable ServerCapabilities capabilities) {
 			this.fileUri = fileUri;
 			this.document = document;
-			this.languageClient = languageClient;
+			this.languageServer = languageServer;
 			this.capabilities = capabilities;
 		}
 
@@ -112,12 +112,16 @@ public class LanguageServiceAccessor {
 			return this.document;
 		}
 
+		/**
+		 * TODO consider directly returning a {@link TextDocumentIdentifier}
+		 * @return
+		 */
 		public @NonNull URI getFileUri() {
 			return this.fileUri;
 		}
 
-		public @NonNull LanguageClientEndpoint getLanguageClient() {
-			return this.languageClient;
+		public @NonNull LanguageServer getLanguageClient() {
+			return this.languageServer;
 		}
 
 		public @Nullable ServerCapabilities getCapabilites() {
@@ -132,12 +136,12 @@ public class LanguageServiceAccessor {
 
 		private final @NonNull IProject project;
 		private final @Nullable ServerCapabilities capabilities;
-		private final @NonNull LanguageClientEndpoint languageClient;
+		private final @NonNull LanguageServer languageServer;
 
-		private LSPServerInfo(@NonNull IProject project, @NonNull LanguageClientEndpoint languageClient,
+		private LSPServerInfo(@NonNull IProject project, @NonNull LanguageServer languageServer,
 		        @Nullable ServerCapabilities capabilities) {
 			this.project = project;
-			this.languageClient = languageClient;
+			this.languageServer = languageServer;
 			this.capabilities = capabilities;
 		}
 
@@ -145,8 +149,8 @@ public class LanguageServiceAccessor {
 			return project;
 		}
 
-		public @NonNull LanguageClientEndpoint getLanguageClient() {
-			return this.languageClient;
+		public @NonNull LanguageServer getLanguageServer() {
+			return this.languageServer;
 		}
 
 		public @Nullable ServerCapabilities getCapabilites() {
@@ -159,7 +163,7 @@ public class LanguageServiceAccessor {
 		final IPath location = FileBuffers.getTextFileBufferManager().getTextFileBuffer(document).getLocation();
 		final IFile file = ResourcesPlugin.getWorkspace().getRoot().getFile(location);
 		URI fileUri = null;
-		LanguageClientEndpoint languageClient = null;
+		LanguageServer languageClient = null;
 		ServerCapabilities capabilities = null;
 		if (file.exists()) { // TODO, also support non resource file
 			fileUri = file.getLocation().toFile().toURI();
@@ -195,7 +199,7 @@ public class LanguageServiceAccessor {
 		}
 	}
 
-	public static LanguageClientEndpoint getLanguageServer(IFile file, IDocument document,
+	public static LanguageServer getLanguageServer(IFile file, IDocument document,
 			Predicate<ServerCapabilities> request) throws IOException {
 		ProjectSpecificLanguageServerWrapper wrapper = getLSWrapper(file, request);
 		if (wrapper != null) {

@@ -12,10 +12,9 @@ package org.eclipse.languageserver.operations.codeactions;
 
 import org.eclipse.core.resources.IMarker;
 import org.eclipse.jface.dialogs.MessageDialog;
+import org.eclipse.lsp4j.Command;
 import org.eclipse.ui.IMarkerResolution;
 import org.eclipse.ui.PlatformUI;
-
-import io.typefox.lsapi.Command;
 
 public class CodeActionMarkerResolution implements IMarkerResolution {
 

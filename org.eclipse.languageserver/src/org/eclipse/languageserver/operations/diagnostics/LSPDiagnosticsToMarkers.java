@@ -15,11 +15,10 @@ import org.eclipse.core.resources.IResource;
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.jface.text.IDocument;
 import org.eclipse.languageserver.LSPEclipseUtils;
+import org.eclipse.lsp4j.Diagnostic;
+import org.eclipse.lsp4j.PublishDiagnosticsParams;
 
 import com.google.common.base.Objects;
-
-import io.typefox.lsapi.Diagnostic;
-import io.typefox.lsapi.PublishDiagnosticsParams;
 
 public class LSPDiagnosticsToMarkers implements Consumer<PublishDiagnosticsParams> {
 	

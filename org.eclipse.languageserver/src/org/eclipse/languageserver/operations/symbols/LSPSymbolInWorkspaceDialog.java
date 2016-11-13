@@ -28,14 +28,12 @@ import org.eclipse.languageserver.LanguageServerPluginActivator;
 import org.eclipse.languageserver.LanguageServiceAccessor.LSPServerInfo;
 import org.eclipse.languageserver.outline.SymbolsLabelProvider;
 import org.eclipse.languageserver.ui.Messages;
+import org.eclipse.lsp4j.SymbolInformation;
+import org.eclipse.lsp4j.WorkspaceSymbolParams;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Control;
 import org.eclipse.swt.widgets.Shell;
 import org.eclipse.ui.dialogs.FilteredItemsSelectionDialog;
-
-import io.typefox.lsapi.SymbolInformation;
-import io.typefox.lsapi.WorkspaceSymbolParams;
-import io.typefox.lsapi.builders.WorkspaceSymbolParamsBuilder;
 
 public class LSPSymbolInWorkspaceDialog extends FilteredItemsSelectionDialog {
 
@@ -114,8 +112,8 @@ public class LSPSymbolInWorkspaceDialog extends FilteredItemsSelectionDialog {
 				return;
 			}
 
-			WorkspaceSymbolParams params = new WorkspaceSymbolParamsBuilder().query(itemsFilter.getPattern()).build();
-			CompletableFuture<List<? extends SymbolInformation>> symbols = info.getLanguageClient()
+			WorkspaceSymbolParams params = new WorkspaceSymbolParams(itemsFilter.getPattern());
+			CompletableFuture<List<? extends SymbolInformation>> symbols = info.getLanguageServer()
 			        .getWorkspaceService().symbol(params);
 
 			try {

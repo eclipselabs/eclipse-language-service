@@ -20,13 +20,10 @@ import org.eclipse.jface.text.ITextHover;
 import org.eclipse.jface.text.ITextViewer;
 import org.eclipse.jface.text.Region;
 import org.eclipse.languageserver.LSPEclipseUtils;
-import org.eclipse.languageserver.LanguageServiceAccessor.LSPDocumentInfo;
 import org.eclipse.languageserver.LanguageServiceAccessor;
-
-import io.typefox.lsapi.Hover;
-import io.typefox.lsapi.MarkedString;
-import io.typefox.lsapi.Range;
-import io.typefox.lsapi.ServerCapabilities;
+import org.eclipse.languageserver.LanguageServiceAccessor.LSPDocumentInfo;
+import org.eclipse.lsp4j.Hover;
+import org.eclipse.lsp4j.Range;
 
 public class LSBasedHover implements ITextHover {
 
@@ -44,8 +41,8 @@ public class LSBasedHover implements ITextHover {
 		}
 		StringBuilder res = new StringBuilder();
 		try {
-			for (MarkedString string : this.hover.get(500, TimeUnit.MILLISECONDS).getContents()) {
-				res.append(string.getValue());
+			for (String string : this.hover.get(500, TimeUnit.MILLISECONDS).getContents()) {
+				res.append(string);
 				res.append('\n');
 			}
 		} catch (InterruptedException | ExecutionException | TimeoutException e) {
@@ -57,7 +54,7 @@ public class LSBasedHover implements ITextHover {
 	@Override
 	public IRegion getHoverRegion(ITextViewer textViewer, int offset) {
 		IRegion res = new Region(offset, 0);
-		final LSPDocumentInfo info = LanguageServiceAccessor.getLSPDocumentInfoFor(textViewer, (capabilities) -> Boolean.TRUE.equals(capabilities.isHoverProvider()));
+		final LSPDocumentInfo info = LanguageServiceAccessor.getLSPDocumentInfoFor(textViewer, (capabilities) -> Boolean.TRUE.equals(capabilities.getHoverProvider()));
 		if (info != null) {
 			try {
 				initiateHoverRequest(textViewer, offset);
@@ -81,7 +78,7 @@ public class LSBasedHover implements ITextHover {
 
 	private void initiateHoverRequest(ITextViewer viewer, int offset) {
 		this.textViewer = viewer;
-		final LSPDocumentInfo info = LanguageServiceAccessor.getLSPDocumentInfoFor(viewer, (capabilities) -> Boolean.TRUE.equals(capabilities.isHoverProvider()));
+		final LSPDocumentInfo info = LanguageServiceAccessor.getLSPDocumentInfoFor(viewer, (capabilities) -> Boolean.TRUE.equals(capabilities.getHoverProvider()));
 		if (info != null) {
 			try {
 				this.hover = info.getLanguageClient().getTextDocumentService().hover(LSPEclipseUtils.toTextDocumentPosistionParams(info.getFileUri(), offset, info.getDocument()));

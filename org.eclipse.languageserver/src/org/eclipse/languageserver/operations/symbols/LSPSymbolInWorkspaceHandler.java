@@ -23,15 +23,14 @@ import org.eclipse.jface.viewers.IStructuredSelection;
 import org.eclipse.languageserver.LSPEclipseUtils;
 import org.eclipse.languageserver.LanguageServiceAccessor;
 import org.eclipse.languageserver.LanguageServiceAccessor.LSPServerInfo;
+import org.eclipse.lsp4j.Location;
+import org.eclipse.lsp4j.ServerCapabilities;
+import org.eclipse.lsp4j.SymbolInformation;
 import org.eclipse.swt.widgets.Shell;
 import org.eclipse.ui.IEditorPart;
 import org.eclipse.ui.IWorkbenchPage;
 import org.eclipse.ui.PlatformUI;
 import org.eclipse.ui.handlers.HandlerUtil;
-
-import io.typefox.lsapi.Location;
-import io.typefox.lsapi.ServerCapabilities;
-import io.typefox.lsapi.SymbolInformation;
 
 public class LSPSymbolInWorkspaceHandler extends AbstractHandler {
 
@@ -55,7 +54,7 @@ public class LSPSymbolInWorkspaceHandler extends AbstractHandler {
 		}
 		IProject project = resource.getProject();
 		List<LSPServerInfo> infos = LanguageServiceAccessor.getLSPServerInfos(project,
-		        ServerCapabilities::isWorkspaceSymbolProvider);
+				capabilities -> Boolean.TRUE.equals(capabilities.getWorkspaceSymbolProvider()));
 		if (infos.isEmpty()) {
 			return null;
 		}

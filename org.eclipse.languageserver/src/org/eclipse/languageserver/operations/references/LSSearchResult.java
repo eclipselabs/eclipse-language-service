@@ -28,6 +28,8 @@ import org.eclipse.jface.text.IRegion;
 import org.eclipse.languageserver.LSPEclipseUtils;
 import org.eclipse.languageserver.LanguageServerPluginActivator;
 import org.eclipse.languageserver.ui.Messages;
+import org.eclipse.lsp4j.Location;
+import org.eclipse.lsp4j.Position;
 import org.eclipse.search.internal.ui.text.FileMatch;
 import org.eclipse.search.internal.ui.text.FileSearchQuery;
 import org.eclipse.search.internal.ui.text.FileSearchResult;
@@ -38,10 +40,6 @@ import org.eclipse.search.ui.text.AbstractTextSearchResult;
 import org.eclipse.search.ui.text.IEditorMatchAdapter;
 import org.eclipse.search.ui.text.IFileMatchAdapter;
 import org.eclipse.search.ui.text.Match;
-
-import io.typefox.lsapi.Location;
-import io.typefox.lsapi.Position;
-import io.typefox.lsapi.Range;
 
 public class LSSearchResult extends FileSearchResult {
 

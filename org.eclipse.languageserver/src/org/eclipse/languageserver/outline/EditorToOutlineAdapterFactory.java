@@ -16,14 +16,12 @@ import org.eclipse.languageserver.LanguageServiceAccessor.LSPDocumentInfo;
 import org.eclipse.ui.texteditor.ITextEditor;
 import org.eclipse.ui.views.contentoutline.IContentOutlinePage;
 
-import io.typefox.lsapi.ServerCapabilities;
-
 public class EditorToOutlineAdapterFactory implements IAdapterFactory {
 
 	@Override
 	public <T> T getAdapter(Object adaptableObject, Class<T> adapterType) {
 		if (adapterType == IContentOutlinePage.class && adaptableObject instanceof ITextEditor) {
-			LSPDocumentInfo info = LanguageServiceAccessor.getLSPDocumentInfoFor((ITextEditor) adaptableObject, ServerCapabilities::isDocumentSymbolProvider);
+			LSPDocumentInfo info = LanguageServiceAccessor.getLSPDocumentInfoFor((ITextEditor) adaptableObject, capabilities -> Boolean.TRUE.equals(capabilities.getDocumentSymbolProvider()));
 			if (info != null) {
 				return (T)new CNFOutinePage(info);
 			}

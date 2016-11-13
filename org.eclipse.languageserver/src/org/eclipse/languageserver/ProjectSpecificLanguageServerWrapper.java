@@ -19,6 +19,8 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 import org.eclipse.core.resources.IFile;
 import org.eclipse.core.resources.IProject;
@@ -36,29 +38,26 @@ import org.eclipse.jface.text.IDocument;
 import org.eclipse.jface.text.IDocumentListener;
 import org.eclipse.languageserver.operations.diagnostics.LSPDiagnosticsToMarkers;
 import org.eclipse.languageserver.ui.Messages;
+import org.eclipse.lsp4j.ClientCapabilities;
+import org.eclipse.lsp4j.DidChangeTextDocumentParams;
+import org.eclipse.lsp4j.DidOpenTextDocumentParams;
+import org.eclipse.lsp4j.InitializeParams;
+import org.eclipse.lsp4j.InitializeResult;
+import org.eclipse.lsp4j.MessageParams;
+import org.eclipse.lsp4j.PublishDiagnosticsParams;
+import org.eclipse.lsp4j.Range;
+import org.eclipse.lsp4j.ServerCapabilities;
+import org.eclipse.lsp4j.ShowMessageRequestParams;
+import org.eclipse.lsp4j.TextDocumentContentChangeEvent;
+import org.eclipse.lsp4j.TextDocumentItem;
+import org.eclipse.lsp4j.TextDocumentSyncKind;
+import org.eclipse.lsp4j.VersionedTextDocumentIdentifier;
+import org.eclipse.lsp4j.jsonrpc.Launcher;
+import org.eclipse.lsp4j.launch.LSPLauncher;
+import org.eclipse.lsp4j.services.LanguageClient;
+import org.eclipse.lsp4j.services.LanguageServer;
 import org.eclipse.swt.widgets.Display;
 import org.eclipse.ui.internal.progress.ProgressMonitorFocusJobDialog;
-
-import io.typefox.lsapi.InitializeResult;
-import io.typefox.lsapi.Message;
-import io.typefox.lsapi.ServerCapabilities;
-import io.typefox.lsapi.TextDocumentSyncKind;
-import io.typefox.lsapi.impl.ClientCapabilitiesImpl;
-import io.typefox.lsapi.impl.DidChangeTextDocumentParamsImpl;
-import io.typefox.lsapi.impl.DidOpenTextDocumentParamsImpl;
-import io.typefox.lsapi.impl.InitializeParamsImpl;
-import io.typefox.lsapi.impl.RangeImpl;
-import io.typefox.lsapi.impl.TextDocumentContentChangeEventImpl;
-import io.typefox.lsapi.impl.TextDocumentItemImpl;
-import io.typefox.lsapi.impl.VersionedTextDocumentIdentifierImpl;
-import io.typefox.lsapi.services.json.InvalidMessageException;
-import io.typefox.lsapi.services.json.MessageJsonHandler;
-import io.typefox.lsapi.services.json.StreamMessageReader;
-import io.typefox.lsapi.services.json.StreamMessageWriter;
-import io.typefox.lsapi.services.transport.client.LanguageClientEndpoint;
-import io.typefox.lsapi.services.transport.io.ConcurrentMessageReader;
-import io.typefox.lsapi.services.transport.io.MessageWriter;
-import io.typefox.lsapi.services.transport.trace.MessageTracer;
 
 /**
  * Wraps instantiation, initialization of project-specific instance of the
@@ -69,7 +68,7 @@ public class ProjectSpecificLanguageServerWrapper {
 	private final class DocumentChangeListenenr implements IDocumentListener {
 		private URI fileURI;
 		private int version = 2;
-		private DidChangeTextDocumentParamsImpl change;
+		private DidChangeTextDocumentParams change;
 
 		public DocumentChangeListenenr(URI fileURI) {
 			this.fileURI = fileURI;
@@ -81,23 +80,23 @@ public class ProjectSpecificLanguageServerWrapper {
 				return;
 			}
 			this.change.getContentChanges().get(0).setText(event.getDocument().get());
-			languageClient.getTextDocumentService().didChange(this.change);
+			languageServer.getTextDocumentService().didChange(this.change);
 			version++;
 		}
 
 		@Override
 		public void documentAboutToBeChanged(DocumentEvent event) {
 			// create change event according synch
-			TextDocumentContentChangeEventImpl changeEvent = toChangeEvent(event);
+			TextDocumentContentChangeEvent changeEvent = toChangeEvent(event);
 			if (changeEvent == null) {
 				return;
 			}
-			this.change = new DidChangeTextDocumentParamsImpl();
-			VersionedTextDocumentIdentifierImpl doc = new VersionedTextDocumentIdentifierImpl();
+			this.change = new DidChangeTextDocumentParams();
+			VersionedTextDocumentIdentifier doc = new VersionedTextDocumentIdentifier();
 			doc.setUri(fileURI.toString());
 			doc.setVersion(version);
 			this.change.setTextDocument(doc);
-			this.change.setContentChanges(Arrays.asList(new TextDocumentContentChangeEventImpl[] { changeEvent }));
+			this.change.setContentChanges(Arrays.asList(new TextDocumentContentChangeEvent[] { changeEvent }));
 		}
 
 		/**
@@ -109,26 +108,26 @@ public class ProjectSpecificLanguageServerWrapper {
 		 *            Eclipse {@link DocumentEvent}
 		 * @return the converted LS {@link TextDocumentContentChangeEventImpl}.
 		 */
-		private TextDocumentContentChangeEventImpl toChangeEvent(DocumentEvent event) {
+		private TextDocumentContentChangeEvent toChangeEvent(DocumentEvent event) {
 			IDocument document = event.getDocument();
-			TextDocumentContentChangeEventImpl changeEvent = null;
+			TextDocumentContentChangeEvent changeEvent = null;
 			TextDocumentSyncKind syncKind = getTextDocumentSyncKind();
 			switch (syncKind) {
 			case None:
 				changeEvent = null;
 				break;
 			case Full:
-				changeEvent = new TextDocumentContentChangeEventImpl();
+				changeEvent = new TextDocumentContentChangeEvent();
 				changeEvent.setText(document.get());
 				break;
 			case Incremental:
-				changeEvent = new TextDocumentContentChangeEventImpl();
+				changeEvent = new TextDocumentContentChangeEvent();
 				String newText = event.getText();
 				int offset = event.getOffset();
 				int length = event.getLength();
 				try {
 					// try to convert the Eclipse start/end offset to LS range.
-					RangeImpl range = new RangeImpl(LSPEclipseUtils.toPosition(offset, document),
+					Range range = new Range(LSPEclipseUtils.toPosition(offset, document),
 					        LSPEclipseUtils.toPosition(offset + length, document));
 					changeEvent.setRange(range);
 					changeEvent.setText(newText);
@@ -158,7 +157,7 @@ public class ProjectSpecificLanguageServerWrapper {
 	}
 
 	final private StreamConnectionProvider lspStreamProvider;
-	private LanguageClientEndpoint languageClient;
+	private LanguageServer languageServer;
 	private IProject project;
 	private Map<IPath, DocumentChangeListenenr> connectedFiles;
 	private Map<IPath, IDocument> documents;
@@ -174,7 +173,7 @@ public class ProjectSpecificLanguageServerWrapper {
 	}
 
 	private void start() throws IOException {
-		if (this.languageClient != null) {
+		if (this.languageServer != null) {
 			if (stillActive()) {
 				return;
 			} else {
@@ -182,74 +181,62 @@ public class ProjectSpecificLanguageServerWrapper {
 			}
 		}
 		try {
-			ExecutorService executorService = Executors.newCachedThreadPool();
-			this.languageClient = new LanguageClientEndpoint(executorService);
-			if (Boolean.getBoolean("ls.log")) { //$NON-NLS-1$
-				this.languageClient.setMessageTracer(new MessageTracer() {
-					@Override
-					public void onWrite(Message message, String json) {
-						if (json.contains("telemetry/event")) {  //$NON-NLS-1$
-							return;
-						}
-						System.out.println("WRITE: "); //$NON-NLS-1$
-						System.out.println(json);
-						System.out.println(message);
-						System.out.println("");  //$NON-NLS-1$
-					}
-					
-					@Override
-					public void onRead(Message message, String json) {
-						if (json.contains("telemetry/event")) { //$NON-NLS-1$
-							return;
-						}
-						System.out.println("READ: "); //$NON-NLS-1$
-						System.out.println(json);
-						System.out.println(message);
-						System.out.println(""); //$NON-NLS-1$
-					}
-					
-					@Override
-					public void onError(String message, Throwable throwable) {
-						System.err.println("ERR:"); //$NON-NLS-1$
-						System.err.println("message: " + message); //$NON-NLS-1$
-						System.err.println("ex: " ); //$NON-NLS-1$
-						if (throwable != null) {
-							throwable.printStackTrace(System.err);
-						}
-						if (throwable instanceof InvalidMessageException) {
-							//System.err.println("json unavailable, see https://github.com/TypeFox/ls-api/issues/51");
-							System.err.println("json: " + ((InvalidMessageException)throwable).getJson()); //$NON-NLS-1$
-						}
-					}
-				});
-			}
 			this.lspStreamProvider.start();
-			MessageJsonHandler jsonHandler = new MessageJsonHandler();
-			jsonHandler.setMethodResolver(this.languageClient);
-			StreamMessageReader baseMessageReader = new StreamMessageReader(this.lspStreamProvider.getInputStream(), jsonHandler);
-			ConcurrentMessageReader multiThreadReader = new ConcurrentMessageReader(baseMessageReader, executorService);
-			MessageWriter writer = new StreamMessageWriter(this.lspStreamProvider.getOutputStream(), jsonHandler);
-			languageClient.connect(multiThreadReader, writer);
-			
-			languageClient.getWindowService().onLogMessage(params -> ServerMessageHandler.logMessage(params));
-			languageClient.getWindowService().onShowMessage(params -> ServerMessageHandler.showMessage(params));
-			languageClient.getWindowService().onShowMessageRequest(params -> ServerMessageHandler.showMessageRequest(params));
-			
+			LanguageClient client = new LanguageClient() {
+				private LSPDiagnosticsToMarkers diagnosticHandler = new LSPDiagnosticsToMarkers(project);
+				
+				@Override
+				public void telemetryEvent(Object object) {
+					// TODO
+				}
+				
+				@Override
+				public CompletableFuture<Void> showMessageRequest(ShowMessageRequestParams requestParams) {
+					return ServerMessageHandler.showMessageRequest(requestParams);
+				}
+				
+				@Override
+				public void showMessage(MessageParams messageParams) {
+					ServerMessageHandler.showMessage(messageParams);
+				}
+				
+				@Override
+				public void publishDiagnostics(PublishDiagnosticsParams diagnostics) {
+					this.diagnosticHandler.accept(diagnostics);
+				}
+				
+				@Override
+				public void logMessage(MessageParams message) {
+					ServerMessageHandler.logMessage(message);
+				}
+			};
+			ExecutorService executorService = Executors.newCachedThreadPool();
+			Launcher<LanguageServer> launcher = LSPLauncher.createClientLauncher(client,
+				this.lspStreamProvider.getInputStream(),
+				this.lspStreamProvider.getOutputStream(),
+				executorService,
+				consumer -> (
+					message -> {
+						System.err.println(message.toString());
+						consumer.consume(message);
+					}));
+			this.languageServer = launcher.getRemoteProxy();
+			launcher.startListening();
+
 			this.initializeJob = new Job(Messages.initializeLanguageServer_job) {
 				protected IStatus run(IProgressMonitor monitor) {
-					InitializeParamsImpl initParams = new InitializeParamsImpl();
+					InitializeParams initParams = new InitializeParams();
 					initParams.setRootPath(project.getLocation().toFile().getAbsolutePath());
 					String name = "Eclipse IDE"; //$NON-NLS-1$
 					if (Platform.getProduct() != null) {
 						name = Platform.getProduct().getName();
 					}
 					initParams.setClientName(name);
-					initParams.setCapabilities(new ClientCapabilitiesImpl());
-					connectDiagnostics();
-					CompletableFuture<InitializeResult> result = languageClient.initialize(initParams);
+					initParams.setCapabilities(new ClientCapabilities());
+					CompletableFuture<InitializeResult> result = languageServer.initialize(initParams);
 					try {
-						initializeResult = result.get();
-					} catch (InterruptedException | ExecutionException e) {
+						initializeResult = result.get(3, TimeUnit.SECONDS);
+					} catch (InterruptedException | ExecutionException | TimeoutException e) {
 						// TODO Auto-generated catch block
 						e.printStackTrace();
 					}
@@ -266,14 +253,11 @@ public class ProjectSpecificLanguageServerWrapper {
 	}
 	
 	private boolean stillActive() {
-		if (this.languageClient == null || this.languageClient.getReader() == null) {
-			return false;
-		}
-		return ((ConcurrentMessageReader)this.languageClient.getReader()).isRunning();
-	}
-
-	private void connectDiagnostics() {
-		this.languageClient.getTextDocumentService().onPublishDiagnostics(new LSPDiagnosticsToMarkers(this.project));
+//		if (this.languageServer == null || this.languageServer.getReader() == null) {
+//			return false;
+//		}
+//		return ((ConcurrentMessageReader)this.languageServer.getReader()).isRunning();
+		return true;
 	}
 
 	private void stop() {
@@ -282,14 +266,9 @@ public class ProjectSpecificLanguageServerWrapper {
 		}
 		this.initializeJob = null;
 		this.initializeResult = null;
-		if (this.languageClient != null) {
-			this.languageClient.shutdown();
-			if (this.languageClient.getReader() != null) {
-				this.languageClient.getReader().close();
-			}
-			if (this.languageClient.getWriter() != null) {
-				this.languageClient.getWriter().close();
-			}
+		if (this.languageServer != null) {
+			this.languageServer.shutdown();
+			// TODO stop readers?
 		}
 		if (this.lspStreamProvider != null) {
 			this.lspStreamProvider.stop();
@@ -297,7 +276,7 @@ public class ProjectSpecificLanguageServerWrapper {
 		while (!this.documents.isEmpty()) {
 			disconnect(this.documents.keySet().iterator().next());
 		}
-		this.languageClient = null;
+		this.languageServer = null;
 	}
 
 	public void connect(IFile file, final IDocument document) throws IOException {
@@ -306,8 +285,8 @@ public class ProjectSpecificLanguageServerWrapper {
 			return;
 		}
 		// add a document buffer
-		DidOpenTextDocumentParamsImpl open = new DidOpenTextDocumentParamsImpl();
-		TextDocumentItemImpl textDocument = new TextDocumentItemImpl();
+		DidOpenTextDocumentParams open = new DidOpenTextDocumentParams();
+		TextDocumentItem textDocument = new TextDocumentItem();
 		textDocument.setUri(file.getLocationURI().toString());
 		textDocument.setText(document.get());
 		textDocument.setLanguageId(file.getFileExtension());
@@ -317,7 +296,7 @@ public class ProjectSpecificLanguageServerWrapper {
 		} catch (InterruptedException e) {
 			e.printStackTrace();
 		}
-		this.languageClient.getTextDocumentService().didOpen(open);
+		this.languageServer.getTextDocumentService().didOpen(open);
 		
 		DocumentChangeListenenr listener = new DocumentChangeListenenr(file.getLocationURI());
 		document.addDocumentListener(listener);
@@ -334,7 +313,7 @@ public class ProjectSpecificLanguageServerWrapper {
 		}
 	}
 
-	@NonNull public LanguageClientEndpoint getServer() {
+	@NonNull public LanguageServer getServer() {
 		if (this.initializeJob.getState() != Job.NONE) {
 			if (Display.getCurrent() != null) { // UI Thread
 				ProgressMonitorFocusJobDialog dialog = new ProgressMonitorFocusJobDialog(null);
@@ -348,7 +327,7 @@ public class ProjectSpecificLanguageServerWrapper {
 				e.printStackTrace();
 			}
 		}
-		return languageClient;
+		return this.languageServer;
 	}
 
 	public ServerCapabilities getServerCapabilities() {

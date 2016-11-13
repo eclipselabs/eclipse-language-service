@@ -17,13 +17,12 @@ import org.eclipse.core.runtime.Path;
 import org.eclipse.core.runtime.Platform;
 import org.eclipse.jface.resource.ImageDescriptor;
 import org.eclipse.jface.resource.ImageRegistry;
+import org.eclipse.lsp4j.CompletionItemKind;
+import org.eclipse.lsp4j.SymbolKind;
 import org.eclipse.swt.graphics.Image;
 import org.eclipse.ui.ISharedImages;
 import org.eclipse.ui.PlatformUI;
 import org.osgi.framework.Bundle;
-
-import io.typefox.lsapi.CompletionItemKind;
-import io.typefox.lsapi.SymbolKind;
 
 public class LSPImages {
 

@@ -39,6 +39,10 @@ import org.eclipse.languageserver.LanguageServerPluginActivator;
 import org.eclipse.languageserver.LanguageServiceAccessor;
 import org.eclipse.languageserver.LanguageServiceAccessor.LSPDocumentInfo;
 import org.eclipse.languageserver.ui.Messages;
+import org.eclipse.lsp4j.RenameParams;
+import org.eclipse.lsp4j.TextDocumentIdentifier;
+import org.eclipse.lsp4j.TextEdit;
+import org.eclipse.lsp4j.WorkspaceEdit;
 import org.eclipse.ui.IEditorPart;
 import org.eclipse.ui.IWorkbenchPart;
 import org.eclipse.ui.PlatformUI;
@@ -46,26 +50,20 @@ import org.eclipse.ui.handlers.HandlerUtil;
 import org.eclipse.ui.texteditor.AbstractTextEditor;
 import org.eclipse.ui.texteditor.ITextEditor;
 
-import io.typefox.lsapi.ServerCapabilities;
-import io.typefox.lsapi.TextEdit;
-import io.typefox.lsapi.WorkspaceEdit;
-import io.typefox.lsapi.impl.RenameParamsImpl;
-import io.typefox.lsapi.impl.TextDocumentIdentifierImpl;
-
 public class LSPRenameHandler extends AbstractHandler implements IHandler {
 
 	@Override
 	public Object execute(ExecutionEvent event) throws ExecutionException {
 		IEditorPart part = HandlerUtil.getActiveEditor(event);
 		if (part instanceof AbstractTextEditor) {
-			LSPDocumentInfo info = LanguageServiceAccessor.getLSPDocumentInfoFor((ITextEditor) part, (capabilities) -> Boolean.TRUE.equals(capabilities.isRenameProvider()));
+			LSPDocumentInfo info = LanguageServiceAccessor.getLSPDocumentInfoFor((ITextEditor) part, (capabilities) -> Boolean.TRUE.equals(capabilities.getRenameProvider()));
 			if (info != null) {
 				ISelection sel = ((AbstractTextEditor) part).getSelectionProvider().getSelection();
 				if (sel instanceof TextSelection) {
 					try {
-						RenameParamsImpl params = new RenameParamsImpl();
+						RenameParams params = new RenameParams();
 						params.setPosition(LSPEclipseUtils.toPosition(((TextSelection) sel).getOffset(), info.getDocument()));
-						TextDocumentIdentifierImpl identifier = new TextDocumentIdentifierImpl();
+						TextDocumentIdentifier identifier = new TextDocumentIdentifier();
 						identifier.setUri(info.getFileUri().toString());
 						params.setTextDocument(identifier);
 						params.setNewName(askNewName());
@@ -117,7 +115,7 @@ public class LSPRenameHandler extends AbstractHandler implements IHandler {
 	public boolean isEnabled() {
 		IWorkbenchPart part = PlatformUI.getWorkbench().getActiveWorkbenchWindow().getActivePage().getActivePart();
 		if (part instanceof AbstractTextEditor) {
-			LSPDocumentInfo info = LanguageServiceAccessor.getLSPDocumentInfoFor((ITextEditor) part, (capabilities) -> Boolean.TRUE.equals(capabilities.isRenameProvider()));
+			LSPDocumentInfo info = LanguageServiceAccessor.getLSPDocumentInfoFor((ITextEditor) part, (capabilities) -> Boolean.TRUE.equals(capabilities.getRenameProvider()));
 			ISelection selection = ((AbstractTextEditor) part).getSelectionProvider().getSelection();
 			return info != null && !selection.isEmpty() && selection instanceof ITextSelection;
 		}

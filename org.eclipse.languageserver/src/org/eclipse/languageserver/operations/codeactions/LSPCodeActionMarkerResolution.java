@@ -12,6 +12,7 @@ package org.eclipse.languageserver.operations.codeactions;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
@@ -26,19 +27,16 @@ import org.eclipse.jface.text.IDocument;
 import org.eclipse.languageserver.LanguageServiceAccessor;
 import org.eclipse.languageserver.operations.diagnostics.LSPDiagnosticsToMarkers;
 import org.eclipse.languageserver.ui.Messages;
+import org.eclipse.lsp4j.CodeActionContext;
+import org.eclipse.lsp4j.CodeActionParams;
+import org.eclipse.lsp4j.Command;
+import org.eclipse.lsp4j.Diagnostic;
+import org.eclipse.lsp4j.TextDocumentIdentifier;
+import org.eclipse.lsp4j.services.LanguageServer;
 import org.eclipse.swt.graphics.Image;
 import org.eclipse.ui.IMarkerResolution;
 import org.eclipse.ui.IMarkerResolutionGenerator2;
 import org.eclipse.ui.views.markers.WorkbenchMarkerResolution;
-
-import io.typefox.lsapi.CodeActionContext;
-import io.typefox.lsapi.CodeActionParams;
-import io.typefox.lsapi.Command;
-import io.typefox.lsapi.Diagnostic;
-import io.typefox.lsapi.ServerCapabilities;
-import io.typefox.lsapi.builders.CodeActionContextBuilder;
-import io.typefox.lsapi.builders.CodeActionParamsBuilder;
-import io.typefox.lsapi.services.transport.client.LanguageClientEndpoint;
 
 public class LSPCodeActionMarkerResolution extends WorkbenchMarkerResolution implements IMarkerResolutionGenerator2 {
 
@@ -93,17 +91,14 @@ public class LSPCodeActionMarkerResolution extends WorkbenchMarkerResolution imp
 				resolutions = (List<? extends Command>)marker.getAttribute(LSP_REMEDIATION);
 			} else if (marker.getResource().getType() == IResource.FILE) {
 				IDocument document = FileBuffers.getTextFileBufferManager().getTextFileBuffer(marker.getResource().getFullPath(), LocationKind.IFILE).getDocument();
-				LanguageClientEndpoint lsp = LanguageServiceAccessor.getLanguageServer((IFile)marker.getResource(), document, (capabilities) -> Boolean.TRUE.equals(capabilities.isCodeActionProvider()));
+				LanguageServer lsp = LanguageServiceAccessor.getLanguageServer((IFile)marker.getResource(), document, (capabilities) -> Boolean.TRUE.equals(capabilities.getCodeActionProvider()));
 				if (lsp != null) {
 					Diagnostic diagnostic = (Diagnostic)marker.getAttribute(LSPDiagnosticsToMarkers.LSP_DIAGNOSTIC);
-					CodeActionContext context = new CodeActionContextBuilder()
-							.diagnostic(diagnostic)
-							.build();
-					CodeActionParams params = new CodeActionParamsBuilder()
-							.context(context)
-							.textDocument(marker.getResource().getLocation().toFile().toURI().toString())
-							.range(diagnostic.getRange())
-							.build();
+					CodeActionContext context = new CodeActionContext(Collections.singletonList(diagnostic));
+					CodeActionParams params = new CodeActionParams();
+					params.setContext(context);
+					params.setTextDocument(new TextDocumentIdentifier(marker.getResource().getLocation().toFile().toURI().toString()));
+					params.setRange(diagnostic.getRange());
 					CompletableFuture<List<? extends Command>> codeAction = lsp.getTextDocumentService().codeAction(params);
 					resolutions = codeAction.get();
 					marker.setAttribute(LSP_REMEDIATION, resolutions);

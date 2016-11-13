@@ -26,11 +26,10 @@ import org.eclipse.jface.text.contentassist.IContextInformationValidator;
 import org.eclipse.languageserver.LSPEclipseUtils;
 import org.eclipse.languageserver.LanguageServiceAccessor;
 import org.eclipse.languageserver.LanguageServiceAccessor.LSPDocumentInfo;
-
-import io.typefox.lsapi.CompletionItem;
-import io.typefox.lsapi.CompletionList;
-import io.typefox.lsapi.ServerCapabilities;
-import io.typefox.lsapi.impl.TextDocumentPositionParamsImpl;
+import org.eclipse.lsp4j.CompletionItem;
+import org.eclipse.lsp4j.CompletionList;
+import org.eclipse.lsp4j.ServerCapabilities;
+import org.eclipse.lsp4j.TextDocumentPositionParams;
 
 public class LSContentAssistProcessor implements IContentAssistProcessor {
 
@@ -48,7 +47,7 @@ public class LSContentAssistProcessor implements IContentAssistProcessor {
 		CompletableFuture<CompletionList> request = null;
 		try {
 			if (info != null) {
-				TextDocumentPositionParamsImpl param = LSPEclipseUtils.toTextDocumentPosistionParams(info.getFileUri(), offset, info.getDocument());
+				TextDocumentPositionParams param = LSPEclipseUtils.toTextDocumentPosistionParams(info.getFileUri(), offset, info.getDocument());
 				request = info.getLanguageClient().getTextDocumentService().completion(param);
 				CompletionList completionList = request.get(5, TimeUnit.SECONDS);
 				res = toProposals(offset, completionList);

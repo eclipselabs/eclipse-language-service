@@ -26,6 +26,9 @@ import org.eclipse.jface.viewers.ISelection;
 import org.eclipse.languageserver.LSPEclipseUtils;
 import org.eclipse.languageserver.LanguageServiceAccessor;
 import org.eclipse.languageserver.LanguageServiceAccessor.LSPDocumentInfo;
+import org.eclipse.lsp4j.Location;
+import org.eclipse.lsp4j.ReferenceParams;
+import org.eclipse.lsp4j.TextDocumentIdentifier;
 import org.eclipse.search2.internal.ui.SearchView;
 import org.eclipse.ui.IEditorPart;
 import org.eclipse.ui.IWorkbenchPart;
@@ -34,11 +37,6 @@ import org.eclipse.ui.PlatformUI;
 import org.eclipse.ui.handlers.HandlerUtil;
 import org.eclipse.ui.texteditor.AbstractTextEditor;
 import org.eclipse.ui.texteditor.ITextEditor;
-
-import io.typefox.lsapi.Location;
-import io.typefox.lsapi.ReferenceParams;
-import io.typefox.lsapi.ServerCapabilities;
-import io.typefox.lsapi.builders.ReferenceParamsBuilder;
 
 public class LSFindReferences extends AbstractHandler implements IHandler {
 
@@ -55,18 +53,17 @@ public class LSFindReferences extends AbstractHandler implements IHandler {
 		if (part instanceof ITextEditor) {
 			ITextEditor editor = (ITextEditor) part;
 			LSPDocumentInfo info = LanguageServiceAccessor.getLSPDocumentInfoFor(editor,
-					(capabilities) -> Boolean.TRUE.equals(capabilities.isReferencesProvider()));
+					(capabilities) -> Boolean.TRUE.equals(capabilities.getReferencesProvider()));
 
 			if (info != null) {
 				ISelection sel = ((AbstractTextEditor) part).getSelectionProvider().getSelection();
 				
 				if (sel instanceof TextSelection) {
 					try {
-						ReferenceParams params = new ReferenceParamsBuilder().context(false)
-						        .textDocument(info.getFileUri().toString())
-						        .position(LSPEclipseUtils.toPosition(((TextSelection) sel).getOffset(), info.getDocument()))
-						        .build();
-
+						ReferenceParams params = new ReferenceParams();
+						// TODO params.setContext(...)
+						params.setTextDocument(new TextDocumentIdentifier(info.getFileUri().toString()));
+						params.setPosition(LSPEclipseUtils.toPosition(((TextSelection) sel).getOffset(), info.getDocument()));
 						CompletableFuture<List<? extends Location>> references = info.getLanguageClient()
 						        .getTextDocumentService().references(params);
 						LSSearchResult search = new LSSearchResult(references);
@@ -88,7 +85,7 @@ public class LSFindReferences extends AbstractHandler implements IHandler {
 	public boolean isEnabled() {
 		IWorkbenchPart part = PlatformUI.getWorkbench().getActiveWorkbenchWindow().getActivePage().getActivePart();
 		if (part instanceof ITextEditor) {
-			LSPDocumentInfo info = LanguageServiceAccessor.getLSPDocumentInfoFor((ITextEditor) part, (capabilities) -> Boolean.TRUE.equals(capabilities.isReferencesProvider()));
+			LSPDocumentInfo info = LanguageServiceAccessor.getLSPDocumentInfoFor((ITextEditor) part, (capabilities) -> Boolean.TRUE.equals(capabilities.getReferencesProvider()));
 			ISelection selection = ((ITextEditor) part).getSelectionProvider().getSelection();
 			return info != null && !selection.isEmpty() && selection instanceof ITextSelection;
 		}

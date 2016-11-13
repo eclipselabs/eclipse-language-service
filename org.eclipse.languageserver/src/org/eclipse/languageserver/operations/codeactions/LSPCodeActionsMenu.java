@@ -10,6 +10,7 @@
  *******************************************************************************/
 package org.eclipse.languageserver.operations.codeactions;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.BiConsumer;
@@ -24,6 +25,11 @@ import org.eclipse.languageserver.LSPEclipseUtils;
 import org.eclipse.languageserver.LanguageServiceAccessor;
 import org.eclipse.languageserver.LanguageServiceAccessor.LSPDocumentInfo;
 import org.eclipse.languageserver.ui.Messages;
+import org.eclipse.lsp4j.CodeActionContext;
+import org.eclipse.lsp4j.CodeActionParams;
+import org.eclipse.lsp4j.Command;
+import org.eclipse.lsp4j.Range;
+import org.eclipse.lsp4j.TextDocumentIdentifier;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.widgets.Menu;
 import org.eclipse.swt.widgets.MenuItem;
@@ -34,16 +40,6 @@ import org.eclipse.ui.progress.UIJob;
 import org.eclipse.ui.services.IServiceLocator;
 import org.eclipse.ui.texteditor.ITextEditor;
 
-import io.typefox.lsapi.CodeActionContext;
-import io.typefox.lsapi.CodeActionParams;
-import io.typefox.lsapi.Command;
-import io.typefox.lsapi.Diagnostic;
-import io.typefox.lsapi.Range;
-import io.typefox.lsapi.ServerCapabilities;
-import io.typefox.lsapi.builders.CodeActionContextBuilder;
-import io.typefox.lsapi.builders.CodeActionParamsBuilder;
-import io.typefox.lsapi.builders.RangeBuilder;
-
 public class LSPCodeActionsMenu extends ContributionItem implements IWorkbenchContribution {
 
 	private LSPDocumentInfo info;
@@ -53,13 +49,12 @@ public class LSPCodeActionsMenu extends ContributionItem implements IWorkbenchCo
 	public void initialize(IServiceLocator serviceLocator) {
 		IEditorPart editor = PlatformUI.getWorkbench().getActiveWorkbenchWindow().getActivePage().getActiveEditor();
 		if (editor instanceof ITextEditor) {
-			info = LanguageServiceAccessor.getLSPDocumentInfoFor((ITextEditor) editor, (capabilities) -> Boolean.TRUE.equals(capabilities.isCodeActionProvider()));
+			info = LanguageServiceAccessor.getLSPDocumentInfoFor((ITextEditor) editor, (capabilities) -> Boolean.TRUE.equals(capabilities.getCodeActionProvider()));
 			ITextSelection selection = (ITextSelection) ((ITextEditor) editor).getSelectionProvider().getSelection();
 			try {
-				this.range = new RangeBuilder()
-						.start(LSPEclipseUtils.toPosition(selection.getOffset(), info.getDocument()))
-						.end(LSPEclipseUtils.toPosition(selection.getOffset() + selection.getLength(), info.getDocument()))
-						.build();
+				this.range = new Range(
+						LSPEclipseUtils.toPosition(selection.getOffset(), info.getDocument()),
+						LSPEclipseUtils.toPosition(selection.getOffset() + selection.getLength(), info.getDocument()));
 			} catch (BadLocationException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
@@ -72,15 +67,12 @@ public class LSPCodeActionsMenu extends ContributionItem implements IWorkbenchCo
 		final MenuItem item = new MenuItem(menu, SWT.NONE, index);
 		item.setText(Messages.computing);
 		item.setEnabled(false);
-		CodeActionContext context = new CodeActionContextBuilder()
-				.diagnostic((Diagnostic)null)
-				.build();
-		CodeActionParams param = new CodeActionParamsBuilder()
-				.textDocument(info.getFileUri().toString())
-				.range(this.range)
-				.context(context)
-				.build();
-		final CompletableFuture<List<? extends Command>> codeActions = info.getLanguageClient().getTextDocumentService().codeAction(param);
+		CodeActionContext context = new CodeActionContext(Collections.emptyList());
+		CodeActionParams params = new CodeActionParams();
+		params.setTextDocument(new TextDocumentIdentifier(info.getFileUri().toString()));
+		params.setRange(this.range);
+		params.setContext(context);
+		final CompletableFuture<List<? extends Command>> codeActions = info.getLanguageClient().getTextDocumentService().codeAction(params);
 		codeActions.whenComplete(new BiConsumer<List<? extends Command>, Throwable>() {
 
 			@Override
@@ -93,9 +85,11 @@ public class LSPCodeActionsMenu extends ContributionItem implements IWorkbenchCo
 							item.setText(u.getMessage());
 						} else {
 							for (Command command : t) {
-								final MenuItem item = new MenuItem(menu, SWT.NONE, index);
-								item.setText(command.getTitle());
-								item.setEnabled(false);
+								if (command != null) {
+									final MenuItem item = new MenuItem(menu, SWT.NONE, index);
+									item.setText(command.getTitle());
+									item.setEnabled(false);
+								}
 							}
 						}
 						return Status.OK_STATUS;

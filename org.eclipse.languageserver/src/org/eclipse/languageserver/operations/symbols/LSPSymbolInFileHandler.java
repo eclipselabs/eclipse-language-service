@@ -18,15 +18,13 @@ import org.eclipse.core.commands.ExecutionEvent;
 import org.eclipse.core.commands.ExecutionException;
 import org.eclipse.languageserver.LanguageServiceAccessor;
 import org.eclipse.languageserver.LanguageServiceAccessor.LSPDocumentInfo;
+import org.eclipse.lsp4j.DocumentSymbolParams;
+import org.eclipse.lsp4j.SymbolInformation;
+import org.eclipse.lsp4j.TextDocumentIdentifier;
 import org.eclipse.swt.widgets.Shell;
 import org.eclipse.ui.IEditorPart;
 import org.eclipse.ui.handlers.HandlerUtil;
 import org.eclipse.ui.texteditor.ITextEditor;
-
-import io.typefox.lsapi.DocumentSymbolParams;
-import io.typefox.lsapi.ServerCapabilities;
-import io.typefox.lsapi.SymbolInformation;
-import io.typefox.lsapi.builders.DocumentSymbolParamsBuilder;
 
 public class LSPSymbolInFileHandler extends AbstractHandler {
 
@@ -36,13 +34,12 @@ public class LSPSymbolInFileHandler extends AbstractHandler {
 		if (part instanceof ITextEditor) {
 			final ITextEditor textEditor = (ITextEditor) part;
 			LSPDocumentInfo info = LanguageServiceAccessor.getLSPDocumentInfoFor(textEditor,
-			        (capabilities) -> Boolean.TRUE.equals(capabilities.isDocumentSymbolProvider()));
+			        (capabilities) -> Boolean.TRUE.equals(capabilities.getDocumentSymbolProvider()));
 			if (info == null) {
 				return null;
 			}
 			final Shell shell = HandlerUtil.getActiveShell(event);
-			DocumentSymbolParams params = new DocumentSymbolParamsBuilder().textDocument(info.getFileUri().toString())
-			        .build();
+			DocumentSymbolParams params = new DocumentSymbolParams(new TextDocumentIdentifier(info.getFileUri().toString()));
 			CompletableFuture<List<? extends SymbolInformation>> symbols = info.getLanguageClient()
 			        .getTextDocumentService().documentSymbol(params);
 

@@ -13,6 +13,9 @@ At the moment, it provides regular JFace/Platform Text classes for:
 * hover
 * jump to declaration
 * Find References
+* File symbols (as Outline or Quick Outline)
+* Workspace symbols
+* Language Server messages as notifications
 
 Extensions to the [Generic Editor proposal for Eclipse Platform Text](https://bugs.eclipse.org/bugs/show_bug.cgi?id=497871) are provided so having the generic editor + this bundle enables the LSP based behavior in the Generic editor. But those classes can be reused in any editor or other extensions. Examples of integration contain:
 * C# edition in Eclipse IDE using OmniSharp LSP implementation

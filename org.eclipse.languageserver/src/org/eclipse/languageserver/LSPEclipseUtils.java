@@ -29,6 +29,12 @@ import org.eclipse.core.runtime.Path;
 import org.eclipse.jface.text.BadLocationException;
 import org.eclipse.jface.text.IDocument;
 import org.eclipse.jface.text.TextSelection;
+import org.eclipse.lsp4j.DiagnosticSeverity;
+import org.eclipse.lsp4j.Location;
+import org.eclipse.lsp4j.Position;
+import org.eclipse.lsp4j.TextDocumentIdentifier;
+import org.eclipse.lsp4j.TextDocumentPositionParams;
+import org.eclipse.lsp4j.TextEdit;
 import org.eclipse.text.edits.MalformedTreeException;
 import org.eclipse.text.edits.MultiTextEdit;
 import org.eclipse.text.edits.ReplaceEdit;
@@ -40,21 +46,13 @@ import org.eclipse.ui.PartInitException;
 import org.eclipse.ui.ide.IDE;
 import org.eclipse.ui.texteditor.AbstractTextEditor;
 
-import io.typefox.lsapi.DiagnosticSeverity;
-import io.typefox.lsapi.Location;
-import io.typefox.lsapi.Position;
-import io.typefox.lsapi.TextEdit;
-import io.typefox.lsapi.impl.PositionImpl;
-import io.typefox.lsapi.impl.TextDocumentIdentifierImpl;
-import io.typefox.lsapi.impl.TextDocumentPositionParamsImpl;
-
 /**
  * Some utility methods to convert between Eclipse and LS-API types
  */
 public class LSPEclipseUtils {
 
-	public static PositionImpl toPosition(int offset, IDocument document) throws BadLocationException {
-		PositionImpl res = new PositionImpl();
+	public static Position toPosition(int offset, IDocument document) throws BadLocationException {
+		Position res = new Position();
 		res.setLine(document.getLineOfOffset(offset));
 		res.setCharacter(offset - document.getLineInformationOfOffset(offset).getOffset());
 		return res;
@@ -64,13 +62,13 @@ public class LSPEclipseUtils {
 		return document.getLineInformation(position.getLine()).getOffset() + position.getCharacter();
 	}
 
-	public static TextDocumentPositionParamsImpl toTextDocumentPosistionParams(URI fileUri, int offset, IDocument document)
+	public static TextDocumentPositionParams toTextDocumentPosistionParams(URI fileUri, int offset, IDocument document)
 			throws BadLocationException {
-		PositionImpl start = toPosition(offset, document);
-		TextDocumentPositionParamsImpl param = new TextDocumentPositionParamsImpl();
+		Position start = toPosition(offset, document);
+		TextDocumentPositionParams param = new TextDocumentPositionParams();
 		param.setPosition(start);
 		param.setUri(fileUri.toString());
-		TextDocumentIdentifierImpl id = new TextDocumentIdentifierImpl();
+		TextDocumentIdentifier id = new TextDocumentIdentifier();
 		id.setUri(fileUri.toString());
 		param.setTextDocument(id);
 		return param;
@@ -141,13 +139,15 @@ public class LSPEclipseUtils {
 
 		MultiTextEdit edit = new MultiTextEdit();
 		for (TextEdit textEdit : edits) {
-			try {
-				int offset = LSPEclipseUtils.toOffset(textEdit.getRange().getStart(), document);
-				int length = LSPEclipseUtils.toOffset(textEdit.getRange().getEnd(), document) - offset;
-				edit.addChild(new ReplaceEdit(offset, length, textEdit.getNewText()));
-			} catch (BadLocationException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
+			if (textEdit != null) {
+				try {
+					int offset = LSPEclipseUtils.toOffset(textEdit.getRange().getStart(), document);
+					int length = LSPEclipseUtils.toOffset(textEdit.getRange().getEnd(), document) - offset;
+					edit.addChild(new ReplaceEdit(offset, length, textEdit.getNewText()));
+				} catch (BadLocationException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
 			}
 		}
 		try {

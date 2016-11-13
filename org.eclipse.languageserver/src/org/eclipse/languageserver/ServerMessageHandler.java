@@ -12,12 +12,12 @@ package org.eclipse.languageserver;
 
 import java.util.Collections;
 import java.util.Date;
+import java.util.concurrent.CompletableFuture;
 
+import org.eclipse.lsp4j.MessageParams;
+import org.eclipse.lsp4j.ShowMessageRequestParams;
 import org.eclipse.mylyn.commons.notifications.core.AbstractNotification;
 import org.eclipse.mylyn.commons.notifications.ui.NotificationsUi;
-
-import io.typefox.lsapi.MessageParams;
-import io.typefox.lsapi.ShowMessageRequestParams;
 
 @SuppressWarnings("restriction")
 public class ServerMessageHandler {
@@ -65,8 +65,9 @@ public class ServerMessageHandler {
 		NotificationsUi.getService().notify(Collections.singletonList(notification));
 	}
 
-	public static void showMessageRequest(ShowMessageRequestParams params) {
+	public static CompletableFuture<Void> showMessageRequest(ShowMessageRequestParams params) {
 		// TODO 
+		return null;
 	}
 
 }
