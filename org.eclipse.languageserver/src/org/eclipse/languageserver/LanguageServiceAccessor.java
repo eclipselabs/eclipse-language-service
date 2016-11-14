@@ -221,10 +221,7 @@ public class LanguageServiceAccessor {
 		for (IContentType contentType : fileContentTypes) {
 			WrapperEntryKey key = new WrapperEntryKey(project, contentType);
 			wrapper = projectServers.get(key);
-			if (wrapper != null && (request == null
-					|| wrapper.getServerCapabilities() == null /* null check is workaround for https://github.com/TypeFox/ls-api/issues/47 */
-					|| request.test(wrapper.getServerCapabilities())
-				)) {
+			if (wrapper != null) {
 				break;
 			} else {
 				wrapper = null;
@@ -238,15 +235,18 @@ public class LanguageServiceAccessor {
 					wrapper = new ProjectSpecificLanguageServerWrapper(project, connection);
 					WrapperEntryKey key = new WrapperEntryKey(project, contentType);
 					projectServers.put(key, wrapper);
-					if (request == null
-						|| wrapper.getServerCapabilities() == null /* null check is workaround for https://github.com/TypeFox/ls-api/issues/47 */
-						|| request.test(wrapper.getServerCapabilities())) {
-						return wrapper;
-					}
+					break;
 				}
 			}
+			return null;
 		}
-		return wrapper;
+		if (request == null 
+				|| wrapper.getServerCapabilities() == null /* null check is workaround for https://github.com/TypeFox/ls-api/issues/47 */
+		        || request.test(wrapper.getServerCapabilities())) {
+			return wrapper;
+		}
+		
+		return null;
 	}
 
 	/**
