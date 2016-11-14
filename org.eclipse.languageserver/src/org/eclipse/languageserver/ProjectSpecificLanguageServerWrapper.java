@@ -19,6 +19,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
@@ -164,6 +165,7 @@ public class ProjectSpecificLanguageServerWrapper {
 
 	private Job initializeJob;
 	private InitializeResult initializeResult;
+	private Future<?> launcherFuture;
 	
 	public ProjectSpecificLanguageServerWrapper(IProject project, StreamConnectionProvider connection) {
 		this.project = project;
@@ -221,7 +223,7 @@ public class ProjectSpecificLanguageServerWrapper {
 						consumer.consume(message);
 					}));
 			this.languageServer = launcher.getRemoteProxy();
-			launcher.startListening();
+			this.launcherFuture = launcher.startListening();
 
 			this.initializeJob = new Job(Messages.initializeLanguageServer_job) {
 				protected IStatus run(IProgressMonitor monitor) {
@@ -253,22 +255,25 @@ public class ProjectSpecificLanguageServerWrapper {
 	}
 	
 	private boolean stillActive() {
-//		if (this.languageServer == null || this.languageServer.getReader() == null) {
-//			return false;
-//		}
-//		return ((ConcurrentMessageReader)this.languageServer.getReader()).isRunning();
-		return true;
+		return this.launcherFuture != null && !this.launcherFuture.isDone() && !this.launcherFuture.isCancelled();
 	}
 
 	private void stop() {
 		if (this.initializeJob != null) {
 			this.initializeJob.cancel();
+			this.initializeJob = null;
 		}
-		this.initializeJob = null;
 		this.initializeResult = null;
 		if (this.languageServer != null) {
-			this.languageServer.shutdown();
-			// TODO stop readers?
+			try {
+				this.languageServer.shutdown();
+			} catch (Exception ex) {
+				// most likely closed externally				
+			}
+		}
+		if (this.launcherFuture != null) {
+			this.launcherFuture.cancel(true);
+			this.launcherFuture = null;
 		}
 		if (this.lspStreamProvider != null) {
 			this.lspStreamProvider.stop();
