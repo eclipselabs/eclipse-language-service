@@ -344,4 +344,8 @@ public class ProjectSpecificLanguageServerWrapper {
 			return null;
 		}
 	}
+
+	public StreamConnectionProvider getUnderlyingConnection() {
+		return this.lspStreamProvider;
+	}
 }

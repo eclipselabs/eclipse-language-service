@@ -23,6 +23,9 @@ import java.io.OutputStream;
  * use a more popular similar interface.
  * Note that in the context of Eclipse, the ILaunch might be such interface but I'm
  * not sure we want to bind to org.eclipse.debug from this Language Server bindings.
+ * 
+ * This method MUST implement meaningful {@link #hashCode()} and {@link #equals(Object)}
+ * to prevent multiple connections to be initiated multiple times.
  */
 public interface StreamConnectionProvider {
 

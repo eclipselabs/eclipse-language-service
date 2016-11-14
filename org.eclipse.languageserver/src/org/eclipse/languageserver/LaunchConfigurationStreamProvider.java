@@ -100,6 +100,23 @@ public class LaunchConfigurationStreamProvider implements StreamConnectionProvid
 			this.launchModes = Collections.singleton(ILaunchManager.RUN_MODE);
 		}
 	}
+	
+	@Override
+	public boolean equals(Object obj) {
+		if (obj == null) {
+			return false;
+		}
+		if (!(obj instanceof LaunchConfigurationStreamProvider)) {
+			return false;
+		}
+		LaunchConfigurationStreamProvider other = (LaunchConfigurationStreamProvider)obj;
+		return this.launchConfiguration.equals(other.launchConfiguration) && this.launchModes.equals(other.launchModes);
+	}
+	
+	@Override
+	public int hashCode() {
+		return this.launchConfiguration.hashCode() ^ this.launchModes.hashCode();
+	}
 
 	public static ILaunchConfiguration findLaunchConfiguration(String typeId, String name) {
 		ILaunchManager manager = DebugPlugin.getDefault().getLaunchManager();
