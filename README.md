@@ -1,6 +1,6 @@
 This repository contains experiments to make Eclipse IDE able to consume the [Language Server protocol](https://github.com/Microsoft/language-server-protocol).
 
-**Install it into Eclipse IDE** using this p2 repository:  http://repository.jboss.org/nexus/content/unzip/unzip/org/eclipse/languageserver/repository/1.0.0-SNAPSHOT/repository-1.0.0-SNAPSHOT.zip-unzip/
+**Install it into Eclipse IDE** using this p2 repository:  http://repository.jboss.org/nexus/content/unzip/unzip/org/eclipse/languageserver/repository/0.1.0-SNAPSHOT/repository-0.1.0-SNAPSHOT.zip-unzip/
 
 
 [<img alt="Video demo" src="http://content.screencast.com/users/mistria/folders/Default/media/1a860eda-8a50-4668-874c-ee2dd2ef213c/FirstFrame.jpg" width="400px">](http://www.screencast.com/t/Xs3TtaQM)
