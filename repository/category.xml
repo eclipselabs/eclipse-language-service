@@ -9,13 +9,10 @@
    </bundle>
    
    <category-def name="deps" label="Dependencies"/>
-   <bundle id="io.typefox.lsapi">
+   <bundle id="org.eclipse.lsp4j">
      <category name="deps"/>
    </bundle>
-   <bundle id="io.typefox.lsapi.services">
-     <category name="deps"/>
-   </bundle>
-   <bundle id="io.typefox.lsapi.annotations">
+   <bundle id="org.eclipse.lsp4j.jsonrpc">
      <category name="deps"/>
    </bundle>
    <bundle id="org.eclipse.xtext.xbase.lib">
