@@ -84,7 +84,7 @@ public class LSSymbolsContentProvider implements ICommonContentProvider, ITreeCo
 			return new Object[] { this.lastError };
 		}
 		if (lastResponse != null) {
-			return this.lastResponse.stream().filter(symbol -> symbol.getContainerName() == null).toArray();
+			return this.lastResponse.stream().filter(symbol -> getParent(symbol) == null).toArray();
 		}
 		return null;
 	}
