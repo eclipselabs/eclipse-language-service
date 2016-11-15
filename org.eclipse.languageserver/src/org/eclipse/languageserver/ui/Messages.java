@@ -30,6 +30,7 @@ public class Messages extends NLS {
 	public static String rename_job;
 	public static String referenceSearchQuery;
 	public static String computing;
+	public static String notImplemented;
 	public static String LSPSymbolInWorkspaceDialog_DialogLabel;
 	public static String LSPSymbolInWorkspaceDialog_DialogTitle;
 	public static String updateCodelensMenu_job;
