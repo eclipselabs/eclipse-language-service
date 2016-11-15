@@ -49,15 +49,18 @@ public class LSPCodeActionsMenu extends ContributionItem implements IWorkbenchCo
 	public void initialize(IServiceLocator serviceLocator) {
 		IEditorPart editor = PlatformUI.getWorkbench().getActiveWorkbenchWindow().getActivePage().getActiveEditor();
 		if (editor instanceof ITextEditor) {
-			info = LanguageServiceAccessor.getLSPDocumentInfoFor((ITextEditor) editor, (capabilities) -> Boolean.TRUE.equals(capabilities.getCodeActionProvider()));
-			ITextSelection selection = (ITextSelection) ((ITextEditor) editor).getSelectionProvider().getSelection();
-			try {
-				this.range = new Range(
-						LSPEclipseUtils.toPosition(selection.getOffset(), info.getDocument()),
-						LSPEclipseUtils.toPosition(selection.getOffset() + selection.getLength(), info.getDocument()));
-			} catch (BadLocationException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
+			ITextEditor textEditor = (ITextEditor) editor;
+			info = LanguageServiceAccessor.getLSPDocumentInfoFor(textEditor, (capabilities) -> Boolean.TRUE.equals(capabilities.getCodeActionProvider()));
+			if (info != null) {
+				ITextSelection selection = (ITextSelection) textEditor.getSelectionProvider().getSelection();
+				try {
+					this.range = new Range(
+							LSPEclipseUtils.toPosition(selection.getOffset(), info.getDocument()),
+							LSPEclipseUtils.toPosition(selection.getOffset() + selection.getLength(), info.getDocument()));
+				} catch (BadLocationException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
 			}
 		}
 	}
@@ -65,8 +68,13 @@ public class LSPCodeActionsMenu extends ContributionItem implements IWorkbenchCo
 	@Override
 	public void fill(final Menu menu, int index) {
 		final MenuItem item = new MenuItem(menu, SWT.NONE, index);
-		item.setText(Messages.computing);
 		item.setEnabled(false);
+		if (info == null){
+			item.setText(Messages.notImplemented);
+			return;
+		}
+		
+		item.setText(Messages.computing);
 		CodeActionContext context = new CodeActionContext(Collections.emptyList());
 		CodeActionParams params = new CodeActionParams();
 		params.setTextDocument(new TextDocumentIdentifier(info.getFileUri().toString()));

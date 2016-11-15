@@ -42,7 +42,7 @@ public class LSPCodeLensMenu extends ContributionItem implements IWorkbenchContr
 	public void initialize(IServiceLocator serviceLocator) {
 		IEditorPart editor = PlatformUI.getWorkbench().getActiveWorkbenchWindow().getActivePage().getActiveEditor();
 		if (editor instanceof ITextEditor) {
-			info = LanguageServiceAccessor.getLSPDocumentInfoFor((ITextEditor) editor, (capabilities) -> capabilities.getCodeLensProvider() != null );
+			info = LanguageServiceAccessor.getLSPDocumentInfoFor((ITextEditor) editor, (capabilities) -> Boolean.TRUE.equals(capabilities.getCodeLensProvider()));
 			// TODO should be ServerCapabilities::isCodeLensProvider, when available in ls-api
 		}
 	}
@@ -50,8 +50,13 @@ public class LSPCodeLensMenu extends ContributionItem implements IWorkbenchContr
 	@Override
 	public void fill(final Menu menu, int index) {
 		final MenuItem item = new MenuItem(menu, SWT.NONE, index);
-		item.setText(Messages.computing);
 		item.setEnabled(false);
+		if (info == null){
+			item.setText(Messages.notImplemented);
+			return;
+		}
+		
+		item.setText(Messages.computing);
 		CodeLensParams param = new CodeLensParams(new TextDocumentIdentifier(info.getFileUri().toString()));;
 		final CompletableFuture<List<? extends CodeLens>> codeLens = info.getLanguageClient().getTextDocumentService().codeLens(param);
 		codeLens.whenComplete(new BiConsumer<List<? extends CodeLens>, Throwable>() {
