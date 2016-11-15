@@ -18,6 +18,7 @@ import org.eclipse.core.commands.AbstractHandler;
 import org.eclipse.core.commands.ExecutionEvent;
 import org.eclipse.core.commands.ExecutionException;
 import org.eclipse.core.commands.IHandler;
+import org.eclipse.jface.text.BadLocationException;
 import org.eclipse.jface.text.ITextSelection;
 import org.eclipse.jface.text.TextSelection;
 import org.eclipse.jface.viewers.ISelection;
@@ -25,7 +26,11 @@ import org.eclipse.languageserver.LSPEclipseUtils;
 import org.eclipse.languageserver.LanguageServiceAccessor;
 import org.eclipse.languageserver.LanguageServiceAccessor.LSPDocumentInfo;
 import org.eclipse.lsp4j.DocumentFormattingParams;
+import org.eclipse.lsp4j.DocumentRangeFormattingParams;
 import org.eclipse.lsp4j.FormattingOptions;
+import org.eclipse.lsp4j.Position;
+import org.eclipse.lsp4j.Range;
+import org.eclipse.lsp4j.ServerCapabilities;
 import org.eclipse.lsp4j.TextDocumentIdentifier;
 import org.eclipse.lsp4j.TextEdit;
 import org.eclipse.swt.widgets.Shell;
@@ -33,7 +38,6 @@ import org.eclipse.ui.IEditorPart;
 import org.eclipse.ui.IWorkbenchPart;
 import org.eclipse.ui.PlatformUI;
 import org.eclipse.ui.handlers.HandlerUtil;
-import org.eclipse.ui.texteditor.AbstractTextEditor;
 import org.eclipse.ui.texteditor.ITextEditor;
 
 public class LSPFormatHandler extends AbstractHandler implements IHandler {
@@ -42,24 +46,56 @@ public class LSPFormatHandler extends AbstractHandler implements IHandler {
 	public Object execute(ExecutionEvent event) throws ExecutionException {
 		IEditorPart part = HandlerUtil.getActiveEditor(event);
 		if (part instanceof ITextEditor) {
-			LSPDocumentInfo info = LanguageServiceAccessor.getLSPDocumentInfoFor((ITextEditor) part, (capabilities) -> Boolean.TRUE.equals(capabilities.getDocumentFormattingProvider()));
+			ITextEditor textEditor = (ITextEditor) part;
+			LSPDocumentInfo info = LanguageServiceAccessor.getLSPDocumentInfoFor(textEditor,
+			        (capabilities) -> supportFormatting(capabilities));
 			if (info != null) {
-				ISelection sel = ((AbstractTextEditor) part).getSelectionProvider().getSelection();
+				ISelection sel = textEditor.getSelectionProvider().getSelection();
 				if (sel instanceof TextSelection) {
-					final Shell shell = HandlerUtil.getActiveShell(event);
-					DocumentFormattingParams params = new DocumentFormattingParams(
-							new TextDocumentIdentifier(info.getFileUri().toString()),
-							new FormattingOptions());
-					CompletableFuture<List<? extends TextEdit>> formatter = info.getLanguageClient().getTextDocumentService().formatting(params);
-					formatter.thenAccept((List<? extends TextEdit> t) -> {
-						shell.getDisplay().asyncExec(() -> {
-							LSPEclipseUtils.applyEdits(info.getDocument(), t);
+					TextSelection textSelection = (TextSelection) sel;
+					try {
+						CompletableFuture<List<? extends TextEdit>> formatter = format(info, textSelection);
+						final Shell shell = HandlerUtil.getActiveShell(event);
+						formatter.thenAccept((List<? extends TextEdit> t) -> {
+							shell.getDisplay().asyncExec(() -> {
+								LSPEclipseUtils.applyEdits(info.getDocument(), t);
+							});
 						});
-					});
+					} catch (BadLocationException e) {
+						// TODO
+						e.printStackTrace();
+						return null;
+					}
 				}
 			}
 		}
 		return null;
+	}
+
+	private CompletableFuture<List<? extends TextEdit>> format(LSPDocumentInfo info, TextSelection textSelection)
+	        throws BadLocationException {
+		TextDocumentIdentifier docId = new TextDocumentIdentifier(info.getFileUri().toString());
+		ServerCapabilities capabilities = info.getCapabilites();
+		// use range formatting if standard formatting is not supported or text is selected
+		if (capabilities != null && Boolean.TRUE.equals(capabilities.getDocumentRangeFormattingProvider())
+		        && (capabilities.getDocumentFormattingProvider() == null
+		                || !capabilities.getDocumentFormattingProvider() || textSelection.getLength() != 0)) {
+			DocumentRangeFormattingParams params = new DocumentRangeFormattingParams();
+			params.setTextDocument(docId);
+			params.setOptions(new FormattingOptions());
+			boolean fullFormat = textSelection.getLength() == 0;
+			Position start = LSPEclipseUtils.toPosition(fullFormat ? 0 : textSelection.getOffset(), info.getDocument());
+			Position end = LSPEclipseUtils.toPosition(
+			        fullFormat ? info.getDocument().getLength() : textSelection.getOffset() + textSelection.getLength(),
+			        info.getDocument());
+			params.setRange(new Range(start, end));
+			return info.getLanguageClient().getTextDocumentService().rangeFormatting(params);
+		}
+
+		DocumentFormattingParams params = new DocumentFormattingParams();
+		params.setTextDocument(docId);
+		params.setOptions(new FormattingOptions());
+		return info.getLanguageClient().getTextDocumentService().formatting(params);
 	}
 
 	@Override
@@ -67,11 +103,16 @@ public class LSPFormatHandler extends AbstractHandler implements IHandler {
 		IWorkbenchPart part = PlatformUI.getWorkbench().getActiveWorkbenchWindow().getActivePage().getActivePart();
 		if (part instanceof ITextEditor) {
 			LSPDocumentInfo info = LanguageServiceAccessor.getLSPDocumentInfoFor((ITextEditor) part,
-			        (capabilities) -> Boolean.TRUE.equals(capabilities.getDocumentFormattingProvider()));
+			        (capabilities) -> supportFormatting(capabilities));
 			ISelection selection = ((ITextEditor) part).getSelectionProvider().getSelection();
 			return info != null && !selection.isEmpty() && selection instanceof ITextSelection;
 		}
 		return false;
+	}
+
+	private boolean supportFormatting(ServerCapabilities capabilities) {
+		return Boolean.TRUE.equals(capabilities.getDocumentFormattingProvider())
+		        || Boolean.TRUE.equals(capabilities.getDocumentRangeFormattingProvider());
 	}
 
 }
