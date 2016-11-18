@@ -39,18 +39,20 @@ public class LSBasedHover implements ITextHover {
 		if (!(hoverRegion.equals(this.lastRegion) && textViewer.equals(this.textViewer) && this.hover != null)) {
 			initiateHoverRequest(textViewer, hoverRegion.getOffset());
 		}
-
-		Hover hover = null;
-		try {
-			hover = this.hover.get(500, TimeUnit.MILLISECONDS);
-		} catch (InterruptedException | ExecutionException | TimeoutException e) {
-			e.printStackTrace();
+		if (this.hover == null){
+			return null;
 		}
-		if (hover == null) {
+		Hover hoverRequest = null;
+		try {
+			hoverRequest = this.hover.get(500, TimeUnit.MILLISECONDS);
+		} catch (InterruptedException | ExecutionException | TimeoutException e) {
+			e.printStackTrace(); // TODO
+		}
+		if (hoverRequest == null) {
 			return null;
 		}
 		StringBuilder res = new StringBuilder();
-		for (String string : hover.getContents()) {
+		for (String string : hoverRequest.getContents()) {
 			res.append(string);
 			res.append('\n');
 		}
