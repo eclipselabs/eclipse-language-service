@@ -36,18 +36,25 @@ public class LSBasedHover implements ITextHover {
 
 	@Override
 	public String getHoverInfo(ITextViewer textViewer, IRegion hoverRegion) {
-		if (! (hoverRegion.equals(this.lastRegion) && textViewer.equals(this.textViewer) && this.hover != null)) {
+		if (!(hoverRegion.equals(this.lastRegion) && textViewer.equals(this.textViewer) && this.hover != null)) {
 			initiateHoverRequest(textViewer, hoverRegion.getOffset());
 		}
-		StringBuilder res = new StringBuilder();
+
+		Hover hover = null;
 		try {
-			for (String string : this.hover.get(500, TimeUnit.MILLISECONDS).getContents()) {
-				res.append(string);
-				res.append('\n');
-			}
+			hover = this.hover.get(500, TimeUnit.MILLISECONDS);
 		} catch (InterruptedException | ExecutionException | TimeoutException e) {
 			e.printStackTrace();
 		}
+		if (hover == null) {
+			return null;
+		}
+		StringBuilder res = new StringBuilder();
+		for (String string : hover.getContents()) {
+			res.append(string);
+			res.append('\n');
+		}
+
 		return res.toString();
 	}
 
