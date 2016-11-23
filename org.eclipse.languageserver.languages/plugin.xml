@@ -75,4 +75,11 @@
             editorId="org.eclipse.ui.genericeditor.GenericEditor">
       </editorContentTypeBinding>
    </extension>
+   <extension
+         point="org.eclipse.languageserver.languageServer">
+      <languageServer
+            class="org.eclipse.languageserver.languages.CSSLanguageServer"
+            contentType="org.eclipse.languageserver.languages.css">
+      </languageServer>
+   </extension>
 </plugin>
