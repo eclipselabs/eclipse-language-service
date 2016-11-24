@@ -77,9 +77,22 @@
    </extension>
    <extension
          point="org.eclipse.languageserver.languageServer">
-      <languageServer
+      <server
             class="org.eclipse.languageserver.languages.CSSLanguageServer"
-            contentType="org.eclipse.languageserver.languages.css">
-      </languageServer>
+            id="org.eclipse.languageserver.languages.css"
+            label="CSS/LESS/SCSS Language Server">
+      </server>
+      <contentTypeMapping
+            contentType="org.eclipse.languageserver.languages.css"
+            id="org.eclipse.languageserver.languages.css">
+      </contentTypeMapping>
+      <contentTypeMapping
+            contentType="org.eclipse.languageserver.languages.scss"
+            id="org.eclipse.languageserver.languages.css">
+      </contentTypeMapping>
+      <contentTypeMapping
+            contentType="org.eclipse.languageserver.languages.less"
+            id="org.eclipse.languageserver.languages.css">
+      </contentTypeMapping>
    </extension>
 </plugin>
